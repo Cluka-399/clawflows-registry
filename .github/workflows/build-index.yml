@@ -1,0 +1,71 @@
+name: Build Index
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Build index.json
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          const automationsDir = './automations';
+          const automations = [];
+          
+          // Read all automation directories
+          const dirs = fs.readdirSync(automationsDir, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .map(d => d.name);
+          
+          for (const dir of dirs) {
+            const metadataPath = path.join(automationsDir, dir, 'metadata.json');
+            
+            if (fs.existsSync(metadataPath)) {
+              try {
+                const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+                automations.push({
+                  ...metadata,
+                  url: `/automations/${dir}/`
+                });
+              } catch (e) {
+                console.error(`Error reading ${metadataPath}:`, e.message);
+              }
+            }
+          }
+          
+          // Sort by name
+          automations.sort((a, b) => a.name.localeCompare(b.name));
+          
+          // Write index
+          const index = {
+            generated: new Date().toISOString(),
+            version: '1.0.0',
+            count: automations.length,
+            automations
+          };
+          
+          fs.writeFileSync('index.json', JSON.stringify(index, null, 2));
+          console.log(`Built index.json with ${automations.length} automations`);
+          EOF
+      
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          git diff --staged --quiet || git commit -m "Rebuild index.json"
+          git push

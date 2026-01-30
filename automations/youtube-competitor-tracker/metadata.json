@@ -1,0 +1,12 @@
+{
+  "name": "youtube-competitor-tracker",
+  "description": "Track competitor YouTube channels, store stats in SQLite, generate weekly charts",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["youtube-data", "database", "chart-generation"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["youtube", "competitor", "analytics", "charts", "sqlite", "weekly-report"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -1,0 +1,208 @@
+{
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "name": "youtube-data",
+      "description": "Fetch YouTube video and channel statistics",
+      "methods": [
+        {
+          "name": "getRecentVideos",
+          "input": {
+            "channels": "string[] - Channel handles (@MrBeast, etc)",
+            "limit": "number - Videos per channel (default: 5)"
+          },
+          "output": "Video[] - Array with: id, title, views, duration, publishedAt, channel"
+        },
+        {
+          "name": "getChannelStats",
+          "input": {
+            "channel": "string - Channel handle"
+          },
+          "output": "ChannelStats - { subscribers, totalViews, videoCount }"
+        }
+      ]
+    },
+    {
+      "name": "database",
+      "description": "Store and query structured data (SQLite, Postgres, etc)",
+      "methods": [
+        {
+          "name": "query",
+          "input": {
+            "sql": "string - SQL query"
+          },
+          "output": "Row[] - Array of row objects"
+        },
+        {
+          "name": "upsert",
+          "input": {
+            "table": "string - Table name",
+            "data": "object[] - Array of row objects",
+            "key": "string - Primary key field for upsert"
+          },
+          "output": "{ inserted: number, updated: number }"
+        },
+        {
+          "name": "execute",
+          "input": {
+            "sql": "string - SQL statement"
+          },
+          "output": "{ changes: number }"
+        }
+      ]
+    },
+    {
+      "name": "chart-generation",
+      "description": "Generate chart images from data",
+      "methods": [
+        {
+          "name": "lineChart",
+          "input": {
+            "data": "DataPoint[] - Array of {x, y} or {time, value} points",
+            "title": "string? - Chart title",
+            "series": "string[]? - Multiple series names",
+            "groupBy": "string? - Field to group by for multi-series"
+          },
+          "output": "{ path: string } - Path to generated PNG"
+        },
+        {
+          "name": "barChart",
+          "input": {
+            "data": "Bar[] - Array of {label, value}",
+            "title": "string?"
+          },
+          "output": "{ path: string }"
+        }
+      ]
+    },
+    {
+      "name": "social-search",
+      "description": "Search social platforms for posts",
+      "methods": [
+        {
+          "name": "search",
+          "input": {
+            "query": "string - Search query",
+            "accounts": "string[]? - Filter to specific accounts",
+            "hours": "number? - Limit to recent hours"
+          },
+          "output": "Post[] - Array with: author, text, time, url"
+        }
+      ]
+    },
+    {
+      "name": "prediction-markets",
+      "description": "Query prediction market prices and odds",
+      "methods": [
+        {
+          "name": "getPrice",
+          "input": {
+            "market": "string - Market slug or ID"
+          },
+          "output": "{ price: number, change24h: number, volume: number }"
+        },
+        {
+          "name": "getHistory",
+          "input": {
+            "market": "string",
+            "interval": "string - 1h, 1d, etc",
+            "limit": "number"
+          },
+          "output": "Point[] - Array of {time, price}"
+        },
+        {
+          "name": "search",
+          "input": {
+            "query": "string",
+            "category": "string?"
+          },
+          "output": "Market[] - Array with: id, title, price"
+        }
+      ]
+    },
+    {
+      "name": "weather",
+      "description": "Get weather forecasts",
+      "methods": [
+        {
+          "name": "current",
+          "input": {
+            "location": "string - City name or coordinates"
+          },
+          "output": "{ temp, feels_like, humidity, description, icon }"
+        },
+        {
+          "name": "forecast",
+          "input": {
+            "location": "string",
+            "days": "number - Days ahead (default: 7)"
+          },
+          "output": "Day[] - Array of daily forecasts"
+        }
+      ]
+    },
+    {
+      "name": "calendar",
+      "description": "Read and write calendar events",
+      "methods": [
+        {
+          "name": "list",
+          "input": {
+            "start": "string - Start date/time",
+            "end": "string - End date/time"
+          },
+          "output": "Event[] - Array with: title, start, end, location"
+        },
+        {
+          "name": "create",
+          "input": {
+            "title": "string",
+            "start": "string",
+            "end": "string",
+            "location": "string?"
+          },
+          "output": "{ id: string }"
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "description": "Send and receive email",
+      "methods": [
+        {
+          "name": "send",
+          "input": {
+            "to": "string - Recipient email",
+            "subject": "string",
+            "body": "string",
+            "html": "string?"
+          },
+          "output": "{ sent: boolean, messageId: string }"
+        },
+        {
+          "name": "list",
+          "input": {
+            "folder": "string? - inbox, sent, etc",
+            "limit": "number?",
+            "unread": "boolean?"
+          },
+          "output": "Email[] - Array with: id, from, subject, date, snippet"
+        }
+      ]
+    },
+    {
+      "name": "tts",
+      "description": "Text to speech",
+      "methods": [
+        {
+          "name": "speak",
+          "input": {
+            "text": "string - Text to speak",
+            "voice": "string? - Voice ID or name"
+          },
+          "output": "{ path: string } - Path to audio file"
+        }
+      ]
+    }
+  ]
+}

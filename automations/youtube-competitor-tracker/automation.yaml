@@ -1,0 +1,107 @@
+name: youtube-competitor-tracker
+description: Track competitor YouTube channels, store stats in SQLite, generate weekly charts
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: youtube-data
+  - capability: database
+  - capability: chart-generation
+
+trigger:
+  schedule: "0 9 * * *"  # Daily at 9am
+
+config:
+  channels:
+    description: "Competitor YouTube channels to track"
+    default: ["@MrBeast", "@PewDiePie", "@Markiplier"]
+  
+  videos_per_channel:
+    description: "Number of recent videos to fetch per channel"
+    default: 5
+  
+  viral_threshold:
+    description: "Alert if any video exceeds this many views"
+    default: 10000000
+  
+  chart_days:
+    description: "Days of history to include in weekly chart"
+    default: 30
+
+steps:
+  # Step 1: Fetch recent videos from competitors
+  - name: fetch-videos
+    capability: youtube-data
+    method: getRecentVideos
+    args:
+      channels: "${config.channels}"
+      limit: "${config.videos_per_channel}"
+    capture: videos
+
+  # Step 2: Store in database
+  - name: store-videos
+    capability: database
+    method: upsert
+    args:
+      table: competitor_videos
+      data: "${videos}"
+      key: video_id
+
+  # Step 3: Check for viral videos
+  - name: check-viral
+    condition: "videos.some(v => v.views > config.viral_threshold)"
+    onFalse: skip-to:check-weekly
+
+  # Step 4: Alert on viral video
+  - name: viral-alert
+    action: notify
+    message: |
+      🚨 **Viral Video Alert!**
+      
+      ${videos.filter(v => v.views > config.viral_threshold).map(v => 
+        `**${v.channel}**: ${v.title}\n👁 ${v.views.toLocaleString()} views`
+      ).join('\n\n')}
+
+  # Step 5: Check if it's Monday (weekly report day)
+  - name: check-weekly
+    condition: "new Date().getDay() === 1"
+    onFalse: exit
+
+  # Step 6: Query historical data
+  - name: get-history
+    capability: database
+    method: query
+    args:
+      sql: |
+        SELECT 
+          channel,
+          date(publishedAt) as date,
+          SUM(views) as total_views,
+          COUNT(*) as video_count
+        FROM competitor_videos
+        WHERE publishedAt > date('now', '-${config.chart_days} days')
+        GROUP BY channel, date(publishedAt)
+        ORDER BY date
+    capture: history
+
+  # Step 7: Generate chart
+  - name: generate-chart
+    capability: chart-generation
+    method: lineChart
+    args:
+      data: "${history}"
+      title: "Competitor Views (${config.chart_days} days)"
+      groupBy: channel
+    capture: chart
+
+  # Step 8: Send weekly report
+  - name: weekly-report
+    action: notify
+    message: |
+      📊 **Weekly Competitor Report**
+      
+      Tracked ${config.channels.length} channels over ${config.chart_days} days.
+      
+      Top performer this week: ${history.reduce((max, h) => h.total_views > max.total_views ? h : max, history[0]).channel}
+    attachments:
+      - "${chart.path}"
