@@ -121,16 +121,16 @@
     
     /* Hero Section */
     .hero {
-      padding: 8rem 0 4rem;
+      padding: 6rem 0 2rem;
       text-align: center;
       position: relative;
     }
     
     .hero-mascot {
-      width: 140px;
-      height: 140px;
-      border-radius: 24px;
-      margin-bottom: 1.5rem;
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
+      margin-bottom: 1rem;
       animation: float 3s ease-in-out infinite;
       box-shadow: 0 20px 60px var(--accent-glow);
     }
@@ -141,7 +141,7 @@
     }
     
     .hero h1 {
-      font-size: 3.5rem;
+      font-size: 3rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
       letter-spacing: -0.02em;
@@ -150,9 +150,9 @@
     .hero h1 span { color: var(--accent); }
     
     .hero-tagline {
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       color: var(--text-secondary);
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       max-width: 500px;
       margin-left: auto;
       margin-right: auto;
@@ -777,57 +777,6 @@
         <div class="install-box" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
           <code>npm i -g clawflows</code>
           <span class="copy-hint">Click to copy</span>
-        </div>
-      </div>
-    </section>
-    
-    <!-- Value Section: What You'll Get -->
-    <section id="value" class="value-section">
-      <div class="container">
-        <h2 class="section-title">📬 What You'll Get</h2>
-        <p class="section-subtitle">Automations deliver real outputs to your chat — alerts, charts, reports, and more.</p>
-        
-        <div class="value-grid">
-          <div class="value-card">
-            <img src="./assets/alert.png" alt="Alerts" class="value-card-image">
-            <h3>Instant Alerts</h3>
-            <div class="example-output">
-              <div class="chat-bubble">
-                <strong>🚨 Viral Video Alert!</strong><br>
-                @MrBeast: I Gave Away $1,000,000<br>
-                <span class="meta">👀 45,000,000 views</span>
-              </div>
-            </div>
-            <p>Get notified when something important happens — viral videos, market moves, or custom triggers.</p>
-          </div>
-          
-          <div class="value-card">
-            <div class="value-icon">📊</div>
-            <h3>Weekly Reports</h3>
-            <div class="example-output">
-              <div class="chat-bubble">
-                <strong>📈 Weekly Competitor Report</strong><br>
-                Tracked 3 channels over 30 days.<br>
-                <span class="meta">Top performer: @MrBeast (+12M)</span>
-              </div>
-              <div class="chart-placeholder">📈 Chart attached</div>
-            </div>
-            <p>Automated summaries with charts comparing trends over time.</p>
-          </div>
-          
-          <div class="value-card">
-            <div class="value-icon">☀️</div>
-            <h3>Morning Briefings</h3>
-            <div class="example-output">
-              <div class="chat-bubble">
-                <strong>🌅 Good Morning!</strong><br>
-                📅 3 meetings today<br>
-                🌤️ 22°C, partly cloudy<br>
-                <span class="meta">🔊 Audio briefing attached</span>
-              </div>
-            </div>
-            <p>Start your day with calendar, weather, and news — optionally as audio.</p>
-          </div>
         </div>
       </div>
     </section>
