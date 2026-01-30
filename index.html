@@ -404,6 +404,26 @@
       margin: 2rem 0 1rem;
     }
     
+    .section-visual {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .section-image {
+      width: 120px;
+      height: 120px;
+      border-radius: 16px;
+      object-fit: cover;
+    }
+    
+    .value-card-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      object-fit: cover;
+      margin-bottom: 0.75rem;
+    }
+    
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -769,7 +789,7 @@
         
         <div class="value-grid">
           <div class="value-card">
-            <div class="value-icon">🚨</div>
+            <img src="./assets/alert.png" alt="Alerts" class="value-card-image">
             <h3>Instant Alerts</h3>
             <div class="example-output">
               <div class="chat-bubble">
@@ -828,6 +848,9 @@
     <section id="how-it-works">
       <div class="container">
         <div class="how-it-works">
+          <div class="section-visual">
+            <img src="./assets/vision.png" alt="The future of automation" class="section-image">
+          </div>
           <h2>⚡ The Skill-Agnostic Future</h2>
           <p class="big-idea">Traditional automations break when you change skills. <strong>ClawFlows automations don't.</strong></p>
           
@@ -925,7 +948,7 @@
             <a href="https://github.com/Cluka-399/clawflows-registry/blob/main/docs/publishing.md" class="btn btn-primary">Publishing Guide →</a>
           </div>
           <div class="contribute-image">
-            <img src="./assets/contribute.png" alt="Contribute your automation">
+            <img src="./assets/community.png" alt="Join the community">
           </div>
         </div>
       </div>
