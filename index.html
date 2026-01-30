@@ -323,6 +323,87 @@
       text-align: center;
     }
     
+    /* Paradigm Shift */
+    .big-idea {
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+    
+    .paradigm-shift {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+    
+    .old-way, .new-way {
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      min-width: 250px;
+      text-align: center;
+    }
+    
+    .old-way {
+      opacity: 0.7;
+    }
+    
+    .new-way {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    
+    .old-way h4, .new-way h4 {
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+    
+    .old-way code, .new-way code {
+      display: block;
+      background: var(--bg-primary);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .new-way code {
+      color: var(--accent);
+    }
+    
+    .old-way p, .new-way p {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin: 0;
+    }
+    
+    .shift-arrow {
+      font-size: 2rem;
+      color: var(--accent);
+    }
+    
+    .paradigm-explain {
+      text-align: center;
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 1.5rem auto 2rem;
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    
+    .capabilities-heading {
+      text-align: center;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin: 2rem 0 1rem;
+    }
+    
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -747,8 +828,24 @@
     <section id="how-it-works">
       <div class="container">
         <div class="how-it-works">
-          <h2>⚡ How It Works</h2>
-          <p>Automations use <strong>capabilities</strong> (abstract) instead of specific skills. This makes them portable across any OpenClaw agent with the right tools.</p>
+          <h2>⚡ The Skill-Agnostic Future</h2>
+          <p class="big-idea">Traditional automations break when you change skills. <strong>ClawFlows automations don't.</strong></p>
+          
+          <div class="paradigm-shift">
+            <div class="old-way">
+              <h4>❌ Old Way: Skill-Locked</h4>
+              <code>use: polymarket-skill</code>
+              <p>Breaks if you switch to kalshi-skill</p>
+            </div>
+            <div class="shift-arrow">→</div>
+            <div class="new-way">
+              <h4>✅ New Way: Capability-Based</h4>
+              <code>needs: prediction-markets</code>
+              <p>Works with ANY skill that provides it</p>
+            </div>
+          </div>
+          
+          <p class="paradigm-explain">Capabilities are <strong>abstract interfaces</strong>. Skills are concrete implementations. Write once, run anywhere — regardless of which skills your agent has installed.</p>
           
           <div class="workflow-visual">
             <div class="workflow-step">📊 Fetch</div>
@@ -762,6 +859,7 @@
             <div class="workflow-step">🔔 Notify</div>
           </div>
           
+          <h3 class="capabilities-heading">Standard Capabilities</h3>
           <div class="capabilities-grid">
             <div class="capability-item">
               <div class="emoji">📊</div>
