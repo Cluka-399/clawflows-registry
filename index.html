@@ -54,9 +54,11 @@
       margin-bottom: 2rem;
     }
     
-    .logo {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
+    .hero-image {
+      width: 180px;
+      height: auto;
+      margin-bottom: 1rem;
+      border-radius: 16px;
     }
     
     h1 {
@@ -262,18 +264,9 @@
 <body>
   <div class="container">
     <header>
-      <div class="logo">🦞</div>
+      <img src="./hero.png" alt="ClawFlows mascot" class="hero-image">
       <h1>Claw<span>Flows</span></h1>
       <p class="tagline">Multi-skill automations for AI agents</p>
-      <div class="hero-visual">
-        <span>📊</span>
-        <span>→</span>
-        <span>🗄️</span>
-        <span>→</span>
-        <span>📈</span>
-        <span>→</span>
-        <span>🔔</span>
-      </div>
       <div class="quick-start" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('code').textContent = 'Copied!'; setTimeout(() => this.querySelector('code').textContent = 'npm i -g clawflows', 1500);">
         <code>npm i -g clawflows</code>
       </div>
