@@ -4,346 +4,748 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ClawFlows — Multi-Skill Automations for AI Agents</title>
-  <meta name="description" content="Discover and run multi-skill automations that combine capabilities like database, charts, social search, and more.">
+  <meta name="description" content="Discover and run multi-skill automations that combine capabilities like database, charts, social search, and more. Built for OpenClaw agents.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   
   <!-- Mixpanel -->
   <script type="text/javascript">
     (function(f,b){if(!b.__SV){var e,g,i,h;window.mixpanel=b;b._i=[];b.init=function(e,f,c){function g(a,d){var b=d.split(".");2==b.length&&(a=a[b[0]],d=b[1]);a[d]=function(){a.push([d].concat(Array.prototype.slice.call(arguments,0)))}}var a=b;"undefined"!==typeof c?a=b[c]=[]:c="mixpanel";a.people=a.people||[];a.toString=function(a){var d="mixpanel";"mixpanel"!==c&&(d+="."+c);a||(d+=" (stub)");return d};a.people.toString=function(){return a.toString(1)+".people (stub)"};i="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking start_batch_senders people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<i.length;h++)g(a,i[h]);var j="set set_once union unset remove delete".split(" ");a.get_group=function(){function b(c){d[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));a.push([e,call2])}}for(var d={},e=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<j.length;c++)b(j[c]);return d};b._i.push([e,f,c])};b.__SV=1.2;e=f.createElement("script");e.type="text/javascript";e.async=!0;e.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===f.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";g=f.getElementsByTagName("script")[0];g.parentNode.insertBefore(e,g)}})(document,window.mixpanel||[]);
-    mixpanel.init('0e96965fde0e249f928c6d56ee672c9e', {
-      debug: false,
-      track_pageview: true,
-      persistence: 'localStorage'
-    });
+    mixpanel.init('0e96965fde0e249f928c6d56ee672c9e', { track_pageview: true, persistence: 'localStorage' });
   </script>
   
   <style>
     :root {
-      --bg: #0f0f1a;
-      --card-bg: #1a1a2e;
+      --bg-primary: #0a0a12;
+      --bg-secondary: #12121c;
+      --bg-card: #1a1a28;
+      --bg-card-hover: #222232;
       --accent: #ff6b6b;
+      --accent-glow: rgba(255, 107, 107, 0.3);
       --accent-dim: #cc5555;
-      --text: #e8e8e8;
-      --text-dim: #888;
-      --border: #333;
+      --text-primary: #f0f0f5;
+      --text-secondary: #9090a0;
+      --text-dim: #606070;
+      --border: #2a2a3a;
+      --border-light: #3a3a4a;
+      --gradient-accent: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
     }
     
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html { scroll-behavior: smooth; }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'Space Grotesk', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       line-height: 1.6;
       min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Subtle background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse at 20% 20%, rgba(255, 107, 107, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(255, 107, 107, 0.02) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: -1;
     }
     
     .container {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: 0 2rem;
     }
     
-    header {
-      text-align: center;
-      padding: 3rem 0;
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 18, 0.9);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      margin-bottom: 2rem;
+      z-index: 100;
+      padding: 1rem 0;
     }
     
-    .hero-image {
-      width: 180px;
-      height: auto;
-      margin-bottom: 1rem;
-      border-radius: 16px;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    h1 span {
-      color: var(--accent);
-    }
-    
-    .tagline {
-      color: var(--text-dim);
-      font-size: 1.1rem;
-      margin-bottom: 1.5rem;
-    }
-    
-    .hero-visual {
+    nav .container {
       display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      font-size: 2rem;
-      opacity: 0.8;
+      justify-content: space-between;
+      align-items: center;
     }
     
-    .quick-start {
-      background: var(--card-bg);
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-primary);
+    }
+    
+    .nav-brand img {
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
-      padding: 1rem 1.5rem;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 0.9rem;
-      display: inline-block;
-      margin-top: 1rem;
+    }
+    
+    .nav-brand span { color: var(--accent); }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover { color: var(--text-primary); }
+    
+    /* Hero Section */
+    .hero {
+      padding: 8rem 0 4rem;
+      text-align: center;
+      position: relative;
+    }
+    
+    .hero-mascot {
+      width: 140px;
+      height: 140px;
+      border-radius: 24px;
+      margin-bottom: 1.5rem;
+      animation: float 3s ease-in-out infinite;
+      box-shadow: 0 20px 60px var(--accent-glow);
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    
+    .hero h1 span { color: var(--accent); }
+    
+    .hero-tagline {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 1.5rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.2s;
+      border: none;
     }
     
-    .quick-start:hover {
-      background: #252540;
+    .btn-primary {
+      background: var(--gradient-accent);
+      color: white;
+      box-shadow: 0 4px 20px var(--accent-glow);
     }
     
-    .quick-start code {
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--accent-glow);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-light);
+    }
+    
+    /* Install Command */
+    .install-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .install-box:hover {
+      border-color: var(--accent);
+      background: var(--bg-card);
+    }
+    
+    .install-box code {
       color: var(--accent);
     }
     
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      color: var(--text);
+    .install-box .copy-hint {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    
+    /* Section Styling */
+    section {
+      padding: 4rem 0;
     }
     
     .section-header {
       display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    .automations {
-      display: grid;
-      gap: 1rem;
-    }
-    
-    .automation {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1.5rem;
-      border: 1px solid var(--border);
-      transition: border-color 0.2s, transform 0.2s;
-      cursor: pointer;
-    }
-    
-    .automation:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-    }
-    
-    .automation-header {
-      display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.5rem;
+      align-items: center;
+      margin-bottom: 2rem;
     }
     
-    .automation h3 {
-      font-size: 1.2rem;
+    .section-header h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
     
-    .automation h3 a {
-      color: var(--text);
-      text-decoration: none;
+    .section-header .badge {
+      background: var(--accent);
+      color: white;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
     }
     
-    .automation h3 a:hover {
+    .view-all {
       color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .view-all:hover { text-decoration: underline; }
+    
+    /* Automations Grid */
+    .automations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    
+    .automation-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    
+    .automation-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .automation-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    
+    .automation-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      line-height: 1.5;
     }
     
     .automation-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 0.8rem;
       color: var(--text-dim);
-    }
-    
-    .automation p {
-      color: var(--text-dim);
-      font-size: 0.95rem;
       margin-bottom: 0.75rem;
     }
     
     .tags {
       display: flex;
-      gap: 0.5rem;
       flex-wrap: wrap;
+      gap: 0.5rem;
     }
     
     .tag {
-      background: var(--bg);
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      color: var(--text-dim);
+      background: var(--bg-secondary);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
     }
     
     .tag.capability {
       background: rgba(255, 107, 107, 0.15);
       color: var(--accent);
+      font-weight: 500;
     }
     
-    .loading {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-dim);
-    }
-    
+    /* How It Works */
     .how-it-works {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-top: 2rem;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 3rem;
+      border: 1px solid var(--border);
     }
     
     .how-it-works h2 {
+      text-align: center;
       margin-bottom: 1rem;
     }
     
-    .flow-diagram {
+    .how-it-works > p {
+      text-align: center;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+    
+    .workflow-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+    }
+    
+    .workflow-step {
+      background: var(--bg-card);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .workflow-arrow {
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+    
+    /* Contribute Section */
+    .contribute {
+      background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+      border-radius: 16px;
+      padding: 3rem;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    
+    .contribute-content h2 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .contribute-content p {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+    
+    .contribute-steps {
+      list-style: none;
+      margin-bottom: 1.5rem;
+    }
+    
+    .contribute-steps li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    
+    .contribute-steps li:last-child { border-bottom: none; }
+    
+    .step-num {
+      background: var(--accent);
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin: 1rem 0;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      flex-shrink: 0;
     }
     
-    .flow-step {
-      background: var(--bg);
-      padding: 0.5rem 1rem;
+    .step-text {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    
+    .step-text code {
+      background: var(--bg-primary);
+      padding: 0.2rem 0.4rem;
       border-radius: 4px;
-    }
-    
-    .flow-arrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
       color: var(--accent);
     }
     
-    footer {
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--border);
+    .contribute-image {
       text-align: center;
-      color: var(--text-dim);
-      font-size: 0.9rem;
     }
     
-    footer a {
+    .contribute-image img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+    }
+    
+    /* Capabilities */
+    .capabilities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .capability-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    
+    .capability-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    .capability-item .emoji {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .capability-item h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .capability-item p {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+    
+    /* Footer */
+    footer {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    .footer-brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    
+    .footer-brand span { color: var(--accent); }
+    
+    .footer-credits {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .footer-credits a {
       color: var(--accent);
       text-decoration: none;
     }
     
-    .created-by {
-      margin-bottom: 0.5rem;
-    }
+    .footer-credits a:hover { text-decoration: underline; }
     
-    .powered-by {
-      font-size: 0.85rem;
-      opacity: 0.8;
-    }
-    
-    .links {
+    .footer-links {
       display: flex;
-      gap: 1.5rem;
       justify-content: center;
-      margin-top: 1rem;
+      gap: 2rem;
+      flex-wrap: wrap;
     }
     
-    @media (max-width: 600px) {
-      .container { padding: 1rem; }
-      h1 { font-size: 2rem; }
-      .hero-visual { font-size: 1.5rem; }
+    .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .footer-links a:hover { color: var(--accent); }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.5rem; }
+      .contribute { grid-template-columns: 1fr; }
+      .contribute-image { order: -1; }
+      .nav-links { display: none; }
+    }
+    
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-dim);
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <img src="./hero.png" alt="ClawFlows mascot" class="hero-image">
-      <h1>Claw<span>Flows</span></h1>
-      <p class="tagline">Multi-skill automations for AI agents</p>
-      <div class="quick-start" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('code').textContent = 'Copied!'; setTimeout(() => this.querySelector('code').textContent = 'npm i -g clawflows', 1500);">
-        <code>npm i -g clawflows</code>
-      </div>
-    </header>
-    
-    <main>
-      <div class="section-header">
-        <h2>🚀 Automations</h2>
-      </div>
-      <div id="automations" class="automations">
-        <div class="loading">Loading automations...</div>
-      </div>
-      
-      <div class="how-it-works">
-        <h2>⚡ How It Works</h2>
-        <p>Automations use <strong>capabilities</strong> (abstract) not skills (concrete). This means they're portable across any agent with the right skills.</p>
-        <div class="flow-diagram">
-          <span class="flow-step">Fetch Data</span>
-          <span class="flow-arrow">→</span>
-          <span class="flow-step">Process</span>
-          <span class="flow-arrow">→</span>
-          <span class="flow-step">Store</span>
-          <span class="flow-arrow">→</span>
-          <span class="flow-step">Visualize</span>
-          <span class="flow-arrow">→</span>
-          <span class="flow-step">Notify</span>
+  <nav>
+    <div class="container">
+      <a href="/" class="nav-brand">
+        <img src="./hero.png" alt="ClawFlows">
+        Claw<span>Flows</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#automations">Automations</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#contribute">Contribute</a></li>
+        <li><a href="https://github.com/Cluka-399/clawflows-registry">GitHub</a></li>
+      </ul>
+    </div>
+  </nav>
+  
+  <main>
+    <section class="hero">
+      <div class="container">
+        <img src="./hero.png" alt="ClawFlows mascot" class="hero-mascot">
+        <h1>Claw<span>Flows</span></h1>
+        <p class="hero-tagline">Multi-skill automations for AI agents. Combine capabilities like charts, databases, and alerts into powerful workflows.</p>
+        
+        <div class="hero-cta">
+          <a href="#automations" class="btn btn-primary">Browse Automations</a>
+          <a href="#contribute" class="btn btn-secondary">Add Your Own</a>
+        </div>
+        
+        <div class="install-box" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
+          <code>npm i -g clawflows</code>
+          <span class="copy-hint">Click to copy</span>
         </div>
       </div>
-    </main>
+    </section>
     
-    <footer>
-      <p class="created-by">Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🐱🦞</p>
-      <p class="powered-by">Powered by <a href="https://clawhub.ai/">OpenClaw Community</a></p>
-      <div class="links">
+    <section id="automations">
+      <div class="container">
+        <div class="section-header">
+          <h2>🚀 Automations <span class="badge">NEW</span></h2>
+          <a href="https://github.com/Cluka-399/clawflows-registry/tree/main/automations" class="view-all">View all →</a>
+        </div>
+        
+        <div id="automations-grid" class="automations-grid">
+          <div class="loading">Loading automations...</div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="how-it-works">
+      <div class="container">
+        <div class="how-it-works">
+          <h2>⚡ How It Works</h2>
+          <p>Automations use <strong>capabilities</strong> (abstract) instead of specific skills. This makes them portable across any OpenClaw agent with the right tools.</p>
+          
+          <div class="workflow-visual">
+            <div class="workflow-step">📊 Fetch</div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">⚙️ Process</div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">🗄️ Store</div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">📈 Visualize</div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">🔔 Notify</div>
+          </div>
+          
+          <div class="capabilities-grid">
+            <div class="capability-item">
+              <div class="emoji">📊</div>
+              <h4>prediction-markets</h4>
+              <p>Polymarket, Kalshi</p>
+            </div>
+            <div class="capability-item">
+              <div class="emoji">🗄️</div>
+              <h4>database</h4>
+              <p>SQLite, storage</p>
+            </div>
+            <div class="capability-item">
+              <div class="emoji">📈</div>
+              <h4>chart-generation</h4>
+              <p>Graphs & visuals</p>
+            </div>
+            <div class="capability-item">
+              <div class="emoji">🔍</div>
+              <h4>social-search</h4>
+              <p>X/Twitter search</p>
+            </div>
+            <div class="capability-item">
+              <div class="emoji">📅</div>
+              <h4>calendar</h4>
+              <p>Events & scheduling</p>
+            </div>
+            <div class="capability-item">
+              <div class="emoji">🔊</div>
+              <h4>tts</h4>
+              <p>Text to speech</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="contribute">
+      <div class="container">
+        <div class="contribute">
+          <div class="contribute-content">
+            <h2>🤝 Add Your Automation</h2>
+            <p>Share your automation with the community! Submit a pull request to add it to the registry. Your OpenClaw agent can even help you do it.</p>
+            
+            <ol class="contribute-steps">
+              <li>
+                <span class="step-num">1</span>
+                <span class="step-text">Create your automation YAML following the <a href="./docs/creating-automations.md">guide</a></span>
+              </li>
+              <li>
+                <span class="step-num">2</span>
+                <span class="step-text">Fork <code>Cluka-399/clawflows-registry</code> on GitHub</span>
+              </li>
+              <li>
+                <span class="step-num">3</span>
+                <span class="step-text">Add your automation to <code>/automations/your-name/</code></span>
+              </li>
+              <li>
+                <span class="step-num">4</span>
+                <span class="step-text">Open a PR — or ask your OpenClaw bot to do it!</span>
+              </li>
+            </ol>
+            
+            <a href="https://github.com/Cluka-399/clawflows-registry/blob/main/docs/publishing.md" class="btn btn-primary">Publishing Guide →</a>
+          </div>
+          <div class="contribute-image">
+            <img src="./assets/contribute.png" alt="Contribute your automation">
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <footer>
+    <div class="container">
+      <div class="footer-brand">🦀 Claw<span>Flows</span></div>
+      <p class="footer-credits">
+        Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🐱🦞<br>
+        Powered by <a href="https://clawhub.ai/">OpenClaw Community</a>
+      </p>
+      <div class="footer-links">
         <a href="https://github.com/Cluka-399/clawflows-registry">GitHub</a>
         <a href="https://www.npmjs.com/package/clawflows">npm</a>
         <a href="https://clawhub.ai">ClawHub</a>
-        <a href="./docs/getting-started.md">Docs</a>
+        <a href="./docs/getting-started.md">Documentation</a>
       </div>
-    </footer>
-  </div>
+    </div>
+  </footer>
   
   <script>
     async function loadAutomations() {
-      const container = document.getElementById('automations');
+      const container = document.getElementById('automations-grid');
       
       try {
         const res = await fetch('./index.json');
         const data = await res.json();
-        
-        // Handle both array and {automations: [...]} format
         const automations = Array.isArray(data) ? data : (data.automations || []);
         
         if (!automations.length) {
-          container.innerHTML = '<p class="loading">No automations yet. Be the first to publish!</p>';
+          container.innerHTML = '<p class="loading">No automations yet. Be the first to contribute!</p>';
           return;
         }
         
         container.innerHTML = automations.map(a => `
-          <div class="automation" onclick="mixpanel.track('automation_click', {slug: '${a.name || a.slug}'})">
-            <div class="automation-header">
-              <h3><a href="${a.url || '#'}">${a.name || a.slug}</a></h3>
-              <span class="automation-meta">v${a.version || '1.0.0'} by ${a.author || 'anonymous'}</span>
+          <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${a.name}'})">
+            <div class="automation-meta">
+              <span>v${a.version || '1.0.0'}</span>
+              <span>by ${a.author || 'anonymous'}</span>
             </div>
+            <h3>${a.name}</h3>
             <p>${a.description || ''}</p>
             <div class="tags">
-              ${(a.requires || a.capabilities || []).map(c => `<span class="tag capability">${c}</span>`).join('')}
-              ${(a.tags || []).slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('')}
+              ${(a.requires || []).map(c => `<span class="tag capability">${c}</span>`).join('')}
             </div>
-          </div>
+          </a>
         `).join('');
         
-        // Track view
-        mixpanel.track('automations_loaded', { count: automations.length });
+        mixpanel.track('page_loaded', { automation_count: automations.length });
         
       } catch (err) {
-        container.innerHTML = '<p class="loading">Could not load automations.</p>';
+        container.innerHTML = '<p class="loading">Could not load automations. <a href="https://github.com/Cluka-399/clawflows-registry/tree/main/automations">View on GitHub</a></p>';
         console.error(err);
       }
     }
