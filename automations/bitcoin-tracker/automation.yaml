@@ -1,0 +1,98 @@
+name: bitcoin-tracker
+description: Track Bitcoin prediction markets and alert on significant moves
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: prediction-markets
+  - capability: chart-generation
+  - capability: social-search
+
+trigger:
+  schedule: "0 */4 * * *"  # Every 4 hours
+
+config:
+  market_query:
+    description: "Polymarket search query"
+    default: "bitcoin"
+  
+  alert_threshold:
+    description: "Alert if price moves more than this percentage"
+    default: 5
+  
+  chart_interval:
+    description: "Chart time range"
+    default: "1w"
+  
+  search_context:
+    description: "Search X for context on big moves"
+    default: true
+
+steps:
+  - name: fetch-markets
+    capability: prediction-markets
+    method: searchMarkets
+    args:
+      query: "${config.market_query}"
+    capture: markets
+
+  - name: get-price-history
+    capability: prediction-markets
+    method: getPriceHistory
+    args:
+      query: "${config.market_query}"
+      interval: "${config.chart_interval}"
+    capture: history
+
+  - name: calculate-change
+    action: evaluate
+    expression: |
+      const prices = history;
+      const recent = prices.slice(-24);
+      const oldPrice = recent[0]?.price || 0;
+      const newPrice = recent[recent.length - 1]?.price || 0;
+      const change = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+      ({ change: change.toFixed(2), direction: change > 0 ? 'up' : 'down', significant: Math.abs(change) > config.alert_threshold })
+    capture: analysis
+
+  - name: generate-chart
+    capability: chart-generation
+    method: lineChart
+    args:
+      data: "${history}"
+      title: "Bitcoin Markets - ${config.chart_interval}"
+    capture: chart
+
+  - name: search-context
+    condition: "analysis.significant && config.search_context"
+    capability: social-search
+    method: searchPosts
+    args:
+      query: "bitcoin ${analysis.direction === 'up' ? 'pump rally' : 'dump crash'}"
+      days: 1
+    capture: tweets
+
+  - name: alert-significant
+    condition: "analysis.significant"
+    action: notify
+    message: |
+      🚨 Bitcoin Market Alert
+      
+      ${analysis.change}% move ${analysis.direction} in last 24h
+      
+      Top markets:
+      ${markets.slice(0, 3).map(m => `• ${m.question}: ${(m.yes * 100).toFixed(0)}%`).join('\n')}
+      
+      ${tweets ? `Recent chatter:\n${tweets.slice(0, 3).map(t => `• @${t.username}: ${t.content.slice(0, 100)}...`).join('\n')}` : ''}
+    attachments: ["${chart.path}"]
+
+  - name: regular-update
+    condition: "!analysis.significant"
+    action: notify
+    message: |
+      📊 Bitcoin Markets Update
+      
+      Change: ${analysis.change}% (${analysis.direction})
+      
+      ${markets.slice(0, 5).map(m => `• ${m.question}: ${(m.yes * 100).toFixed(0)}%`).join('\n')}
+    attachments: ["${chart.path}"]

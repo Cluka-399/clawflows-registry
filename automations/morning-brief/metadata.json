@@ -1,0 +1,12 @@
+{
+  "name": "morning-brief",
+  "description": "Daily morning briefing with calendar, weather, and optional audio",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar", "weather", "tts"],
+  "trigger": "schedule",
+  "schedule": "30 7 * * *",
+  "tags": ["daily", "briefing", "calendar", "weather", "tts", "productivity"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

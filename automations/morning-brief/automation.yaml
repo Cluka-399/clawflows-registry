@@ -1,0 +1,79 @@
+name: morning-brief
+description: Daily morning briefing with calendar, weather, and news summary
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: calendar
+  - capability: weather
+  - capability: tts
+
+trigger:
+  schedule: "30 7 * * *"  # 7:30am daily
+
+config:
+  location:
+    description: "Your city for weather"
+    default: "Tel Aviv"
+  
+  calendar_days:
+    description: "Days ahead to check calendar"
+    default: 2
+  
+  voice_output:
+    description: "Generate audio briefing"
+    default: true
+
+steps:
+  - name: sync-calendar
+    capability: calendar
+    method: sync
+    
+  - name: get-agenda
+    capability: calendar
+    method: listEvents
+    args:
+      start: "today"
+      range: "${config.calendar_days}d"
+    capture: events
+
+  - name: get-weather
+    capability: weather
+    method: getCurrentWeather
+    args:
+      location: "${config.location}"
+    capture: weather
+
+  - name: get-forecast
+    capability: weather
+    method: getForecast
+    args:
+      location: "${config.location}"
+      days: 1
+    capture: forecast
+
+  - name: compose-briefing
+    action: template
+    template: |
+      Good morning! Here's your briefing for today.
+      
+      Weather in ${config.location}: ${weather}
+      
+      ${events.length > 0 ? `You have ${events.length} events coming up:` : 'Your calendar is clear.'}
+      ${events.map(e => `- ${e.time}: ${e.title}`).join('\n')}
+      
+      Have a great day!
+    capture: briefing
+
+  - name: generate-audio
+    condition: "config.voice_output"
+    capability: tts
+    method: speak
+    args:
+      text: "${briefing}"
+    capture: audio
+
+  - name: deliver
+    action: notify
+    message: "${briefing}"
+    attachments: "${audio ? [audio.path] : []}"
