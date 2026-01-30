@@ -404,7 +404,23 @@
       text-align: center;
       font-size: 1.1rem;
       color: var(--text-secondary);
-      margin: 2rem 0 1rem;
+      margin: 2rem 0 0.5rem;
+    }
+    
+    .capabilities-subtext {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+    }
+    
+    .capabilities-subtext a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    .capabilities-subtext a:hover {
+      text-decoration: underline;
     }
     
     .section-visual {
@@ -612,6 +628,45 @@
     }
     
     .contribute-steps li:last-child { border-bottom: none; }
+    
+    .agent-prompt {
+      background: var(--bg-primary);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    
+    .prompt-label {
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .agent-prompt p {
+      color: var(--text-primary);
+      font-style: italic;
+      margin: 0.5rem 0 0;
+      font-size: 1rem;
+    }
+    
+    .contribute-note {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin: 1rem 0 0.5rem;
+    }
+    
+    .contribute-small {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 1rem;
+    }
+    
+    .contribute-small a {
+      color: var(--accent);
+    }
     
     .step-num {
       background: var(--accent);
@@ -835,6 +890,7 @@
           </div>
           
           <h3 class="capabilities-heading">Standard Capabilities</h3>
+          <p class="capabilities-subtext">These are the building blocks. <a href="./capabilities/">Browse all</a> or <a href="./capabilities/README.md#propose-a-new-capability">propose new ones</a>.</p>
           <div class="capabilities-grid">
             <div class="capability-item">
               <div class="emoji">📊</div>
@@ -876,28 +932,30 @@
         <div class="contribute">
           <div class="contribute-content">
             <h2>🤝 Add Your Automation</h2>
-            <p>Share your automation with the community! Submit a pull request to add it to the registry. Your OpenClaw agent can even help you do it.</p>
+            <p>Just tell your agent what you want automated. It handles everything — writing the YAML, creating the PR, the whole thing.</p>
             
+            <div class="agent-prompt">
+              <span class="prompt-label">Tell your agent:</span>
+              <p>"Create a ClawFlows automation that tracks [X] and alerts me when [Y]. Publish it to the registry."</p>
+            </div>
+            
+            <p class="contribute-note">Your agent will:</p>
             <ol class="contribute-steps">
               <li>
                 <span class="step-num">1</span>
-                <span class="step-text">Create your automation YAML following the <a href="./docs/creating-automations.md">guide</a></span>
+                <span class="step-text">Write the automation YAML with the right capabilities</span>
               </li>
               <li>
                 <span class="step-num">2</span>
-                <span class="step-text">Fork <code>Cluka-399/clawflows-registry</code> on GitHub</span>
+                <span class="step-text">Create README with examples and documentation</span>
               </li>
               <li>
                 <span class="step-num">3</span>
-                <span class="step-text">Add your automation to <code>/automations/your-name/</code></span>
-              </li>
-              <li>
-                <span class="step-num">4</span>
-                <span class="step-text">Open a PR — or ask your OpenClaw bot to do it!</span>
+                <span class="step-text">Open a PR to <code>clawflows-registry</code></span>
               </li>
             </ol>
             
-            <a href="https://github.com/Cluka-399/clawflows-registry/blob/main/docs/publishing.md" class="btn btn-primary">Publishing Guide →</a>
+            <p class="contribute-small">Manual instructions in the <a href="https://github.com/Cluka-399/clawflows-registry/blob/main/docs/publishing.md">Publishing Guide</a> if needed.</p>
           </div>
           <div class="contribute-image">
             <img src="./assets/community.png" alt="Join the community">
