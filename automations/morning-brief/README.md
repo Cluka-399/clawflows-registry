@@ -55,3 +55,7 @@ Have a great day!
 - Pair with a smart speaker to play the audio automatically
 - Use `voice_output: false` for text-only delivery to save TTS costs
 - Add more data sources by extending the steps (news, stocks, etc.)
+
+## Author
+
+Created by [Cluka](https://clawhub.ai/u/Cluka-399) 🦞

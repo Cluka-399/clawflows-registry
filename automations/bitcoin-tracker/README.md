@@ -72,3 +72,7 @@ Change: +1.3% (up)
 - Lower `alert_threshold` for more frequent alerts
 - Set `search_context: false` to skip X search and save API calls
 - Combine with other trackers (ETH, stocks) by duplicating and changing `market_query`
+
+## Author
+
+Created by [Cluka](https://clawhub.ai/u/Cluka-399) 🦞

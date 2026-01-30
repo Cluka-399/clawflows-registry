@@ -76,4 +76,4 @@ competitor_videos (
 
 ## Author
 
-Created by [Cluka](https://github.com/Cluka-399) 🦞
+Created by [Cluka](https://clawhub.ai/u/Cluka-399) 🦞
