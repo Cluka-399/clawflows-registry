@@ -54,6 +54,11 @@
       margin-bottom: 2rem;
     }
     
+    .logo {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    
     h1 {
       font-size: 2.5rem;
       margin-bottom: 0.5rem;
@@ -69,6 +74,15 @@
       margin-bottom: 1.5rem;
     }
     
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      font-size: 2rem;
+      opacity: 0.8;
+    }
+    
     .quick-start {
       background: var(--card-bg);
       border-radius: 8px;
@@ -77,6 +91,12 @@
       font-size: 0.9rem;
       display: inline-block;
       margin-top: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .quick-start:hover {
+      background: #252540;
     }
     
     .quick-start code {
@@ -89,6 +109,13 @@
       color: var(--text);
     }
     
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    
     .automations {
       display: grid;
       gap: 1rem;
@@ -99,16 +126,24 @@
       border-radius: 8px;
       padding: 1.5rem;
       border: 1px solid var(--border);
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: pointer;
     }
     
     .automation:hover {
       border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    
+    .automation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
     }
     
     .automation h3 {
       font-size: 1.2rem;
-      margin-bottom: 0.5rem;
     }
     
     .automation h3 a {
@@ -118,6 +153,11 @@
     
     .automation h3 a:hover {
       color: var(--accent);
+    }
+    
+    .automation-meta {
+      font-size: 0.8rem;
+      color: var(--text-dim);
     }
     
     .automation p {
@@ -140,10 +180,46 @@
       color: var(--text-dim);
     }
     
+    .tag.capability {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--accent);
+    }
+    
     .loading {
       text-align: center;
       padding: 2rem;
       color: var(--text-dim);
+    }
+    
+    .how-it-works {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .how-it-works h2 {
+      margin-bottom: 1rem;
+    }
+    
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    
+    .flow-step {
+      background: var(--bg);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    
+    .flow-arrow {
+      color: var(--accent);
     }
     
     footer {
@@ -160,33 +236,77 @@
       text-decoration: none;
     }
     
+    .created-by {
+      margin-bottom: 0.5rem;
+    }
+    
+    .powered-by {
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+    
     .links {
       display: flex;
       gap: 1.5rem;
       justify-content: center;
       margin-top: 1rem;
     }
+    
+    @media (max-width: 600px) {
+      .container { padding: 1rem; }
+      h1 { font-size: 2rem; }
+      .hero-visual { font-size: 1.5rem; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>🦞 Claw<span>Flows</span></h1>
+      <div class="logo">🦞</div>
+      <h1>Claw<span>Flows</span></h1>
       <p class="tagline">Multi-skill automations for AI agents</p>
-      <div class="quick-start">
+      <div class="hero-visual">
+        <span>📊</span>
+        <span>→</span>
+        <span>🗄️</span>
+        <span>→</span>
+        <span>📈</span>
+        <span>→</span>
+        <span>🔔</span>
+      </div>
+      <div class="quick-start" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('code').textContent = 'Copied!'; setTimeout(() => this.querySelector('code').textContent = 'npm i -g clawflows', 1500);">
         <code>npm i -g clawflows</code>
       </div>
     </header>
     
     <main>
-      <h2>Automations</h2>
+      <div class="section-header">
+        <h2>🚀 Automations</h2>
+      </div>
       <div id="automations" class="automations">
         <div class="loading">Loading automations...</div>
+      </div>
+      
+      <div class="how-it-works">
+        <h2>⚡ How It Works</h2>
+        <p>Automations use <strong>capabilities</strong> (abstract) not skills (concrete). This means they're portable across any agent with the right skills.</p>
+        <div class="flow-diagram">
+          <span class="flow-step">Fetch Data</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">Process</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">Store</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">Visualize</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step">Notify</span>
+        </div>
       </div>
     </main>
     
     <footer>
-      <p>Made with 🦞 by the <a href="https://github.com/openclaw/openclaw">OpenClaw</a> community</p>
+      <p class="created-by">Created by <a href="https://clawhub.com/u/Cluka-399">Cluka</a> 🐱🦞</p>
+      <p class="powered-by">Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
       <div class="links">
         <a href="https://github.com/Cluka-399/clawflows-registry">GitHub</a>
         <a href="https://www.npmjs.com/package/clawflows">npm</a>
@@ -202,7 +322,10 @@
       
       try {
         const res = await fetch('./index.json');
-        const automations = await res.json();
+        const data = await res.json();
+        
+        // Handle both array and {automations: [...]} format
+        const automations = Array.isArray(data) ? data : (data.automations || []);
         
         if (!automations.length) {
           container.innerHTML = '<p class="loading">No automations yet. Be the first to publish!</p>';
@@ -210,11 +333,15 @@
         }
         
         container.innerHTML = automations.map(a => `
-          <div class="automation" onclick="mixpanel.track('automation_click', {slug: '${a.slug}'})">
-            <h3><a href="${a.url || '#'}">${a.name || a.slug}</a></h3>
+          <div class="automation" onclick="mixpanel.track('automation_click', {slug: '${a.name || a.slug}'})">
+            <div class="automation-header">
+              <h3><a href="${a.url || '#'}">${a.name || a.slug}</a></h3>
+              <span class="automation-meta">v${a.version || '1.0.0'} by ${a.author || 'anonymous'}</span>
+            </div>
             <p>${a.description || ''}</p>
             <div class="tags">
-              ${(a.capabilities || []).map(c => `<span class="tag">${c}</span>`).join('')}
+              ${(a.requires || a.capabilities || []).map(c => `<span class="tag capability">${c}</span>`).join('')}
+              ${(a.tags || []).slice(0, 3).map(t => `<span class="tag">${t}</span>`).join('')}
             </div>
           </div>
         `).join('');
