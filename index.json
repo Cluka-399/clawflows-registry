@@ -1,46 +1,79 @@
 {
-  "generated": "2026-01-30T17:52:00.000Z",
+  "generated": "2026-01-30T17:53:34.405Z",
   "version": "1.0.0",
   "count": 3,
   "automations": [
     {
-      "name": "youtube-competitor-tracker",
-      "description": "Track competitor YouTube channels, store stats in SQLite, generate weekly charts",
+      "name": "bitcoin-tracker",
+      "description": "Track Bitcoin prediction markets and alert on significant price moves",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": ["youtube-data", "database", "chart-generation"],
+      "requires": [
+        "prediction-markets",
+        "chart-generation",
+        "social-search"
+      ],
       "trigger": "schedule",
-      "schedule": "0 9 * * *",
-      "tags": ["youtube", "competitor", "analytics", "charts", "sqlite", "weekly-report"],
+      "schedule": "0 */4 * * *",
+      "tags": [
+        "bitcoin",
+        "crypto",
+        "polymarket",
+        "prediction-markets",
+        "alerts",
+        "charts"
+      ],
       "created": "2026-01-30",
       "updated": "2026-01-30",
-      "url": "/automations/youtube-competitor-tracker/"
+      "url": "/automations/bitcoin-tracker/"
     },
     {
       "name": "morning-brief",
       "description": "Daily morning briefing with calendar, weather, and optional audio",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": ["calendar", "weather", "tts"],
+      "requires": [
+        "calendar",
+        "weather",
+        "tts"
+      ],
       "trigger": "schedule",
       "schedule": "30 7 * * *",
-      "tags": ["daily", "briefing", "calendar", "weather", "tts", "productivity"],
+      "tags": [
+        "daily",
+        "briefing",
+        "calendar",
+        "weather",
+        "tts",
+        "productivity"
+      ],
       "created": "2026-01-30",
       "updated": "2026-01-30",
       "url": "/automations/morning-brief/"
     },
     {
-      "name": "bitcoin-tracker",
-      "description": "Track Bitcoin prediction markets and alert on significant price moves",
+      "name": "youtube-competitor-tracker",
+      "description": "Track competitor YouTube channels, store stats in SQLite, generate weekly charts",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": ["prediction-markets", "chart-generation", "social-search"],
+      "requires": [
+        "youtube-data",
+        "database",
+        "chart-generation"
+      ],
       "trigger": "schedule",
-      "schedule": "0 */4 * * *",
-      "tags": ["bitcoin", "crypto", "polymarket", "prediction-markets", "alerts", "charts"],
+      "schedule": "0 9 * * *",
+      "tags": [
+        "youtube",
+        "competitor",
+        "analytics",
+        "charts",
+        "sqlite",
+        "weekly-report"
+      ],
       "created": "2026-01-30",
       "updated": "2026-01-30",
-      "url": "/automations/bitcoin-tracker/"
+      "url": "/automations/youtube-competitor-tracker/"
     }
   ]
 }
