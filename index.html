@@ -238,6 +238,91 @@
       padding: 4rem 0;
     }
     
+    .section-title {
+      font-size: 2rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      font-size: 1.1rem;
+    }
+    
+    /* Value Section */
+    .value-section {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .value-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s;
+    }
+    
+    .value-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+    
+    .value-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .value-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .value-card > p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    
+    .example-output {
+      background: var(--bg-primary);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    
+    .chat-bubble {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    
+    .chat-bubble .meta {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+    }
+    
+    .chart-placeholder {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-card);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+    
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -591,6 +676,57 @@
         <div class="install-box" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
           <code>npm i -g clawflows</code>
           <span class="copy-hint">Click to copy</span>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Value Section: What You'll Get -->
+    <section id="value" class="value-section">
+      <div class="container">
+        <h2 class="section-title">📬 What You'll Get</h2>
+        <p class="section-subtitle">Automations deliver real outputs to your chat — alerts, charts, reports, and more.</p>
+        
+        <div class="value-grid">
+          <div class="value-card">
+            <div class="value-icon">🚨</div>
+            <h3>Instant Alerts</h3>
+            <div class="example-output">
+              <div class="chat-bubble">
+                <strong>🚨 Viral Video Alert!</strong><br>
+                @MrBeast: I Gave Away $1,000,000<br>
+                <span class="meta">👀 45,000,000 views</span>
+              </div>
+            </div>
+            <p>Get notified when something important happens — viral videos, market moves, or custom triggers.</p>
+          </div>
+          
+          <div class="value-card">
+            <div class="value-icon">📊</div>
+            <h3>Weekly Reports</h3>
+            <div class="example-output">
+              <div class="chat-bubble">
+                <strong>📈 Weekly Competitor Report</strong><br>
+                Tracked 3 channels over 30 days.<br>
+                <span class="meta">Top performer: @MrBeast (+12M)</span>
+              </div>
+              <div class="chart-placeholder">📈 Chart attached</div>
+            </div>
+            <p>Automated summaries with charts comparing trends over time.</p>
+          </div>
+          
+          <div class="value-card">
+            <div class="value-icon">☀️</div>
+            <h3>Morning Briefings</h3>
+            <div class="example-output">
+              <div class="chat-bubble">
+                <strong>🌅 Good Morning!</strong><br>
+                📅 3 meetings today<br>
+                🌤️ 22°C, partly cloudy<br>
+                <span class="meta">🔊 Audio briefing attached</span>
+              </div>
+            </div>
+            <p>Start your day with calendar, weather, and news — optionally as audio.</p>
+          </div>
         </div>
       </div>
     </section>
