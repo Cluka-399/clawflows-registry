@@ -1,0 +1,111 @@
+name: Validate PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'automations/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate automations
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          const automationsDir = './automations';
+          const errors = [];
+          const warnings = [];
+          const requiredMetadataFields = ['name', 'description', 'version', 'requires'];
+          const requiredFiles = ['metadata.json', 'automation.yaml', 'README.md'];
+          
+          // Get all automation directories
+          const dirs = fs.readdirSync(automationsDir, { withFileTypes: true })
+            .filter(d => d.isDirectory())
+            .map(d => d.name);
+          
+          console.log(`\n🔍 Validating ${dirs.length} automations...\n`);
+          
+          for (const dir of dirs) {
+            const dirPath = path.join(automationsDir, dir);
+            let hasError = false;
+            
+            console.log(`📦 ${dir}`);
+            
+            // Check required files exist
+            for (const file of requiredFiles) {
+              const filePath = path.join(dirPath, file);
+              if (!fs.existsSync(filePath)) {
+                errors.push(`${dir}: Missing required file '${file}'`);
+                console.log(`   ❌ Missing ${file}`);
+                hasError = true;
+              } else {
+                console.log(`   ✓ ${file}`);
+              }
+            }
+            
+            // Validate metadata.json structure
+            const metadataPath = path.join(dirPath, 'metadata.json');
+            if (fs.existsSync(metadataPath)) {
+              try {
+                const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+                
+                for (const field of requiredMetadataFields) {
+                  if (!metadata[field]) {
+                    errors.push(`${dir}: metadata.json missing required field '${field}'`);
+                    console.log(`   ❌ metadata.json missing '${field}'`);
+                    hasError = true;
+                  }
+                }
+                
+                if (metadata.requires && !Array.isArray(metadata.requires)) {
+                  errors.push(`${dir}: 'requires' must be an array`);
+                  hasError = true;
+                }
+                
+                // Warnings (non-blocking)
+                if (!metadata.author) {
+                  warnings.push(`${dir}: Consider adding 'author' to metadata.json`);
+                }
+                if (!metadata.tags || metadata.tags.length === 0) {
+                  warnings.push(`${dir}: Consider adding 'tags' for discoverability`);
+                }
+                
+              } catch (e) {
+                errors.push(`${dir}: metadata.json parse error: ${e.message}`);
+                hasError = true;
+              }
+            }
+            
+            if (!hasError) {
+              console.log(`   ✅ Valid!`);
+            }
+            console.log('');
+          }
+          
+          // Print summary
+          if (warnings.length > 0) {
+            console.log('⚠️  Warnings (non-blocking):');
+            warnings.forEach(w => console.log(`   • ${w}`));
+            console.log('');
+          }
+          
+          if (errors.length > 0) {
+            console.log('🚨 VALIDATION FAILED\n');
+            console.log('Required fixes:');
+            errors.forEach(e => console.log(`   ❌ ${e}`));
+            console.log('\n📖 Each automation needs:');
+            console.log('   • metadata.json (with name, description, version, requires)');
+            console.log('   • automation.yaml (workflow definition)');
+            console.log('   • README.md (documentation)');
+            process.exit(1);
+          }
+          
+          console.log(`✅ All ${dirs.length} automations passed validation!`);
+          EOF
