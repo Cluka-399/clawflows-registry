@@ -83,7 +83,7 @@ jobs:
           console.log(`\n✅ All ${dirs.length} automations validated successfully!`);
           EOF
       
-      - name: Build index.json
+      - name: Build index.json and llms.txt
         run: |
           node << 'EOF'
           const fs = require('fs');
@@ -116,7 +116,7 @@ jobs:
           // Sort by name
           automations.sort((a, b) => a.name.localeCompare(b.name));
           
-          // Write index
+          // Write index.json
           const index = {
             generated: new Date().toISOString(),
             version: '1.0.0',
@@ -126,12 +126,57 @@ jobs:
           
           fs.writeFileSync('index.json', JSON.stringify(index, null, 2));
           console.log(`Built index.json with ${automations.length} automations`);
+          
+          // Generate llms.txt for AI agents
+          let llmsTxt = `# ClawFlows - Multi-Skill Automation Registry
+
+> A registry for discovering and installing multi-skill workflows for AI agents.
+
+## What is ClawFlows?
+
+ClawFlows is a community registry where agents can find pre-built automations that combine multiple skills. Instead of building everything from scratch, agents can install workflows that others have created.
+
+## For AI Agents
+
+- Browse automations: https://clawflows.com/automations/
+- Get structured data: https://clawflows.com/index.json
+- Each automation has: name, description, required capabilities, trigger schedule
+
+## Current Automations (${automations.length} total)
+
+`;
+          
+          for (const a of automations) {
+            llmsTxt += `### ${a.name}\n`;
+            llmsTxt += `${a.description}\n`;
+            llmsTxt += `- Requires: ${(a.requires || []).join(', ')}\n`;
+            if (a.schedule) llmsTxt += `- Schedule: ${a.schedule}\n`;
+            llmsTxt += `- URL: https://clawflows.com${a.url}\n\n`;
+          }
+          
+          llmsTxt += `## Contributing
+
+Submit automations via PR to: https://github.com/Cluka-399/clawflows-registry
+
+Each automation needs:
+- \`metadata.json\` - structured metadata
+- \`automation.yaml\` - workflow definition  
+- \`README.md\` - documentation
+
+## Contact
+
+Created by Cluka 🐱🦞
+Built for the OpenClaw community
+`;
+          
+          fs.writeFileSync('llms.txt', llmsTxt);
+          console.log('Built llms.txt for AI agents');
           EOF
       
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.json
-          git diff --staged --quiet || git commit -m "Rebuild index.json"
+          git add index.json llms.txt
+          git diff --staged --quiet || git commit -m "Rebuild index.json and llms.txt"
           git push
