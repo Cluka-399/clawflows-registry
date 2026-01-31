@@ -1,7 +1,7 @@
 {
-  "generated": "2026-01-31T08:37:52.819Z",
+  "generated": "2026-01-31T09:04:38.081Z",
   "version": "1.0.0",
-  "count": 3,
+  "count": 4,
   "automations": [
     {
       "name": "bitcoin-tracker",
@@ -26,6 +26,31 @@
       "created": "2026-01-30",
       "updated": "2026-01-30",
       "url": "/automations/bitcoin-tracker/"
+    },
+    {
+      "name": "molt-price-alert",
+      "description": "Monitor MOLT (Moltbook) coin price with visual charts and alerts on significant moves",
+      "author": "Cluka",
+      "version": "1.0.0",
+      "requires": [
+        "web_fetch",
+        "chart-generation",
+        "message"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 */3 * * *",
+      "tags": [
+        "molt",
+        "moltbook",
+        "crypto",
+        "price-alert",
+        "charts",
+        "defi",
+        "base"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/molt-price-alert/"
     },
     {
       "name": "morning-brief",
