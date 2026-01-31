@@ -1,0 +1,96 @@
+name: A/B Test Automator
+description: Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_fetch
+  - file_system
+  - messaging
+
+trigger:
+  schedule: "0 9 * * *"  # Daily check
+
+parameters:
+  - name: landing_page_api
+    description: API endpoint for your landing page builder
+    required: true
+  - name: api_key
+    required: true
+  - name: min_sample_size
+    default: 100
+  - name: confidence_threshold
+    default: 0.95
+
+steps:
+  - name: check_active_tests
+    action: web_fetch
+    params:
+      url: "{{landing_page_api}}/tests"
+      headers:
+        Authorization: "Bearer {{api_key}}"
+
+  - name: analyze_results
+    action: analyze
+    for_each: "{{active_tests}}"
+    prompt: |
+      Analyze A/B test results:
+      
+      Variant A: {{variant_a_stats}}
+      Variant B: {{variant_b_stats}}
+      
+      Calculate:
+      - Conversion rate difference
+      - Statistical significance
+      - Confidence interval
+      
+      Has it reached {{confidence_threshold}} confidence?
+
+  - name: promote_winner
+    condition: "is_significant AND sample_size >= {{min_sample_size}}"
+    action: web_fetch
+    params:
+      url: "{{landing_page_api}}/tests/{{test_id}}/promote"
+      method: POST
+      body:
+        winner: "{{winning_variant}}"
+
+  - name: generate_new_variations
+    condition: "test_promoted"
+    action: generate
+    prompt: |
+      Generate 3 new headline variations to test against winner:
+      
+      Current winner: "{{winning_headline}}"
+      
+      Create variations that:
+      - Test different emotional angles
+      - Test different value props
+      - Test different formats (question vs statement)
+
+  - name: create_new_test
+    action: web_fetch
+    params:
+      url: "{{landing_page_api}}/tests"
+      method: POST
+      body:
+        control: "{{winning_headline}}"
+        variants: "{{new_variations}}"
+
+  - name: alert_results
+    action: message
+    params:
+      template: |
+        🧪 **A/B Test Update**
+        
+        {{#if promoted}}
+        ✅ Winner promoted: "{{winning_headline}}"
+        Lift: +{{lift_percentage}}%
+        New test started with {{new_variations.length}} variants
+        {{else}}
+        ⏳ {{active_tests.length}} tests running
+        Closest to significance: {{closest_test}}
+        {{/if}}
+
+state:
+  storage: memory/ab-test-state.json

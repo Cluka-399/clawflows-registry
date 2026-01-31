@@ -1,0 +1,8 @@
+{
+  "name": "PR Newsjacking Bot",
+  "slug": "pr-newsjacking",
+  "category": "pr",
+  "tags": ["pr", "news", "journalists", "media", "thought-leadership"],
+  "difficulty": "intermediate",
+  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+}

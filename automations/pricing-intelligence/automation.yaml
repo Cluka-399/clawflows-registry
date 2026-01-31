@@ -1,0 +1,87 @@
+name: Pricing Page Intelligence
+description: Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_fetch
+  - messaging
+  - file_system
+
+trigger:
+  schedule: "0 */6 * * *"  # Every 6 hours
+
+parameters:
+  - name: competitor_pricing_urls
+    description: URLs of competitor pricing pages
+    required: true
+
+steps:
+  - name: fetch_pricing
+    action: web_fetch
+    for_each: "{{competitor_pricing_urls}}"
+    params:
+      url: "{{url}}"
+      extract: pricing_tiers
+
+  - name: compare_to_previous
+    action: compare
+    for_each: "{{pricing_data}}"
+    params:
+      current: "{{pricing}}"
+      previous: "{{state[competitor].last_pricing}}"
+
+  - name: analyze_change
+    condition: "has_changes"
+    action: analyze
+    prompt: |
+      Analyze pricing change at {{competitor}}:
+      
+      Before: {{previous_pricing}}
+      After: {{current_pricing}}
+      
+      What changed?
+      - Price increases/decreases?
+      - New tiers added/removed?
+      - Feature changes per tier?
+      - Positioning shift?
+
+  - name: recommend_response
+    condition: "has_changes"
+    action: generate
+    prompt: |
+      Given competitor changed pricing:
+      {{change_summary}}
+      
+      Our current pricing: {{our_pricing}}
+      
+      Recommend response:
+      - Do nothing (why?)
+      - Adjust our pricing (how?)
+      - Update positioning/messaging?
+      - Create comparison content?
+
+  - name: alert_change
+    condition: "has_changes"
+    action: message
+    params:
+      template: |
+        💰 **Pricing Change Alert**
+        
+        {{competitor}} updated pricing!
+        
+        **Changes:**
+        {{change_summary}}
+        
+        **Recommendation:**
+        {{recommendation}}
+        
+        [View page]({{url}})
+
+  - name: save_state
+    action: file_write
+    params:
+      path: "memory/pricing-intelligence-state.json"
+
+state:
+  storage: memory/pricing-intelligence-state.json

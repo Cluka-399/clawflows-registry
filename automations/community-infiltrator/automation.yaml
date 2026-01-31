@@ -1,0 +1,82 @@
+name: Community Infiltrator
+description: Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - browser
+  - messaging
+
+trigger:
+  schedule: "0 */2 * * *"  # Every 2 hours
+
+parameters:
+  - name: product_category
+    description: What category is your product?
+    required: true
+  - name: community_urls
+    description: Slack/Discord/Facebook group URLs
+    required: true
+  - name: competitor_names
+    description: Names to watch for comparison questions
+
+steps:
+  - name: monitor_communities
+    action: browser
+    for_each: "{{community_urls}}"
+    params:
+      url: "{{url}}"
+      extract: recent_messages
+      filter: "contains_question"
+
+  - name: detect_opportunities
+    action: analyze
+    for_each: "{{messages}}"
+    prompt: |
+      Is this a buying opportunity?
+      
+      Message: "{{message_text}}"
+      
+      Look for:
+      - "What's the best tool for X?"
+      - "Anyone tried X for Y?"
+      - "Recommendations for..."
+      - Complaints about competitors
+      
+      Rate: HOT (direct opportunity) / WARM (related) / COLD
+
+  - name: generate_response
+    condition: "rating != 'COLD'"
+    action: generate
+    prompt: |
+      Draft a helpful community response:
+      
+      Context: {{message_text}}
+      Our product: {{product_description}}
+      
+      Rules:
+      - Be genuinely helpful first
+      - Don't be salesy
+      - Share experience, not pitch
+      - If our product fits, mention naturally
+      - Sound like a community member
+
+  - name: alert_opportunity
+    action: message
+    params:
+      template: |
+        💬 **Community Opportunity**
+        
+        Platform: {{platform}}
+        Channel: {{channel}}
+        Rating: {{rating}}
+        
+        > "{{message_text}}"
+        
+        **Suggested response:**
+        {{draft_response}}
+        
+        [Jump to conversation]({{message_url}})
+
+state:
+  storage: memory/community-infiltrator-state.json

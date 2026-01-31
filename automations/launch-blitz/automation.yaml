@@ -1,0 +1,87 @@
+name: 100-Platform Launch Blitz
+description: Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - browser
+  - file_system
+  - messaging
+
+trigger:
+  schedule: "0 10 * * *"  # Daily at 10am, processes queue
+
+parameters:
+  - name: product_name
+    required: true
+  - name: product_url
+    required: true
+  - name: tagline
+    required: true
+  - name: description
+    required: true
+  - name: assets_folder
+    description: Path to launch assets (logo.png, banner.png, screenshots)
+    default: "~/launch-assets/"
+  - name: submissions_per_day
+    default: 3
+  - name: directories_file
+    default: "memory/launch-directories.json"
+
+steps:
+  - name: load_directories
+    action: file_read
+    params:
+      path: "{{directories_file}}"
+
+  - name: get_pending
+    action: filter
+    params:
+      items: "{{directories}}"
+      condition: "status == 'pending'"
+      limit: "{{submissions_per_day}}"
+
+  - name: generate_descriptions
+    action: analyze
+    for_each: "{{pending}}"
+    prompt: |
+      Generate a submission description for {{item.platform}} optimized for their audience.
+      Product: {{product_name}}
+      Base description: {{description}}
+      Platform style: {{item.style_notes}}
+      Max length: {{item.max_chars}}
+
+  - name: submit_to_platform
+    action: browser
+    for_each: "{{pending}}"
+    params:
+      url: "{{item.submit_url}}"
+      steps:
+        - fill_form: "{{item.form_mapping}}"
+        - upload: 
+            field: "{{item.logo_field}}"
+            file: "{{assets_folder}}/logo.png"
+        - submit
+
+  - name: update_status
+    action: file_update
+    params:
+      path: "{{directories_file}}"
+      updates: "{{submission_results}}"
+
+  - name: alert_submissions
+    action: message
+    params:
+      template: |
+        🚀 **Launch Blitz Update**
+        
+        Submitted today: {{submitted.length}}
+        {{#each submitted}}
+        - {{name}}: {{status}}
+        {{/each}}
+        
+        Queue remaining: {{pending_count}}
+        Approved so far: {{approved_count}}
+
+state:
+  storage: memory/launch-blitz-state.json

@@ -1,0 +1,73 @@
+name: Review Farm Defense System
+description: Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_fetch
+  - messaging
+  - file_system
+
+trigger:
+  schedule: "0 */4 * * *"  # Every 4 hours
+
+parameters:
+  - name: product_name
+    required: true
+  - name: review_platforms
+    default: ["g2", "capterra", "trustpilot", "producthunt"]
+  - name: team_handles
+    description: Team members to tag on negative reviews
+
+steps:
+  - name: fetch_reviews
+    action: web_fetch
+    for_each: "{{review_platforms}}"
+    params:
+      url: "{{platform_urls[item]}}"
+      extract: reviews
+
+  - name: classify_sentiment
+    action: analyze
+    for_each: "{{new_reviews}}"
+    prompt: "Classify as POSITIVE, NEUTRAL, or NEGATIVE"
+
+  - name: handle_positive
+    condition: "sentiment == 'POSITIVE'"
+    action: generate
+    template: |
+      Thank you so much for the kind words, {{reviewer_name}}! 
+      We're thrilled {{product_name}} is helping you {{mentioned_benefit}}.
+      
+  - name: handle_negative
+    condition: "sentiment == 'NEGATIVE'"
+    steps:
+      - action: message
+        params:
+          template: |
+            🚨 **Negative Review Alert**
+            
+            Platform: {{platform}}
+            Reviewer: {{reviewer_name}}
+            Rating: {{rating}}/5
+            
+            > "{{review_excerpt}}"
+            
+            **Draft response:**
+            {{empathetic_response}}
+            
+            {{team_handles}}
+            
+      - action: file_append
+        params:
+          path: "memory/feedback-tracker.md"
+          content: "{{review_log}}"
+
+  - name: extract_testimonial
+    condition: "sentiment == 'POSITIVE' AND rating >= 4"
+    action: file_append
+    params:
+      path: "memory/social-proof.md"
+
+state:
+  storage: memory/review-defense-state.json

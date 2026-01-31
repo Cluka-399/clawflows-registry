@@ -1,0 +1,73 @@
+name: Newsletter Growth Engine
+description: Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+
+trigger:
+  schedule: "0 8 * * 1"  # Weekly Monday
+
+parameters:
+  - name: your_newsletter
+    required: true
+  - name: your_niche
+    required: true
+  - name: subscriber_count
+    required: true
+  - name: unsubscribe_data_path
+    description: CSV of unsubscribes with timestamps
+
+steps:
+  - name: find_newsletters
+    action: web_search
+    params:
+      query: "{{your_niche}} newsletter substack beehiiv"
+
+  - name: analyze_overlap
+    action: analyze
+    for_each: "{{newsletters}}"
+    prompt: |
+      Analyze {{newsletter}} for swap potential:
+      - Subscriber count (similar to ours?)
+      - Audience overlap (complementary?)
+      - Content style match?
+      - Have they done swaps before?
+      
+      Rate swap potential: HIGH / MEDIUM / LOW
+
+  - name: generate_proposal
+    condition: "potential == 'HIGH'"
+    action: generate
+    prompt: |
+      Generate newsletter swap proposal:
+      
+      Our newsletter: {{your_newsletter}} ({{subscriber_count}} subs)
+      Their newsletter: {{target_newsletter}}
+      
+      Propose:
+      - Recommended mention for us in their newsletter
+      - What we'll say about them
+      - Timing coordination
+
+  - name: analyze_churn
+    condition: "{{unsubscribe_data_path}}"
+    action: analyze
+    params:
+      data: "{{unsubscribe_data}}"
+    prompt: |
+      Analyze unsubscribe patterns:
+      - Which emails caused most churn?
+      - Topic patterns in high-churn emails?
+      - Time-based patterns?
+      - Recommendations for reducing churn
+
+  - name: send_proposals
+    action: email
+    for_each: "{{proposals}}"
+
+state:
+  storage: memory/newsletter-growth-state.json

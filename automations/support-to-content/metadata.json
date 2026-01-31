@@ -1,0 +1,8 @@
+{
+  "name": "Support-to-Content Pipeline",
+  "slug": "support-to-content",
+  "category": "content",
+  "tags": ["support", "content", "documentation", "customer-success"],
+  "difficulty": "beginner",
+  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+}

@@ -1,0 +1,98 @@
+name: PR Newsjacking Bot
+description: Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+  - messaging
+
+trigger:
+  schedule: "0 */2 * * *"  # Every 2 hours
+
+parameters:
+  - name: industry_keywords
+    required: true
+  - name: expert_bio
+    description: Your expert credentials for journalist pitches
+    required: true
+  - name: topics_of_expertise
+    required: true
+
+steps:
+  - name: monitor_news
+    action: web_search
+    params:
+      query: "{{industry_keywords}}"
+      freshness: "24h"
+      sort: "date"
+
+  - name: filter_relevant
+    action: analyze
+    for_each: "{{news}}"
+    prompt: |
+      Is this news relevant for newsjacking?
+      
+      {{headline}}
+      
+      Consider:
+      - Is it breaking/trending?
+      - Can we add expert commentary?
+      - Is it in our expertise areas: {{topics_of_expertise}}?
+      
+      Rate: HOT (newsjack now) / WARM (maybe) / PASS
+
+  - name: draft_commentary
+    condition: "rating == 'HOT'"
+    action: generate
+    prompt: |
+      Draft expert commentary on:
+      {{news_summary}}
+      
+      Expert credentials: {{expert_bio}}
+      
+      Create:
+      - 2-3 quotable sound bites
+      - Unique angle/insight
+      - What this means for the industry
+
+  - name: find_journalists
+    action: web_search
+    for_each: "{{hot_news}}"
+    params:
+      query: "{{topic}} journalist OR reporter OR editor"
+
+  - name: generate_pitch
+    action: generate
+    prompt: |
+      Generate journalist pitch:
+      
+      News: {{news_headline}}
+      Journalist: {{journalist_name}} at {{outlet}}
+      Their beat: {{journalist_beat}}
+      
+      Pitch offering expert commentary.
+      Show you know their work.
+      Be concise.
+
+  - name: send_pitches
+    action: email
+    for_each: "{{pitches}}"
+    params:
+      urgency: high
+
+  - name: alert_opportunities
+    action: message
+    params:
+      template: |
+        📰 **Newsjacking Opportunity**
+        
+        Breaking: {{headline}}
+        
+        Draft commentary ready.
+        Pitches sent to {{journalists.length}} journalists.
+
+state:
+  storage: memory/pr-newsjacking-state.json

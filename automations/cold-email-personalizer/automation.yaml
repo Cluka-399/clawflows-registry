@@ -1,0 +1,90 @@
+name: Cold Email Personalizer
+description: Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+
+trigger:
+  manual: true
+
+parameters:
+  - name: target_accounts
+    description: List of company domains to target
+    required: true
+  - name: target_titles
+    description: Job titles to find
+    default: ["CEO", "CTO", "VP Engineering", "Head of Product"]
+  - name: emails_per_batch
+    default: 10
+
+steps:
+  - name: find_decision_makers
+    action: web_search
+    for_each: "{{target_accounts}}"
+    params:
+      query: "site:linkedin.com {{domain}} {{target_titles}}"
+
+  - name: research_person
+    action: web_fetch
+    for_each: "{{decision_makers}}"
+    params:
+      sources:
+        - linkedin_posts
+        - twitter
+        - company_blog
+        - press_releases
+        - job_listings
+
+  - name: identify_pain_points
+    action: analyze
+    for_each: "{{decision_makers}}"
+    prompt: |
+      From {{name}}'s public information:
+      - Recent posts/comments
+      - Company announcements
+      - Job listings (what are they hiring for?)
+      - Press mentions
+      
+      Identify likely pain points our product solves.
+
+  - name: generate_email
+    action: generate
+    for_each: "{{researched}}"
+    prompt: |
+      Write cold email to {{name}} at {{company}}:
+      
+      Requirements:
+      - Reference specific post/announcement: {{specific_reference}}
+      - Connect their pain point to our solution
+      - NOT generic "I noticed you're hiring for X"
+      - Actually insightful personalization
+      - Under 150 words
+      - Clear CTA
+
+  - name: find_email
+    action: web_search
+    for_each: "{{targets}}"
+    params:
+      query: "{{name}} {{company}} email"
+
+  - name: send_emails
+    action: email
+    for_each: "{{emails}}"
+    params:
+      to: "{{verified_email}}"
+      subject: "{{personalized_subject}}"
+      body: "{{email_body}}"
+
+  - name: schedule_followups
+    action: cron_add
+    for_each: "{{sent}}"
+    params:
+      delay: "3 days"
+      condition: "no_reply"
+
+state:
+  storage: memory/cold-email-state.json

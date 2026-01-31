@@ -1,0 +1,8 @@
+{
+  "name": "Full-Funnel Attribution Detective",
+  "slug": "attribution-detective",
+  "category": "analytics",
+  "tags": ["attribution", "analytics", "customer-journey", "data"],
+  "difficulty": "advanced",
+  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+}

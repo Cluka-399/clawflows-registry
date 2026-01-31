@@ -1,0 +1,78 @@
+name: Affiliate Army Builder
+description: Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+
+trigger:
+  schedule: "0 10 * * 1"  # Weekly Monday
+
+parameters:
+  - name: target_keywords
+    description: Keywords your affiliates should rank for
+    required: true
+  - name: your_product
+    required: true
+  - name: commission_details
+    required: true
+
+steps:
+  - name: find_bloggers
+    action: web_search
+    for_each: "{{target_keywords}}"
+    params:
+      query: "{{keyword}} best tools guide"
+      filter: "NOT site:{{your_domain}}"
+
+  - name: analyze_affiliate_potential
+    action: web_fetch
+    for_each: "{{bloggers}}"
+    params:
+      url: "{{blog_url}}"
+      extract:
+        - existing_affiliates
+        - traffic_indicators
+        - content_quality
+
+  - name: score_prospects
+    action: analyze
+    for_each: "{{bloggers}}"
+    prompt: |
+      Score affiliate prospect:
+      - Traffic indicators: {{traffic}}
+      - Existing affiliate relationships: {{affiliates}}
+      - Content quality: {{quality}}
+      - Do they mention competitors but not us?
+      
+      Score 1-10, explain rationale
+
+  - name: generate_pitch
+    condition: "score >= 7"
+    action: generate
+    prompt: |
+      Generate affiliate recruitment email:
+      
+      Blogger: {{blogger_name}} at {{blog_url}}
+      Their content: {{content_summary}}
+      Our product: {{your_product}}
+      Commission: {{commission_details}}
+      
+      Personalize based on their existing content.
+      Don't be generic.
+
+  - name: find_contact
+    action: web_search
+    for_each: "{{prospects}}"
+    params:
+      query: "{{blogger_name}} contact email"
+
+  - name: send_pitches
+    action: email
+    for_each: "{{pitches}}"
+
+state:
+  storage: memory/affiliate-builder-state.json

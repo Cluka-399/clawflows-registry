@@ -1,0 +1,79 @@
+name: Hacker News Timing Bot
+description: Monitor HN activity patterns, detect optimal posting conditions, alert when it's time to submit.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_fetch
+  - messaging
+
+trigger:
+  schedule: "*/30 * * * *"  # Every 30 minutes
+
+parameters:
+  - name: topic_keywords
+    description: Your topic area to monitor
+    required: true
+  - name: draft_titles
+    description: Pre-written HN-style titles to choose from
+  - name: target_url
+    description: URL to submit
+    required: true
+
+steps:
+  - name: fetch_hn_front_page
+    action: web_fetch
+    params:
+      url: "https://news.ycombinator.com"
+      extract: posts
+
+  - name: analyze_activity
+    action: analyze
+    prompt: |
+      Analyze current HN state:
+      - How many posts about {{topic_keywords}} on front page?
+      - Current competition level (low/medium/high)?
+      - Are topic-relevant users active? (check recent comments)
+      - Time of day factor (US coasts awake?)
+      
+      Rate posting conditions: OPTIMAL / GOOD / WAIT
+
+  - name: check_title_quality
+    condition: "conditions != 'WAIT'"
+    action: analyze
+    for_each: "{{draft_titles}}"
+    prompt: |
+      Rate this HN title:
+      - Clickbait detection (HN hates clickbait)
+      - Matches HN style?
+      - Would moderators flag?
+      
+      Score 1-10
+
+  - name: alert_optimal
+    condition: "conditions == 'OPTIMAL'"
+    action: message
+    params:
+      template: |
+        🟢 **HN Optimal Window Detected**
+        
+        Conditions: {{analysis_summary}}
+        Competition: {{competition_level}}
+        
+        Best title: "{{best_title}}"
+        Score: {{title_score}}/10
+        
+        Submit now: {{target_url}}
+
+  - name: alert_good
+    condition: "conditions == 'GOOD'"
+    action: message
+    params:
+      template: |
+        🟡 **HN Good Window**
+        
+        Conditions decent but not optimal.
+        {{analysis_summary}}
+
+state:
+  storage: memory/hn-timing-state.json

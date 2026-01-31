@@ -1,0 +1,85 @@
+name: Backlink Hunter
+description: Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+
+trigger:
+  schedule: "0 6 * * 1"  # Weekly Monday 6am
+
+parameters:
+  - name: your_content_urls
+    description: Your best content URLs to pitch as replacements
+    required: true
+  - name: niche_keywords
+    required: true
+  - name: min_domain_authority
+    default: 30
+
+steps:
+  - name: find_broken_links
+    action: web_search
+    params:
+      query: "{{niche_keywords}} inurl:resources -site:{{your_domain}}"
+    
+  - name: check_for_dead_links
+    action: browser
+    for_each: "{{results}}"
+    params:
+      extract_links: true
+      check_status: true
+      filter: "status == 404 OR status == 410"
+
+  - name: match_your_content
+    action: analyze
+    prompt: |
+      Match dead links to replacement content from:
+      {{your_content_urls}}
+      
+      Find best semantic match.
+
+  - name: find_contact
+    action: web_search
+    for_each: "{{matches}}"
+    params:
+      query: "site:{{item.domain}} contact OR email"
+
+  - name: draft_outreach
+    action: generate
+    for_each: "{{matches}}"
+    template: |
+      Subject: Broken link on {{page_title}}
+      
+      Hi,
+      
+      I was reading your excellent resource page on {{topic}} and noticed 
+      that the link to "{{dead_link_text}}" appears to be broken.
+      
+      I recently published a comprehensive guide on the same topic that 
+      might be a good replacement: {{your_url}}
+      
+      Either way, wanted to give you a heads up about the broken link!
+      
+      Best,
+      {{signature}}
+
+  - name: send_outreach
+    action: email
+    for_each: "{{drafts}}"
+    params:
+      to: "{{contact_email}}"
+      subject: "{{draft.subject}}"
+      body: "{{draft.body}}"
+      
+  - name: schedule_followup
+    action: cron_add
+    params:
+      delay: "3 days"
+      task: "followup_{{item.id}}"
+
+state:
+  storage: memory/backlink-hunter-state.json

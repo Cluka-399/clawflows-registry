@@ -1,0 +1,86 @@
+name: SEO Gap Assassin
+description: Analyze competitors, find keywords they rank for that you don't, generate content briefs for the top gaps.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - file_system
+
+trigger:
+  schedule: "0 6 * * 1"  # Weekly Monday
+
+parameters:
+  - name: your_domain
+    required: true
+  - name: competitor_domains
+    description: Top 10 competitors
+    required: true
+  - name: top_gaps_count
+    default: 20
+
+steps:
+  - name: get_competitor_keywords
+    action: web_search
+    for_each: "{{competitor_domains}}"
+    params:
+      query: "site:{{domain}}"
+      extract: ranking_keywords
+
+  - name: get_your_keywords
+    action: web_search
+    params:
+      query: "site:{{your_domain}}"
+      extract: ranking_keywords
+
+  - name: find_gaps
+    action: analyze
+    prompt: |
+      Compare keyword sets:
+      Competitors rank for: {{competitor_keywords}}
+      You rank for: {{your_keywords}}
+      
+      Find keywords where:
+      - At least 2 competitors rank
+      - You don't rank in top 50
+      - Search volume > 100/month
+      
+      Prioritize by: volume * (1 / difficulty)
+
+  - name: generate_briefs
+    action: generate
+    for_each: "{{top_gaps[:20]}}"
+    prompt: |
+      Generate content brief for: {{keyword}}
+      
+      Include:
+      - Target keyword + related keywords
+      - Search intent analysis
+      - Recommended content format
+      - Outline with H2/H3 structure
+      - Competitor content analysis
+      - Unique angle to differentiate
+
+  - name: save_briefs
+    action: file_write
+    params:
+      path: "memory/seo-briefs/{{keyword_slug}}.md"
+      content: "{{brief}}"
+
+  - name: alert_summary
+    action: message
+    params:
+      template: |
+        🎯 **SEO Gap Analysis Complete**
+        
+        Found {{gaps.length}} keyword gaps
+        Top opportunities:
+        {{#each top_5}}
+        - {{keyword}} ({{volume}}/mo, difficulty: {{difficulty}})
+        {{/each}}
+        
+        {{briefs.length}} content briefs generated
+
+state:
+  storage: memory/seo-gap-state.json

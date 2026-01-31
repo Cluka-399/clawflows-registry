@@ -1,0 +1,106 @@
+name: Content Syndication Network
+description: Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - browser
+  - web_fetch
+  - file_system
+
+trigger:
+  manual: true
+
+parameters:
+  - name: source_post_path
+    description: Path to your original blog post (markdown)
+    required: true
+  - name: canonical_url
+    description: Your original blog URL for SEO
+    required: true
+  - name: target_platforms
+    default: ["medium", "devto", "hashnode", "linkedin", "twitter", "reddit"]
+  - name: reddit_subreddits
+    default: []
+
+steps:
+  - name: read_source
+    action: file_read
+    params:
+      path: "{{source_post_path}}"
+
+  - name: transform_medium
+    action: generate
+    prompt: |
+      Reformat this post for Medium's editor style:
+      - Add pull quotes
+      - Shorter paragraphs
+      - Medium-style headers
+      {{source_content}}
+
+  - name: transform_devto
+    action: generate
+    prompt: |
+      Reformat for Dev.to:
+      - Add front matter with tags
+      - Code blocks with syntax highlighting
+      - Add series tag if applicable
+      {{source_content}}
+
+  - name: transform_hashnode
+    action: generate
+    prompt: |
+      Reformat for Hashnode:
+      - Add canonical URL
+      - Hashnode-specific tags
+      {{source_content}}
+
+  - name: transform_linkedin
+    action: generate
+    prompt: |
+      Transform into LinkedIn article:
+      - Professional angle
+      - Business value focus
+      - Shorter, punchier
+      {{source_content}}
+
+  - name: transform_twitter
+    action: generate
+    prompt: |
+      Extract into Twitter thread:
+      - Hook in tweet 1
+      - Key points as numbered tweets
+      - Call to action with link at end
+      - Max 15 tweets
+      {{source_content}}
+
+  - name: transform_reddit
+    action: generate
+    for_each: "{{reddit_subreddits}}"
+    prompt: |
+      Angle this post for r/{{subreddit}}:
+      - Match subreddit tone
+      - Different hook per community
+      - No self-promo feel
+      {{source_content}}
+
+  - name: publish_all
+    action: browser
+    for_each: "{{platforms}}"
+    params:
+      url: "{{platform_urls[item]}}"
+      steps:
+        - login_if_needed
+        - create_post
+        - paste_content: "{{transformed[item]}}"
+        - set_canonical: "{{canonical_url}}"
+        - publish
+
+  - name: track_engagement
+    action: cron_add
+    params:
+      schedule: "0 9 * * *"
+      task: "check_syndication_stats"
+
+state:
+  storage: memory/content-syndication-state.json

@@ -1,0 +1,114 @@
+name: Full-Funnel Attribution Detective
+description: Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_fetch
+  - file_system
+
+trigger:
+  schedule: "0 6 * * 1"  # Weekly Monday
+
+parameters:
+  - name: analytics_api
+    description: Google Analytics or similar API
+  - name: crm_api
+    description: Your CRM API endpoint
+  - name: ad_platforms
+    description: Ad platform APIs (Google Ads, Facebook, etc.)
+  - name: time_period
+    default: "30d"
+
+steps:
+  - name: fetch_conversions
+    action: web_fetch
+    params:
+      url: "{{crm_api}}/conversions"
+      params:
+        period: "{{time_period}}"
+
+  - name: fetch_analytics
+    action: web_fetch
+    params:
+      url: "{{analytics_api}}/user-journeys"
+      params:
+        period: "{{time_period}}"
+
+  - name: fetch_ad_data
+    action: web_fetch
+    for_each: "{{ad_platforms}}"
+    params:
+      url: "{{platform_api}}/conversions"
+
+  - name: correlate_journeys
+    action: analyze
+    prompt: |
+      Correlate customer journey data:
+      
+      CRM conversions: {{conversions}}
+      Analytics paths: {{analytics}}
+      Ad touchpoints: {{ad_data}}
+      
+      For each customer:
+      - First touchpoint
+      - Content consumed
+      - Ad interactions
+      - Final conversion trigger
+
+  - name: build_journey_maps
+    action: analyze
+    prompt: |
+      Build journey map insights:
+      
+      {{correlated_data}}
+      
+      Find:
+      - Average touchpoints before conversion
+      - Most common first touchpoint
+      - Most common final touchpoint before conversion
+      - Content that appears most in winning journeys
+      - Ad channels that initiate vs close
+
+  - name: generate_insights
+    action: generate
+    prompt: |
+      Generate actionable insights:
+      
+      {{journey_maps}}
+      
+      Recommendations for:
+      - Content investment
+      - Ad budget allocation
+      - Funnel optimization
+
+  - name: save_report
+    action: file_write
+    params:
+      path: "memory/attribution-report-{{date}}.md"
+      content: |
+        # Attribution Report - {{date}}
+        
+        ## Key Metrics
+        {{metrics}}
+        
+        ## Journey Patterns
+        {{patterns}}
+        
+        ## Recommendations
+        {{recommendations}}
+
+  - name: alert_summary
+    action: message
+    params:
+      template: |
+        📊 **Attribution Analysis Complete**
+        
+        Analyzed {{conversions.length}} conversions
+        
+        Key insight: "{{top_insight}}"
+        
+        Full report: memory/attribution-report-{{date}}.md
+
+state:
+  storage: memory/attribution-state.json

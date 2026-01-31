@@ -1,0 +1,8 @@
+{
+  "name": "Cold Email Personalizer",
+  "slug": "cold-email-personalizer",
+  "category": "sales",
+  "tags": ["email", "outreach", "sales", "personalization"],
+  "difficulty": "advanced",
+  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+}

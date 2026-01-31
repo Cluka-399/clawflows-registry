@@ -1,0 +1,81 @@
+name: Micro-Influencer Outreach Machine
+description: Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - browser
+  - email
+
+trigger:
+  schedule: "0 8 * * 1"  # Weekly Monday
+
+parameters:
+  - name: icp_definition
+    description: Your ideal customer profile
+    required: true
+  - name: niche_keywords
+    required: true
+  - name: follower_min
+    default: 1000
+  - name: follower_max
+    default: 50000
+  - name: outreach_per_week
+    default: 10
+
+steps:
+  - name: find_influencers
+    action: search_x
+    params:
+      query: "{{niche_keywords}}"
+      filter: "followers:{{follower_min}}-{{follower_max}}"
+
+  - name: analyze_content
+    action: web_fetch
+    for_each: "{{influencers}}"
+    params:
+      url: "https://x.com/{{handle}}"
+      extract: "last 20 posts"
+
+  - name: find_overlap
+    action: analyze
+    for_each: "{{influencers}}"
+    prompt: |
+      Analyze {{handle}}'s last 20 posts.
+      Find genuine connection points with: {{icp_definition}}
+      
+      Look for:
+      - Topics they're passionate about
+      - Problems they mention
+      - Tools they use/recommend
+      - Questions they ask
+      
+      Rate overlap: HIGH/MEDIUM/LOW
+
+  - name: generate_outreach
+    condition: "overlap == 'HIGH'"
+    action: generate
+    prompt: |
+      Write a DM to {{handle}} that:
+      - References their specific post about {{specific_topic}}
+      - Shows you actually read their content
+      - Finds natural connection to your product
+      - NOT "Hey [NAME], loved your post about [TOPIC]"
+      - Actually genuine
+
+  - name: send_outreach
+    action: browser
+    for_each: "{{outreach}}"
+    params:
+      platform: "{{preferred_platform}}"
+      action: send_dm
+
+  - name: track_responses
+    action: cron_add
+    params:
+      schedule: "0 9 * * *"
+      task: "check_influencer_responses"
+
+state:
+  storage: memory/influencer-outreach-state.json

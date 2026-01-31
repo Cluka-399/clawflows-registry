@@ -1,0 +1,77 @@
+name: Partnership Scout
+description: Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - email
+
+trigger:
+  schedule: "0 9 * * 1"  # Weekly Monday
+
+parameters:
+  - name: target_audience
+    required: true
+  - name: your_product
+    required: true
+  - name: exclude_competitors
+    required: true
+
+steps:
+  - name: find_adjacent_companies
+    action: web_search
+    params:
+      query: "{{target_audience}} tools software -{{exclude_competitors}}"
+
+  - name: analyze_partnership_fit
+    action: analyze
+    for_each: "{{companies}}"
+    prompt: |
+      Analyze {{company}} for partnership potential:
+      - Do they serve the same audience?
+      - Are they complementary (not competitive)?
+      - What's their content strategy?
+      - Partnership signals (guest posts, webinars, integrations)?
+      
+      Rate: HIGH / MEDIUM / LOW
+
+  - name: research_marketing
+    condition: "fit == 'HIGH'"
+    action: web_fetch
+    for_each: "{{high_fit}}"
+    params:
+      sources:
+        - blog
+        - podcast_appearances
+        - webinars
+        - co-marketing_examples
+
+  - name: generate_pitch
+    action: generate
+    for_each: "{{high_fit}}"
+    prompt: |
+      Generate partnership pitch for {{company}}:
+      
+      Based on their recent content about {{recent_topic}},
+      propose a co-marketing opportunity:
+      - Co-authored report
+      - Joint webinar
+      - Integration partnership
+      - Newsletter swap
+      
+      Be specific about mutual value.
+
+  - name: find_contact
+    action: web_search
+    for_each: "{{targets}}"
+    params:
+      query: "{{company}} partnerships head of marketing email"
+
+  - name: send_outreach
+    action: email
+    for_each: "{{pitches}}"
+
+state:
+  storage: memory/partnership-scout-state.json

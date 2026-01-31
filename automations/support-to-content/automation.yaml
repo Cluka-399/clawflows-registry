@@ -1,0 +1,90 @@
+name: Support-to-Content Pipeline
+description: Analyze support tickets for patterns, generate help articles and blog posts from common questions.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - file_system
+  - messaging
+
+trigger:
+  schedule: "0 9 * * 1"  # Weekly Monday
+
+parameters:
+  - name: support_data_path
+    description: Path to support tickets export (CSV/JSON)
+    required: true
+  - name: min_occurrences
+    description: Minimum times a question must appear
+    default: 3
+
+steps:
+  - name: load_tickets
+    action: file_read
+    params:
+      path: "{{support_data_path}}"
+
+  - name: analyze_patterns
+    action: analyze
+    prompt: |
+      Analyze support tickets for patterns:
+      
+      {{tickets}}
+      
+      Find:
+      - Most common questions (with count)
+      - Most common frustrations
+      - Feature confusion patterns
+      - Recurring technical issues
+
+  - name: prioritize_content
+    action: analyze
+    prompt: |
+      Prioritize content creation:
+      
+      Patterns found: {{patterns}}
+      
+      Rank by:
+      - Frequency (how often asked)
+      - Impact (reduces support load)
+      - SEO potential (others searching this?)
+      
+      Output top 10 content opportunities
+
+  - name: generate_briefs
+    action: generate
+    for_each: "{{top_10}}"
+    prompt: |
+      Generate content brief for: {{topic}}
+      
+      Based on {{occurrence_count}} support tickets:
+      {{example_tickets}}
+      
+      Create brief for:
+      - Help article (if how-to)
+      - Blog post (if conceptual)
+      - Product improvement (if UX issue)
+
+  - name: save_briefs
+    action: file_write
+    for_each: "{{briefs}}"
+    params:
+      path: "memory/content-briefs/{{slug}}.md"
+
+  - name: alert_summary
+    action: message
+    params:
+      template: |
+        📊 **Support-to-Content Analysis**
+        
+        Analyzed {{tickets.length}} tickets
+        
+        Top patterns:
+        {{#each top_5}}
+        - {{topic}} ({{count}} tickets)
+        {{/each}}
+        
+        {{briefs.length}} content briefs generated
+
+state:
+  storage: memory/support-content-state.json

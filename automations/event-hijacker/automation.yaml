@@ -1,0 +1,75 @@
+name: Event Hijacker
+description: Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - browser
+  - file_system
+
+trigger:
+  schedule: "0 7 * * *"  # Daily
+
+parameters:
+  - name: industry_keywords
+    required: true
+  - name: speaker_kit_path
+    description: Path to your speaker bio, headshot, talk abstracts
+  - name: location
+    default: "remote"
+
+steps:
+  - name: find_events
+    action: web_search
+    params:
+      query: "{{industry_keywords}} (site:eventbrite.com OR site:lu.ma OR site:meetup.com)"
+
+  - name: find_cfps
+    action: web_search
+    params:
+      query: "{{industry_keywords}} CFP call for proposals speakers"
+
+  - name: analyze_relevance
+    action: analyze
+    for_each: "{{events}}"
+    prompt: "Rate relevance to {{industry_keywords}}: HIGH/MEDIUM/LOW"
+
+  - name: auto_register
+    condition: "relevance == 'HIGH' AND type == 'virtual'"
+    action: browser
+    params:
+      url: "{{event_url}}"
+      steps:
+        - click: register
+        - fill_form: "{{registration_details}}"
+        - submit
+
+  - name: submit_cfp
+    condition: "has_cfp == true"
+    action: browser
+    params:
+      url: "{{cfp_url}}"
+      steps:
+        - fill_form: "{{speaker_kit}}"
+        - submit
+
+  - name: prepare_networking
+    action: analyze
+    for_each: "{{registered_events}}"
+    prompt: |
+      For {{event_name}}:
+      - Who's speaking? Research their backgrounds
+      - Who's attending? (if visible)
+      - Generate custom talking points based on event theme
+      - Identify networking opportunities
+
+  - name: schedule_followups
+    action: cron_add
+    for_each: "{{registered_events}}"
+    params:
+      at: "{{event_date + 1 day}}"
+      task: "send_followup_messages"
+
+state:
+  storage: memory/event-hijacker-state.json
