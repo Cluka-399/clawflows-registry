@@ -1,0 +1,14 @@
+{
+  "name": "bookmark-organizer",
+  "displayName": "Bookmark Organizer",
+  "description": "Periodically organize and summarize your saved bookmarks/links",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "organization", "weekly"],
+  "tags": ["bookmarks", "links", "organize", "categorize", "cleanup"],
+  "capabilities": ["file-system", "web-fetch", "llm-analysis", "notifications"],
+  "schedule": "0 10 * * 0",
+  "createdAt": "2026-01-31"
+}

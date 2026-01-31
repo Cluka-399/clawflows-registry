@@ -1,0 +1,14 @@
+{
+  "name": "focus-time-report",
+  "displayName": "Focus Time Report",
+  "description": "Track and report on your deep work vs fragmented time",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "time-tracking", "weekly"],
+  "tags": ["focus", "deep-work", "calendar", "time-management", "meetings"],
+  "capabilities": ["calendar", "llm-analysis", "notifications"],
+  "schedule": "0 18 * * 5",
+  "createdAt": "2026-01-31"
+}

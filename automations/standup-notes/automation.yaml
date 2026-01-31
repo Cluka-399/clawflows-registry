@@ -1,0 +1,88 @@
+name: standup-notes
+description: Auto-generate daily standup notes from yesterday's activity
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: file-system
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 9 * * 1-5"  # 9am weekdays
+
+config:
+  memory_path:
+    description: "Path to agent memory"
+    default: "/data/clawd/memory"
+  
+  format:
+    description: "Standup format: classic, brief, or detailed"
+    default: "classic"
+  
+  include_blockers:
+    description: "Include blockers section"
+    default: true
+
+steps:
+  - name: read-yesterday
+    capability: file-system
+    method: readFile
+    args:
+      path: "${config.memory_path}/${new Date(Date.now() - 86400000).toISOString().split('T')[0]}.md"
+    capture: yesterdayLog
+
+  - name: read-today-calendar
+    capability: calendar
+    method: getEvents
+    args:
+      daysAhead: 1
+    capture: todayEvents
+    optional: true
+
+  - name: generate-standup
+    capability: llm-analysis
+    method: extract
+    args:
+      log: "${yesterdayLog}"
+      calendar: "${todayEvents || []}"
+      prompt: |
+        Generate standup notes in this format:
+        
+        **Yesterday:**
+        - What was accomplished (be specific)
+        
+        **Today:**
+        - What's planned (based on calendar + ongoing work)
+        
+        **Blockers:**
+        - Anything stuck or needs help
+        
+        Keep each bullet concise (one line).
+        Max 3-4 bullets per section.
+        Be honest about what actually got done.
+    capture: standup
+
+  - name: format-standup
+    action: evaluate
+    expression: |
+      const sections = [];
+      if (standup.yesterday?.length) {
+        sections.push(`**Yesterday:**\n${standup.yesterday.map(y => `• ${y}`).join('\n')}`);
+      }
+      if (standup.today?.length) {
+        sections.push(`**Today:**\n${standup.today.map(t => `• ${t}`).join('\n')}`);
+      }
+      if (config.include_blockers && standup.blockers?.length) {
+        sections.push(`**Blockers:**\n${standup.blockers.map(b => `• ${b}`).join('\n')}`);
+      }
+      sections.join('\n\n')
+    capture: formatted
+
+  - name: notify-standup
+    action: notify
+    message: |
+      🌅 **Daily Standup**
+      _${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}_
+      
+      ${formatted}

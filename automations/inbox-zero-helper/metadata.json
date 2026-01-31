@@ -1,0 +1,14 @@
+{
+  "name": "inbox-zero-helper",
+  "displayName": "Inbox Zero Helper",
+  "description": "Categorize, summarize, and draft responses for your email inbox",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "email", "daily"],
+  "tags": ["email", "inbox-zero", "categorize", "drafts", "summary"],
+  "capabilities": ["email", "llm-analysis", "notifications"],
+  "schedule": "0 8,14,18 * * *",
+  "createdAt": "2026-01-31"
+}

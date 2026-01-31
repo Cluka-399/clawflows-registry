@@ -1,0 +1,98 @@
+name: daily-news-digest
+description: Aggregate and summarize news from multiple sources into a morning briefing
+author: cluka
+version: 1.0.0
+
+# Inspired by @bindureddy's agent that "wakes up every day and summarizes news"
+
+requires:
+  - capability: web-search
+  - capability: rss-reader
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 7 * * *"  # 7am daily
+
+config:
+  topics:
+    description: "Topics to track (comma-separated)"
+    default: "AI, startups, technology"
+  
+  sources:
+    description: "News sources (RSS feeds or search queries)"
+    default: ["hackernews", "techcrunch", "producthunt"]
+  
+  max_articles:
+    description: "Maximum articles to process"
+    default: 20
+  
+  summary_style:
+    description: "Brief, detailed, or bullet"
+    default: "bullet"
+  
+  delivery:
+    description: "How to deliver (notify, email, file)"
+    default: "notify"
+
+steps:
+  - name: fetch-hackernews
+    capability: web-search
+    method: fetchRSS
+    args:
+      url: "https://hnrss.org/frontpage"
+      limit: 10
+    capture: hnArticles
+
+  - name: search-topics
+    capability: web-search
+    method: search
+    args:
+      query: "${config.topics.split(',').map(t => t.trim()).join(' OR ')}"
+      freshness: "24h"
+      count: 10
+    capture: searchResults
+
+  - name: combine-sources
+    action: evaluate
+    expression: |
+      const articles = [
+        ...hnArticles.map(a => ({ title: a.title, url: a.link, source: 'HN', score: a.score || 0 })),
+        ...searchResults.map(r => ({ title: r.title, url: r.url, source: 'Web', score: 0 }))
+      ];
+      // Dedupe by title similarity and sort by relevance
+      const seen = new Set();
+      const unique = articles.filter(a => {
+        const key = a.title.toLowerCase().slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      unique.slice(0, config.max_articles)
+    capture: allArticles
+
+  - name: summarize-news
+    capability: llm-analysis
+    method: summarize
+    args:
+      articles: "${allArticles}"
+      style: "${config.summary_style}"
+      prompt: |
+        Create a morning news digest for someone interested in: ${config.topics}
+        
+        Format as ${config.summary_style === 'bullet' ? 'bullet points with emoji' : config.summary_style} style.
+        Group by theme if possible.
+        Highlight anything particularly important or time-sensitive.
+        Keep it scannable - this is for a busy person's morning.
+    capture: digest
+
+  - name: deliver-digest
+    action: notify
+    message: |
+      ☀️ **Morning News Digest**
+      _${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}_
+      
+      ${digest.summary}
+      
+      ---
+      _${allArticles.length} articles processed from ${config.sources.length} sources_

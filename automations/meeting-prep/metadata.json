@@ -1,0 +1,14 @@
+{
+  "name": "meeting-prep",
+  "displayName": "Meeting Prep",
+  "description": "Prepare briefings for upcoming meetings with context and agenda",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "meetings", "daily"],
+  "tags": ["meetings", "prep", "calendar", "agenda", "context"],
+  "capabilities": ["calendar", "email", "llm-analysis", "notifications"],
+  "schedule": "0 8 * * 1-5",
+  "createdAt": "2026-01-31"
+}

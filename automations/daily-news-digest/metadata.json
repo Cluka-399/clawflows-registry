@@ -1,0 +1,14 @@
+{
+  "name": "daily-news-digest",
+  "displayName": "Daily News Digest",
+  "description": "Aggregate and summarize news from multiple sources into a morning briefing",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "news", "daily"],
+  "tags": ["news", "digest", "morning", "summary", "rss", "hackernews"],
+  "capabilities": ["web-search", "rss-reader", "llm-analysis", "notifications"],
+  "schedule": "0 7 * * *",
+  "createdAt": "2026-01-31"
+}

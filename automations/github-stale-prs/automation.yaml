@@ -1,0 +1,70 @@
+name: github-stale-prs
+description: Alert on pull requests that have been open too long or need attention
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: github
+  - capability: notifications
+
+trigger:
+  schedule: "0 9 * * 1-5"  # 9am weekdays
+
+config:
+  repos:
+    description: "GitHub repos to monitor (owner/repo format)"
+    default: []
+  
+  stale_days:
+    description: "Days before a PR is considered stale"
+    default: 3
+  
+  include_reviews_needed:
+    description: "Include PRs awaiting your review"
+    default: true
+
+steps:
+  - name: fetch-open-prs
+    capability: github
+    method: getPullRequests
+    args:
+      repos: "${config.repos}"
+      state: "open"
+    capture: allPRs
+
+  - name: categorize-prs
+    action: evaluate
+    expression: |
+      const now = Date.now();
+      const staleThreshold = config.stale_days * 24 * 60 * 60 * 1000;
+      
+      const stale = allPRs.filter(pr => 
+        (now - new Date(pr.updatedAt).getTime()) > staleThreshold
+      );
+      
+      const needsReview = allPRs.filter(pr => 
+        pr.reviewsRequested?.includes(config.github_user)
+      );
+      
+      const approved = allPRs.filter(pr =>
+        pr.reviews?.some(r => r.state === 'APPROVED') && !pr.merged
+      );
+      
+      ({ stale, needsReview, approved, total: allPRs.length })
+    capture: categorized
+
+  - name: notify-summary
+    condition: "categorized.stale.length > 0 || categorized.needsReview.length > 0 || categorized.approved.length > 0"
+    action: notify
+    message: |
+      🔀 **PR Status Report**
+      
+      ${categorized.stale.length > 0 ? `⏰ **Stale PRs (>${config.stale_days} days):**\n${categorized.stale.map(pr => `• [${pr.title}](${pr.url}) - ${pr.author} (${Math.floor((Date.now() - new Date(pr.updatedAt).getTime()) / 86400000)}d old)`).join('\n')}\n\n` : ''}
+      ${categorized.needsReview.length > 0 ? `👀 **Needs Your Review:**\n${categorized.needsReview.map(pr => `• [${pr.title}](${pr.url}) - ${pr.author}`).join('\n')}\n\n` : ''}
+      ${categorized.approved.length > 0 ? `✅ **Ready to Merge:**\n${categorized.approved.map(pr => `• [${pr.title}](${pr.url})`).join('\n')}\n\n` : ''}
+      _${categorized.total} total open PRs across ${config.repos.length} repos_
+
+  - name: all-clear
+    condition: "categorized.stale.length === 0 && categorized.needsReview.length === 0"
+    action: log
+    message: "All PRs healthy! No stale or review-needed PRs."

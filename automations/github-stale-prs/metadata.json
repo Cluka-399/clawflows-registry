@@ -1,0 +1,14 @@
+{
+  "name": "github-stale-prs",
+  "displayName": "GitHub Stale PRs",
+  "description": "Alert on pull requests that have been open too long or need attention",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["development", "github", "daily"],
+  "tags": ["github", "pull-requests", "code-review", "stale", "engineering"],
+  "capabilities": ["github", "notifications"],
+  "schedule": "0 9 * * 1-5",
+  "createdAt": "2026-01-31"
+}

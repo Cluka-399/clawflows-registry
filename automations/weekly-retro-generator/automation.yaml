@@ -1,0 +1,96 @@
+name: weekly-retro-generator
+description: Generate a weekly retrospective from your agent's activity and accomplishments
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: file-system
+  - capability: calendar
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 17 * * 5"  # Friday 5pm
+
+config:
+  memory_path:
+    description: "Path to agent memory/logs"
+    default: "/data/clawd/memory"
+  
+  include_calendar:
+    description: "Include calendar events in analysis"
+    default: true
+  
+  include_commits:
+    description: "Include git commits if available"
+    default: true
+  
+  format:
+    description: "Output format: summary, detailed, or standup"
+    default: "summary"
+
+steps:
+  - name: read-week-logs
+    capability: file-system
+    method: readDirectory
+    args:
+      path: "${config.memory_path}"
+      pattern: "*.md"
+      daysBack: 7
+    capture: weekLogs
+
+  - name: get-calendar-events
+    condition: "config.include_calendar"
+    capability: calendar
+    method: getEvents
+    args:
+      daysBack: 7
+    capture: calendarEvents
+
+  - name: analyze-week
+    capability: llm-analysis
+    method: summarize
+    args:
+      logs: "${weekLogs.map(l => l.content).join('\n---\n')}"
+      calendar: "${calendarEvents || []}"
+      prompt: |
+        Analyze this week's activity and generate a retrospective.
+        
+        Extract:
+        1. **Accomplishments** - What was completed/shipped?
+        2. **Progress** - What moved forward but isn't done?
+        3. **Blockers** - What got stuck or delayed?
+        4. **Learnings** - What was learned or discovered?
+        5. **Next Week** - What should be prioritized?
+        
+        Be specific with names, numbers, and outcomes.
+        Keep it honest - include struggles, not just wins.
+    capture: retroAnalysis
+
+  - name: format-retro
+    action: evaluate
+    expression: |
+      const emoji = { accomplishments: '✅', progress: '🔄', blockers: '🚧', learnings: '💡', next: '📋' };
+      const formatted = Object.entries(retroAnalysis)
+        .map(([key, items]) => `${emoji[key] || '•'} **${key.charAt(0).toUpperCase() + key.slice(1)}**\n${items.map(i => `  • ${i}`).join('\n')}`)
+        .join('\n\n');
+      formatted
+    capture: formattedRetro
+
+  - name: notify-retro
+    action: notify
+    message: |
+      📆 **Weekly Retrospective**
+      _Week of ${new Date(Date.now() - 6*24*60*60*1000).toLocaleDateString()} - ${new Date().toLocaleDateString()}_
+      
+      ${formattedRetro}
+      
+      ---
+      _Generated from ${weekLogs.length} daily logs${calendarEvents ? ` and ${calendarEvents.length} calendar events` : ''}_
+
+  - name: save-retro
+    capability: file-system
+    method: writeFile
+    args:
+      path: "${config.memory_path}/retros/week-${new Date().toISOString().split('T')[0]}.md"
+      content: "# Weekly Retro - ${new Date().toLocaleDateString()}\n\n${formattedRetro}"

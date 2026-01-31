@@ -1,0 +1,103 @@
+name: bookmark-organizer
+description: Periodically organize and summarize your saved bookmarks/links
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: file-system
+  - capability: web-fetch
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 10 * * 0"  # Sunday 10am
+
+config:
+  bookmarks_path:
+    description: "Path to bookmarks file or folder"
+    default: "/data/clawd/bookmarks.md"
+  
+  max_process:
+    description: "Max bookmarks to process per run"
+    default: 20
+  
+  auto_categorize:
+    description: "Automatically categorize uncategorized bookmarks"
+    default: true
+  
+  check_dead_links:
+    description: "Check for dead/moved links"
+    default: true
+
+steps:
+  - name: read-bookmarks
+    capability: file-system
+    method: readFile
+    args:
+      path: "${config.bookmarks_path}"
+    capture: bookmarksContent
+
+  - name: parse-bookmarks
+    action: evaluate
+    expression: |
+      // Parse markdown bookmarks
+      const lines = bookmarksContent.split('\n');
+      const bookmarks = [];
+      let currentCategory = 'Uncategorized';
+      
+      for (const line of lines) {
+        if (line.startsWith('## ')) {
+          currentCategory = line.slice(3).trim();
+        } else if (line.includes('](http')) {
+          const match = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
+          if (match) {
+            bookmarks.push({ title: match[1], url: match[2], category: currentCategory });
+          }
+        }
+      }
+      bookmarks.slice(0, config.max_process)
+    capture: bookmarks
+
+  - name: check-links
+    condition: "config.check_dead_links"
+    capability: web-fetch
+    method: checkUrls
+    args:
+      urls: "${bookmarks.map(b => b.url)}"
+    capture: linkStatus
+
+  - name: categorize-uncategorized
+    condition: "config.auto_categorize"
+    capability: llm-analysis
+    method: classify
+    args:
+      items: "${bookmarks.filter(b => b.category === 'Uncategorized')}"
+      prompt: |
+        Categorize these bookmarks based on their titles and URLs.
+        Suggest categories like: Development, Design, AI/ML, Business, Learning, Tools, etc.
+        Return JSON: [{ "url": "...", "suggestedCategory": "..." }]
+    capture: suggestions
+
+  - name: generate-summary
+    capability: llm-analysis
+    method: summarize
+    args:
+      bookmarks: "${bookmarks}"
+      prompt: |
+        Summarize this bookmark collection:
+        - Total count by category
+        - Any themes or patterns
+        - Bookmarks that might be outdated
+        - Suggested cleanup actions
+    capture: summary
+
+  - name: notify-report
+    action: notify
+    message: |
+      🔖 **Bookmark Organizer Report**
+      
+      **📊 Summary:**
+      ${summary}
+      
+      ${linkStatus?.dead?.length > 0 ? `**⚠️ Dead Links (${linkStatus.dead.length}):**\n${linkStatus.dead.slice(0, 5).map(l => `• ${l.title}`).join('\n')}\n\n` : ''}
+      ${suggestions?.length > 0 ? `**🏷️ Suggested Categories:**\n${suggestions.slice(0, 5).map(s => `• ${s.title} → ${s.suggestedCategory}`).join('\n')}` : ''}

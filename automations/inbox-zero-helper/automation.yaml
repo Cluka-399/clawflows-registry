@@ -1,0 +1,97 @@
+name: inbox-zero-helper
+description: Categorize, summarize, and draft responses for your email inbox
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: email
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 8,14,18 * * *"  # 8am, 2pm, 6pm
+
+config:
+  max_emails:
+    description: "Maximum emails to process per run"
+    default: 20
+  
+  auto_archive:
+    description: "Auto-archive low-priority/promotional emails"
+    default: true
+  
+  draft_responses:
+    description: "Draft responses for action-needed emails"
+    default: true
+  
+  categories:
+    description: "Email categories to use"
+    default: ["urgent", "action-needed", "fyi", "promotional", "personal"]
+
+steps:
+  - name: fetch-unread
+    capability: email
+    method: getUnread
+    args:
+      limit: "${config.max_emails}"
+    capture: emails
+
+  - name: categorize-emails
+    capability: llm-analysis
+    method: classify
+    args:
+      items: "${emails}"
+      categories: "${config.categories}"
+      prompt: |
+        Categorize each email:
+        - urgent: Needs response within hours, time-sensitive
+        - action-needed: Requires a response or action, but not urgent
+        - fyi: Informational, no action needed
+        - promotional: Marketing, newsletters, deals
+        - personal: Friends, family, non-work
+        
+        Return JSON: [{ "id": "email_id", "category": "category", "summary": "one-line summary", "suggestedAction": "reply|archive|star|none" }]
+    capture: categorized
+
+  - name: group-by-category
+    action: evaluate
+    expression: |
+      const grouped = {};
+      for (const cat of config.categories) {
+        grouped[cat] = categorized.filter(e => e.category === cat);
+      }
+      grouped
+    capture: byCategory
+
+  - name: auto-archive-promotional
+    condition: "config.auto_archive && byCategory.promotional.length > 0"
+    capability: email
+    method: archive
+    args:
+      ids: "${byCategory.promotional.map(e => e.id)}"
+    capture: archived
+
+  - name: draft-responses
+    condition: "config.draft_responses && byCategory['action-needed'].length > 0"
+    capability: llm-analysis
+    method: generate
+    args:
+      emails: "${byCategory['action-needed'].slice(0, 5)}"
+      prompt: |
+        For each email that needs a response, draft a reply.
+        Keep responses concise and professional.
+        Match the tone of the sender.
+        
+        Return JSON: [{ "id": "email_id", "draft": "response text" }]
+    capture: drafts
+
+  - name: notify-summary
+    action: notify
+    message: |
+      📬 **Inbox Summary**
+      
+      ${byCategory.urgent.length > 0 ? `🔴 **Urgent (${byCategory.urgent.length}):**\n${byCategory.urgent.map(e => `• ${e.summary}`).join('\n')}\n\n` : ''}
+      ${byCategory['action-needed'].length > 0 ? `🟡 **Action Needed (${byCategory['action-needed'].length}):**\n${byCategory['action-needed'].map(e => `• ${e.summary}`).join('\n')}\n\n` : ''}
+      ${byCategory.fyi.length > 0 ? `🔵 **FYI (${byCategory.fyi.length}):**\n${byCategory.fyi.slice(0, 3).map(e => `• ${e.summary}`).join('\n')}${byCategory.fyi.length > 3 ? `\n• ...and ${byCategory.fyi.length - 3} more` : ''}\n\n` : ''}
+      ${config.auto_archive && archived ? `🗑️ Auto-archived ${archived.count} promotional emails\n\n` : ''}
+      ${drafts && drafts.length > 0 ? `✏️ Drafted ${drafts.length} responses (review in drafts folder)` : ''}

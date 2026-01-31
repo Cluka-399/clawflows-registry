@@ -1,0 +1,14 @@
+{
+  "name": "standup-notes",
+  "displayName": "Standup Notes",
+  "description": "Auto-generate daily standup notes from yesterday's activity",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "team", "daily"],
+  "tags": ["standup", "daily", "scrum", "team", "async"],
+  "capabilities": ["file-system", "calendar", "llm-analysis", "notifications"],
+  "schedule": "0 9 * * 1-5",
+  "createdAt": "2026-01-31"
+}

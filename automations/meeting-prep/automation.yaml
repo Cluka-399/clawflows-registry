@@ -1,0 +1,91 @@
+name: meeting-prep
+description: Prepare briefings for upcoming meetings with context and agenda
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: calendar
+  - capability: email
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 8 * * 1-5"  # 8am weekdays
+  
+config:
+  hours_ahead:
+    description: "How many hours ahead to look for meetings"
+    default: 10
+  
+  include_email_context:
+    description: "Search email for related context"
+    default: true
+  
+  include_notes:
+    description: "Include previous meeting notes if available"
+    default: true
+
+steps:
+  - name: get-upcoming-meetings
+    capability: calendar
+    method: getEvents
+    args:
+      hoursAhead: "${config.hours_ahead}"
+      filter: "meeting OR call OR sync OR 1:1"
+    capture: meetings
+
+  - name: filter-important
+    action: evaluate
+    expression: |
+      // Filter to meetings with other people (not blocked time)
+      meetings.filter(m => 
+        m.attendees?.length > 0 || 
+        m.title.toLowerCase().includes('meeting') ||
+        m.title.toLowerCase().includes('call') ||
+        m.title.toLowerCase().includes('sync')
+      )
+    capture: importantMeetings
+
+  - name: gather-context
+    condition: "config.include_email_context && importantMeetings.length > 0"
+    capability: email
+    method: search
+    args:
+      queries: "${importantMeetings.map(m => m.attendees?.[0]?.name || m.title).slice(0, 5)}"
+      daysBack: 14
+      limit: 5
+    capture: relatedEmails
+
+  - name: generate-briefs
+    condition: "importantMeetings.length > 0"
+    capability: llm-analysis
+    method: generate
+    args:
+      meetings: "${importantMeetings}"
+      emails: "${relatedEmails || []}"
+      prompt: |
+        For each meeting, create a brief:
+        
+        1. **Context**: What's this about? Any recent emails/history?
+        2. **Attendees**: Who's coming? Their role/relationship?
+        3. **Suggested agenda**: What should be discussed?
+        4. **Prep needed**: Anything to review beforehand?
+        
+        Keep each brief to 4-5 bullet points max.
+    capture: briefs
+
+  - name: notify-prep
+    condition: "importantMeetings.length > 0"
+    action: notify
+    message: |
+      📅 **Today's Meeting Prep**
+      
+      ${importantMeetings.map((m, i) => `
+      **${m.time} - ${m.title}**
+      ${briefs[i] || 'No additional context needed'}
+      `).join('\n---\n')}
+
+  - name: no-meetings
+    condition: "importantMeetings.length === 0"
+    action: log
+    message: "No meetings requiring prep in the next ${config.hours_ahead} hours 🎉"

@@ -1,0 +1,14 @@
+{
+  "name": "learning-digest",
+  "displayName": "Learning Digest",
+  "description": "Curate educational content based on your interests and learning goals",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["learning", "productivity", "weekly"],
+  "tags": ["learning", "education", "tutorials", "curated", "digest"],
+  "capabilities": ["web-search", "llm-analysis", "notifications"],
+  "schedule": "0 7 * * 1,4",
+  "createdAt": "2026-01-31"
+}

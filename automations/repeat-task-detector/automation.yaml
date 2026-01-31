@@ -1,0 +1,125 @@
+name: repeat-task-detector
+description: Analyze your agent's activity logs to find repetitive patterns that could be automated
+author: cluka
+version: 1.0.0
+
+# Pattern: Agents do the same things repeatedly. Find those patterns -> automate them.
+
+requires:
+  - capability: file-system
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 20 * * 0"  # Weekly on Sunday evening
+
+config:
+  memory_path:
+    description: "Path to agent memory/logs"
+    default: "/data/clawd/memory"
+  
+  days_to_analyze:
+    description: "How many days of logs to scan"
+    default: 14
+  
+  min_occurrences:
+    description: "Minimum times a pattern must appear"
+    default: 3
+  
+  suggest_automations:
+    description: "Generate ClawFlows YAML suggestions"
+    default: true
+
+steps:
+  - name: read-recent-logs
+    capability: file-system
+    method: readDirectory
+    args:
+      path: "${config.memory_path}"
+      pattern: "*.md"
+      sortBy: "date"
+      limit: "${config.days_to_analyze}"
+    capture: logFiles
+
+  - name: extract-activities
+    capability: llm-analysis
+    method: extract
+    args:
+      documents: "${logFiles.map(f => f.content).join('\n---\n')}"
+      prompt: |
+        Analyze these agent activity logs and extract all distinct TASKS the agent performed.
+        
+        Focus on:
+        - Checking/monitoring activities (email, calendar, prices, etc.)
+        - Search queries (what was searched, how often)
+        - File operations (what files were read/written)
+        - API calls (external services used)
+        - Notifications sent
+        - Scheduled/recurring actions
+        
+        For each task, note:
+        - What was done
+        - Approximate frequency (daily, weekly, on-demand)
+        - Any patterns in timing or triggers
+        
+        Return JSON array: [{ "task": "description", "frequency": "daily|weekly|etc", "count": N, "trigger": "time|event|manual" }]
+    capture: activities
+
+  - name: find-patterns
+    action: evaluate
+    expression: |
+      // Group similar activities and count
+      const patterns = activities
+        .filter(a => a.count >= config.min_occurrences)
+        .sort((a, b) => b.count - a.count);
+      
+      // Identify automation candidates
+      const candidates = patterns.filter(p => 
+        p.frequency !== 'one-time' && 
+        (p.trigger === 'time' || p.trigger === 'schedule')
+      );
+      
+      ({ allPatterns: patterns, automationCandidates: candidates })
+    capture: analysis
+
+  - name: generate-suggestions
+    condition: "config.suggest_automations && analysis.automationCandidates.length > 0"
+    capability: llm-analysis
+    method: generate
+    args:
+      input: "${analysis.automationCandidates}"
+      prompt: |
+        For each of these repetitive tasks, suggest a ClawFlows automation:
+        
+        ${JSON.stringify(analysis.automationCandidates, null, 2)}
+        
+        For each, provide:
+        1. Suggested automation name (kebab-case)
+        2. One-line description
+        3. Recommended schedule
+        4. Required capabilities
+        
+        Be practical - these should be genuinely useful automations.
+    capture: suggestions
+
+  - name: notify-findings
+    condition: "analysis.automationCandidates.length > 0"
+    action: notify
+    message: |
+      🔄 **Repeat Task Analysis**
+      
+      Found **${analysis.automationCandidates.length}** patterns that could be automated:
+      
+      ${analysis.automationCandidates.slice(0, 5).map((p, i) => 
+        `${i + 1}. **${p.task}** (${p.count}x in ${config.days_to_analyze} days)\n   Frequency: ${p.frequency} | Trigger: ${p.trigger}`
+      ).join('\n\n')}
+      
+      ${config.suggest_automations ? '\n**💡 Automation Suggestions:**\n' + suggestions : ''}
+      
+      ---
+      _Analyzed ${logFiles.length} days of activity logs_
+
+  - name: no-patterns
+    condition: "analysis.automationCandidates.length === 0"
+    action: log
+    message: "No significant repeat patterns found in the last ${config.days_to_analyze} days."

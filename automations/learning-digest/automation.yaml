@@ -1,0 +1,79 @@
+name: learning-digest
+description: Curate educational content based on your interests and learning goals
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: web-search
+  - capability: llm-analysis
+  - capability: notifications
+
+trigger:
+  schedule: "0 7 * * 1,4"  # Monday and Thursday mornings
+
+config:
+  topics:
+    description: "Topics you want to learn about"
+    default: ["AI/ML", "system design", "leadership"]
+  
+  sources:
+    description: "Content sources to search"
+    default: ["hackernews", "youtube", "arxiv", "blogs"]
+  
+  max_items:
+    description: "Maximum items per digest"
+    default: 10
+  
+  difficulty:
+    description: "Content difficulty: beginner, intermediate, advanced"
+    default: "intermediate"
+
+steps:
+  - name: search-content
+    capability: web-search
+    method: search
+    args:
+      queries: "${config.topics.map(t => `${t} tutorial OR guide OR explained`)}"
+      freshness: "7d"
+      count: 20
+    capture: searchResults
+
+  - name: curate-content
+    capability: llm-analysis
+    method: filter
+    args:
+      items: "${searchResults}"
+      criteria: |
+        Select high-quality educational content:
+        - Prefer tutorials, guides, deep-dives over news
+        - Match difficulty level: ${config.difficulty}
+        - Favor practical, actionable content
+        - Diverse formats (articles, videos, papers)
+        - Recent and relevant
+      limit: "${config.max_items}"
+    capture: curated
+
+  - name: format-digest
+    capability: llm-analysis
+    method: summarize
+    args:
+      items: "${curated}"
+      prompt: |
+        Format as a learning digest:
+        - Group by topic
+        - Add estimated reading/watching time
+        - One-sentence description of what you'll learn
+        - Difficulty indicator (🟢 beginner, 🟡 intermediate, 🔴 advanced)
+    capture: formatted
+
+  - name: notify-digest
+    action: notify
+    message: |
+      📚 **Learning Digest**
+      _${config.topics.join(', ')}_
+      
+      ${formatted}
+      
+      ---
+      _${curated.length} resources from ${config.sources.length} sources_
+      _Tip: Bookmark what interests you, schedule time to learn_

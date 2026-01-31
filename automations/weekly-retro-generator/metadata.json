@@ -1,0 +1,14 @@
+{
+  "name": "weekly-retro-generator",
+  "displayName": "Weekly Retro Generator",
+  "description": "Generate a weekly retrospective from your agent's activity and accomplishments",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "license": "MIT",
+  "categories": ["productivity", "reflection", "weekly"],
+  "tags": ["retro", "retrospective", "weekly", "accomplishments", "planning"],
+  "capabilities": ["file-system", "calendar", "llm-analysis", "notifications"],
+  "schedule": "0 17 * * 5",
+  "createdAt": "2026-01-31"
+}
