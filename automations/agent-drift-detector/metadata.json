@@ -1,0 +1,27 @@
+{
+  "name": "agent-drift-detector",
+  "displayName": "Agent Drift Detector",
+  "description": "Compare your agent's recent behavior against their original SOUL.md to detect personality and goal drift",
+  "version": "1.0.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "repository": "https://github.com/Cluka-399/clawflows-registry",
+  "license": "MIT",
+  "categories": ["agent-management", "alignment", "monitoring"],
+  "tags": ["drift", "soul", "identity", "alignment", "personality", "weekly-check"],
+  "capabilities": [
+    "file-system",
+    "llm-analysis",
+    "notifications"
+  ],
+  "features": [
+    "Weekly behavioral comparison",
+    "LLM-powered drift analysis",
+    "Configurable thresholds",
+    "Historical reports"
+  ],
+  "schedule": "0 9 * * 0",
+  "estimatedRuntime": "60s",
+  "createdAt": "2026-01-31",
+  "updatedAt": "2026-01-31"
+}
