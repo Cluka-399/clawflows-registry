@@ -826,15 +826,16 @@
         <img src="./hero.png" alt="ClawFlows mascot" class="hero-mascot">
         <h1>Claw<span>Flows</span></h1>
         <p class="hero-tagline">Multi-skill automations for AI agents. Combine capabilities like charts, databases, and alerts into powerful workflows.</p>
+        <p class="hero-count" id="hero-count" style="color: var(--accent); font-weight: 600; font-size: 1.2rem; margin-bottom: 1rem;">🚀 36+ automations and growing!</p>
         
         <div class="hero-cta">
           <a href="#automations" class="btn btn-primary">Browse Automations</a>
           <a href="#contribute" class="btn btn-secondary">Add Your Own</a>
         </div>
         
-        <div class="install-box" onclick="navigator.clipboard.writeText('npm i -g clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
-          <code>npm i -g clawflows</code>
-          <span class="copy-hint">Click to copy</span>
+        <div class="install-box" onclick="navigator.clipboard.writeText('install clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
+          <code>install clawflows</code>
+          <span class="copy-hint">Tell your OpenClaw bot</span>
         </div>
       </div>
     </section>
@@ -843,7 +844,7 @@
       <div class="container">
         <div class="section-header">
           <h2>🚀 Automations</h2>
-          <a href="./automations/" class="view-all">View all →</a>
+          <a href="./automations/" class="view-all">View all <span id="automation-count">(36)</span> →</a>
         </div>
         
         <div id="automations-grid" class="automations-grid">
@@ -1009,7 +1010,12 @@
           </a>
         `).join('');
         
-        mixpanel.track('page_loaded', { automation_count: automations.length });
+        // Update counts dynamically
+        const count = automations.length;
+        document.getElementById('automation-count').textContent = `(${count})`;
+        document.getElementById('hero-count').textContent = `🚀 ${count}+ automations and growing!`;
+        
+        mixpanel.track('page_loaded', { automation_count: count });
         
       } catch (err) {
         container.innerHTML = '<p class="loading">Could not load automations. <a href="https://github.com/Cluka-399/clawflows-registry/tree/main/automations">View on GitHub</a></p>';
