@@ -2,7 +2,22 @@
   "name": "Review Farm Defense System",
   "slug": "review-defense",
   "category": "marketing",
-  "tags": ["reviews", "reputation", "customer-success", "alerts"],
+  "tags": [
+    "reviews",
+    "reputation",
+    "customer-success",
+    "alerts"
+  ],
   "difficulty": "beginner",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
+  "version": "1.0.0",
+  "requires": [
+    "reviews",
+    "reputation",
+    "customer-success"
+  ]
 }

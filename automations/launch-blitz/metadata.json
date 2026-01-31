@@ -2,8 +2,24 @@
   "name": "100-Platform Launch Blitz",
   "slug": "launch-blitz",
   "category": "marketing",
-  "tags": ["launch", "directories", "product-hunt", "visibility", "marketing"],
+  "tags": [
+    "launch",
+    "directories",
+    "product-hunt",
+    "visibility",
+    "marketing"
+  ],
   "difficulty": "intermediate",
   "estimated_setup_time": "15 minutes",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
+  "version": "1.0.0",
+  "requires": [
+    "launch",
+    "directories",
+    "product-hunt"
+  ]
 }

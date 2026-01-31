@@ -2,7 +2,22 @@
   "name": "Support-to-Content Pipeline",
   "slug": "support-to-content",
   "category": "content",
-  "tags": ["support", "content", "documentation", "customer-success"],
+  "tags": [
+    "support",
+    "content",
+    "documentation",
+    "customer-success"
+  ],
   "difficulty": "beginner",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
+  "version": "1.0.0",
+  "requires": [
+    "support",
+    "content",
+    "documentation"
+  ]
 }

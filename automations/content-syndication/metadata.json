@@ -2,7 +2,22 @@
   "name": "Content Syndication Network",
   "slug": "content-syndication",
   "category": "content",
-  "tags": ["content", "syndication", "cross-posting", "marketing"],
+  "tags": [
+    "content",
+    "syndication",
+    "cross-posting",
+    "marketing"
+  ],
   "difficulty": "intermediate",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.",
+  "version": "1.0.0",
+  "requires": [
+    "content",
+    "syndication",
+    "cross-posting"
+  ]
 }

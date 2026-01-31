@@ -1,6 +1,9 @@
 {
   "name": "Hacker News Timing Bot",
   "slug": "hn-timing-bot",
+  "description": "Monitor HN activity patterns, detect optimal posting conditions, alert when it is time to submit.",
+  "version": "1.0.0",
+  "requires": ["web_fetch", "messaging"],
   "category": "marketing",
   "tags": ["hacker-news", "timing", "launch", "content"],
   "difficulty": "beginner",

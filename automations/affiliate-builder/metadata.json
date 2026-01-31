@@ -2,7 +2,22 @@
   "name": "Affiliate Army Builder",
   "slug": "affiliate-builder",
   "category": "marketing",
-  "tags": ["affiliates", "partnerships", "content-creators", "revenue"],
+  "tags": [
+    "affiliates",
+    "partnerships",
+    "content-creators",
+    "revenue"
+  ],
   "difficulty": "intermediate",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.",
+  "version": "1.0.0",
+  "requires": [
+    "affiliates",
+    "partnerships",
+    "content-creators"
+  ]
 }

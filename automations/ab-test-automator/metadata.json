@@ -2,7 +2,22 @@
   "name": "A/B Test Automator",
   "slug": "ab-test-automator",
   "category": "optimization",
-  "tags": ["ab-testing", "conversion", "optimization", "landing-pages"],
+  "tags": [
+    "ab-testing",
+    "conversion",
+    "optimization",
+    "landing-pages"
+  ],
   "difficulty": "advanced",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
+  "version": "1.0.0",
+  "requires": [
+    "ab-testing",
+    "conversion",
+    "optimization"
+  ]
 }

@@ -2,7 +2,22 @@
   "name": "Pricing Page Intelligence",
   "slug": "pricing-intelligence",
   "category": "competitive-intelligence",
-  "tags": ["pricing", "competitors", "monitoring", "strategy"],
+  "tags": [
+    "pricing",
+    "competitors",
+    "monitoring",
+    "strategy"
+  ],
   "difficulty": "beginner",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.",
+  "version": "1.0.0",
+  "requires": [
+    "pricing",
+    "competitors",
+    "monitoring"
+  ]
 }

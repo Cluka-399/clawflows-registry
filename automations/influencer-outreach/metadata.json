@@ -2,7 +2,22 @@
   "name": "Micro-Influencer Outreach Machine",
   "slug": "influencer-outreach",
   "category": "marketing",
-  "tags": ["influencer", "outreach", "social", "partnerships"],
+  "tags": [
+    "influencer",
+    "outreach",
+    "social",
+    "partnerships"
+  ],
   "difficulty": "intermediate",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
+  "version": "1.0.0",
+  "requires": [
+    "influencer",
+    "outreach",
+    "social"
+  ]
 }

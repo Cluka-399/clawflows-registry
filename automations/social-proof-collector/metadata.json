@@ -2,7 +2,13 @@
   "name": "Social Proof Collector",
   "slug": "social-proof-collector",
   "category": "marketing",
-  "tags": ["testimonials", "social-proof", "monitoring", "marketing", "content"],
+  "tags": [
+    "testimonials",
+    "social-proof",
+    "monitoring",
+    "marketing",
+    "content"
+  ],
   "difficulty": "beginner",
   "estimated_setup_time": "3 minutes",
   "credit": {
@@ -15,5 +21,12 @@
     "Never miss positive mentions",
     "Organize social proof by page type"
   ],
-  "example_output": "📣 **3 new testimonials found!**\n\nBest quote:\n> \"OpenClaw literally changed how I work. It's like having a second brain.\"\n— @developer_jane"
+  "example_output": "📣 **3 new testimonials found!**\n\nBest quote:\n> \"OpenClaw literally changed how I work. It's like having a second brain.\"\n— @developer_jane",
+  "description": "Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.",
+  "version": "1.0.0",
+  "requires": [
+    "testimonials",
+    "social-proof",
+    "monitoring"
+  ]
 }

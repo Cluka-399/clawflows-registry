@@ -2,7 +2,22 @@
   "name": "Newsletter Growth Engine",
   "slug": "newsletter-growth",
   "category": "content",
-  "tags": ["newsletter", "growth", "cross-promotion", "churn"],
+  "tags": [
+    "newsletter",
+    "growth",
+    "cross-promotion",
+    "churn"
+  ],
   "difficulty": "beginner",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
+  "version": "1.0.0",
+  "requires": [
+    "newsletter",
+    "growth",
+    "cross-promotion"
+  ]
 }

@@ -2,7 +2,23 @@
   "name": "PR Newsjacking Bot",
   "slug": "pr-newsjacking",
   "category": "pr",
-  "tags": ["pr", "news", "journalists", "media", "thought-leadership"],
+  "tags": [
+    "pr",
+    "news",
+    "journalists",
+    "media",
+    "thought-leadership"
+  ],
   "difficulty": "intermediate",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
+  "version": "1.0.0",
+  "requires": [
+    "pr",
+    "news",
+    "journalists"
+  ]
 }

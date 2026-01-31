@@ -1,6 +1,9 @@
 {
   "name": "SEO Gap Assassin",
   "slug": "seo-gap-assassin",
+  "description": "Analyze competitors, find keywords they rank for that you do not, generate content briefs for the top gaps.",
+  "version": "1.0.0",
+  "requires": ["web_search", "web_fetch", "file_system"],
   "category": "seo",
   "tags": ["seo", "keywords", "content-strategy", "competitive-analysis"],
   "difficulty": "intermediate",

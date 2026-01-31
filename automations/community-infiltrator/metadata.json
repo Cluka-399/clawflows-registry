@@ -2,7 +2,23 @@
   "name": "Community Infiltrator",
   "slug": "community-infiltrator",
   "category": "marketing",
-  "tags": ["community", "slack", "discord", "monitoring", "social-selling"],
+  "tags": [
+    "community",
+    "slack",
+    "discord",
+    "monitoring",
+    "social-selling"
+  ],
   "difficulty": "intermediate",
-  "credit": {"inspired_by": "@alex_prompter", "source": "https://x.com/alex_prompter/status/2017044857764688132"}
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "description": "Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.",
+  "version": "1.0.0",
+  "requires": [
+    "community",
+    "slack",
+    "discord"
+  ]
 }
