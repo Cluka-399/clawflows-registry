@@ -1,49 +1,16 @@
 {
-  "generated": "2026-01-31T16:01:01.406Z",
-  "version": "1.0.0",
-  "count": 24,
   "automations": [
-    {
-      "name": "100-Platform Launch Blitz",
-      "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
-      "author": "unknown",
-      "version": "1.0.0",
-      "requires": [
-        "launch",
-        "directories",
-        "product-hunt"
-      ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "launch",
-        "directories",
-        "product-hunt",
-        "visibility",
-        "marketing"
-      ],
-      "created": "2026-01-31",
-      "updated": "2026-01-31",
-      "url": "/automations/launch-blitz/"
-    },
     {
       "name": "A/B Test Automator",
       "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "ab-testing",
-        "conversion",
-        "optimization"
+        "web_fetch",
+        "file_system",
+        "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "ab-testing",
-        "conversion",
-        "optimization",
-        "landing-pages"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/ab-test-automator/"
@@ -51,89 +18,104 @@
     {
       "name": "Affiliate Army Builder",
       "description": "Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "affiliates",
-        "partnerships",
-        "content-creators"
+        "web_search",
+        "web_fetch",
+        "email"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "affiliates",
-        "partnerships",
-        "content-creators",
-        "revenue"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/affiliate-builder/"
     },
     {
-      "name": "Backlink Hunter",
-      "description": "Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.",
-      "author": "unknown",
+      "name": "agent-drift-detector",
+      "description": "Compare your agent's recent behavior against their original SOUL.md to detect personality/goal drift",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "seo",
-        "backlinks",
-        "outreach"
+        "capability: file-system",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "seo",
-        "backlinks",
-        "outreach",
-        "link-building"
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/agent-drift-detector/"
+    },
+    {
+      "name": "Full-Funnel Attribution Detective",
+      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "web_fetch",
+        "file_system"
       ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/attribution-detective/"
+    },
+    {
+      "name": "Backlink Hunter",
+      "description": "Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "web_search",
+        "web_fetch",
+        "email"
+      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/backlink-hunter/"
     },
     {
       "name": "bitcoin-tracker",
-      "description": "Track Bitcoin prediction markets and alert on significant price moves",
+      "description": "Track Bitcoin prediction markets and alert on significant moves",
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "prediction-markets",
-        "chart-generation",
-        "social-search"
+        "capability: prediction-markets",
+        "capability: chart-generation",
+        "capability: social-search"
       ],
-      "trigger": "schedule",
-      "schedule": "0 */4 * * *",
-      "tags": [
-        "bitcoin",
-        "crypto",
-        "polymarket",
-        "prediction-markets",
-        "alerts",
-        "charts"
-      ],
-      "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
       "url": "/automations/bitcoin-tracker/"
+    },
+    {
+      "name": "bookmark-organizer",
+      "description": "Periodically organize and summarize your saved bookmarks/links",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: file-system",
+        "capability: web-fetch",
+        "capability: llm-analysis",
+        "capability: notifications"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/bookmark-organizer/"
     },
     {
       "name": "Cold Email Personalizer",
       "description": "Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "email",
-        "outreach",
-        "sales"
+        "web_search",
+        "web_fetch",
+        "email"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "email",
-        "outreach",
-        "sales",
-        "personalization"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/cold-email-personalizer/"
@@ -141,22 +123,13 @@
     {
       "name": "Community Infiltrator",
       "description": "Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "community",
-        "slack",
-        "discord"
+        "browser",
+        "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "community",
-        "slack",
-        "discord",
-        "monitoring",
-        "social-selling"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/community-infiltrator/"
@@ -164,21 +137,14 @@
     {
       "name": "Competitor Shadow",
       "description": "Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "competitive-intelligence",
-        "monitoring",
-        "alerts"
+        "browser",
+        "web_fetch",
+        "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "competitive-intelligence",
-        "monitoring",
-        "alerts",
-        "marketing"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/competitor-shadow/"
@@ -186,111 +152,167 @@
     {
       "name": "Content Syndication Network",
       "description": "Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "content",
-        "syndication",
-        "cross-posting"
+        "browser",
+        "web_fetch",
+        "file_system"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "content",
-        "syndication",
-        "cross-posting",
-        "marketing"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/content-syndication/"
     },
     {
-      "name": "Event Hijacker",
-      "description": "Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.",
-      "author": "unknown",
+      "name": "daily-news-digest",
+      "description": "Aggregate and summarize news from multiple sources into a morning briefing",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "events",
-        "cfp",
-        "speaking"
+        "capability: web-search",
+        "capability: rss-reader",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "events",
-        "cfp",
-        "speaking",
-        "networking"
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/daily-news-digest/"
+    },
+    {
+      "name": "Event Hijacker",
+      "description": "Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "web_search",
+        "browser",
+        "file_system"
       ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/event-hijacker/"
     },
     {
-      "name": "Full-Funnel Attribution Detective",
-      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
-      "author": "unknown",
+      "name": "focus-time-report",
+      "description": "Track and report on your deep work vs fragmented time",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "attribution",
-        "analytics",
-        "customer-journey"
+        "capability: calendar",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "attribution",
-        "analytics",
-        "customer-journey",
-        "data"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
-      "url": "/automations/attribution-detective/"
+      "url": "/automations/focus-time-report/"
+    },
+    {
+      "name": "github-stale-prs",
+      "description": "Alert on pull requests that have been open too long or need attention",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: github",
+        "capability: notifications"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/github-stale-prs/"
     },
     {
       "name": "Hacker News Timing Bot",
-      "description": "Monitor HN activity patterns, detect optimal posting conditions, alert when it is time to submit.",
-      "author": "unknown",
+      "description": "Monitor HN activity patterns, detect optimal posting conditions, alert when it's time to submit.",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
         "web_fetch",
         "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "hacker-news",
-        "timing",
-        "launch",
-        "content"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/hn-timing-bot/"
     },
     {
-      "name": "Micro-Influencer Outreach Machine",
-      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
-      "author": "unknown",
+      "name": "inbox-zero-helper",
+      "description": "Categorize, summarize, and draft responses for your email inbox",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "influencer",
-        "outreach",
-        "social"
+        "capability: email",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "influencer",
-        "outreach",
-        "social",
-        "partnerships"
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/inbox-zero-helper/"
+    },
+    {
+      "name": "Micro-Influencer Outreach Machine",
+      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "web_search",
+        "browser",
+        "email"
       ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/influencer-outreach/"
+    },
+    {
+      "name": "100-Platform Launch Blitz",
+      "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "browser",
+        "file_system",
+        "messaging"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/launch-blitz/"
+    },
+    {
+      "name": "learning-digest",
+      "description": "Curate educational content based on your interests and learning goals",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: web-search",
+        "capability: llm-analysis",
+        "capability: notifications"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/learning-digest/"
+    },
+    {
+      "name": "meeting-prep",
+      "description": "Prepare briefings for upcoming meetings with context and agenda",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: calendar",
+        "capability: email",
+        "capability: llm-analysis",
+        "capability: notifications"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/meeting-prep/"
     },
     {
       "name": "molt-price-alert",
@@ -299,66 +321,40 @@
       "version": "1.0.0",
       "requires": [
         "web_fetch",
-        "chart-generation",
+        "chart-image",
         "message"
       ],
-      "trigger": "schedule",
-      "schedule": "0 */3 * * *",
-      "tags": [
-        "molt",
-        "moltbook",
-        "crypto",
-        "price-alert",
-        "charts",
-        "defi",
-        "base"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/molt-price-alert/"
     },
     {
       "name": "morning-brief",
-      "description": "Daily morning briefing with calendar, weather, and optional audio",
+      "description": "Daily morning briefing with calendar, weather, and news summary",
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "calendar",
-        "weather",
-        "tts"
+        "capability: calendar",
+        "capability: weather",
+        "capability: tts"
       ],
-      "trigger": "schedule",
-      "schedule": "30 7 * * *",
-      "tags": [
-        "daily",
-        "briefing",
-        "calendar",
-        "weather",
-        "tts",
-        "productivity"
-      ],
-      "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
       "url": "/automations/morning-brief/"
     },
     {
       "name": "Newsletter Growth Engine",
       "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "newsletter",
-        "growth",
-        "cross-promotion"
+        "web_search",
+        "web_fetch",
+        "email"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "newsletter",
-        "growth",
-        "cross-promotion",
-        "churn"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/newsletter-growth/"
@@ -366,21 +362,14 @@
     {
       "name": "Partnership Scout",
       "description": "Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "partnerships",
-        "co-marketing",
-        "b2b"
+        "web_search",
+        "web_fetch",
+        "email"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "partnerships",
-        "co-marketing",
-        "b2b",
-        "outreach"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/partnership-scout/"
@@ -388,22 +377,15 @@
     {
       "name": "PR Newsjacking Bot",
       "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "pr",
-        "news",
-        "journalists"
+        "web_search",
+        "web_fetch",
+        "email",
+        "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "pr",
-        "news",
-        "journalists",
-        "media",
-        "thought-leadership"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/pr-newsjacking/"
@@ -411,65 +393,59 @@
     {
       "name": "Pricing Page Intelligence",
       "description": "Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "pricing",
-        "competitors",
-        "monitoring"
+        "web_fetch",
+        "messaging",
+        "file_system"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "pricing",
-        "competitors",
-        "monitoring",
-        "strategy"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/pricing-intelligence/"
     },
     {
-      "name": "Review Farm Defense System",
-      "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
-      "author": "unknown",
+      "name": "repeat-task-detector",
+      "description": "Analyze your agent's activity logs to find repetitive patterns that could be automated",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "reviews",
-        "reputation",
-        "customer-success"
+        "capability: file-system",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "reviews",
-        "reputation",
-        "customer-success",
-        "alerts"
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/repeat-task-detector/"
+    },
+    {
+      "name": "Review Farm Defense System",
+      "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "web_fetch",
+        "messaging",
+        "file_system"
       ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/review-defense/"
     },
     {
       "name": "SEO Gap Assassin",
-      "description": "Analyze competitors, find keywords they rank for that you do not, generate content briefs for the top gaps.",
-      "author": "unknown",
+      "description": "Analyze competitors, find keywords they rank for that you don't, generate content briefs for the top gaps.",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
         "web_search",
         "web_fetch",
         "file_system"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "seo",
-        "keywords",
-        "content-strategy",
-        "competitive-analysis"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/seo-gap-assassin/"
@@ -477,47 +453,62 @@
     {
       "name": "Social Proof Collector",
       "description": "Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.",
-      "author": "unknown",
+      "author": "Cluka (inspired by @alex_prompter)",
       "version": "1.0.0",
       "requires": [
-        "testimonials",
-        "social-proof",
-        "monitoring"
+        "web_search",
+        "web_fetch",
+        "file_system"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "testimonials",
-        "social-proof",
-        "monitoring",
-        "marketing",
-        "content"
-      ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/social-proof-collector/"
     },
     {
-      "name": "Support-to-Content Pipeline",
-      "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
-      "author": "unknown",
+      "name": "standup-notes",
+      "description": "Auto-generate daily standup notes from yesterday's activity",
+      "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "support",
-        "content",
-        "documentation"
+        "capability: file-system",
+        "capability: llm-analysis",
+        "capability: notifications"
       ],
-      "trigger": "manual",
-      "schedule": null,
-      "tags": [
-        "support",
-        "content",
-        "documentation",
-        "customer-success"
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/standup-notes/"
+    },
+    {
+      "name": "Support-to-Content Pipeline",
+      "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
+      "author": "Cluka (inspired by @alex_prompter)",
+      "version": "1.0.0",
+      "requires": [
+        "file_system",
+        "messaging"
       ],
+      "tags": [],
       "created": "2026-01-31",
       "updated": "2026-01-31",
       "url": "/automations/support-to-content/"
+    },
+    {
+      "name": "weekly-retro-generator",
+      "description": "Generate a weekly retrospective from your agent's activity and accomplishments",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: file-system",
+        "capability: calendar",
+        "capability: llm-analysis",
+        "capability: notifications"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/weekly-retro-generator/"
     },
     {
       "name": "youtube-competitor-tracker",
@@ -525,23 +516,15 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "youtube-data",
-        "database",
-        "chart-generation"
+        "capability: youtube-data",
+        "capability: database",
+        "capability: chart-generation"
       ],
-      "trigger": "schedule",
-      "schedule": "0 9 * * *",
-      "tags": [
-        "youtube",
-        "competitor",
-        "analytics",
-        "charts",
-        "sqlite",
-        "weekly-report"
-      ],
-      "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
       "url": "/automations/youtube-competitor-tracker/"
     }
-  ]
+  ],
+  "count": 35
 }
