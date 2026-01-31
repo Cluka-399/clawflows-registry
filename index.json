@@ -1,8 +1,97 @@
 {
-  "generated": "2026-01-31T09:06:35.308Z",
+  "generated": "2026-01-31T16:01:01.406Z",
   "version": "1.0.0",
-  "count": 4,
+  "count": 24,
   "automations": [
+    {
+      "name": "100-Platform Launch Blitz",
+      "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "launch",
+        "directories",
+        "product-hunt"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "launch",
+        "directories",
+        "product-hunt",
+        "visibility",
+        "marketing"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/launch-blitz/"
+    },
+    {
+      "name": "A/B Test Automator",
+      "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "ab-testing",
+        "conversion",
+        "optimization"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "ab-testing",
+        "conversion",
+        "optimization",
+        "landing-pages"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/ab-test-automator/"
+    },
+    {
+      "name": "Affiliate Army Builder",
+      "description": "Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "affiliates",
+        "partnerships",
+        "content-creators"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "affiliates",
+        "partnerships",
+        "content-creators",
+        "revenue"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/affiliate-builder/"
+    },
+    {
+      "name": "Backlink Hunter",
+      "description": "Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "seo",
+        "backlinks",
+        "outreach"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "seo",
+        "backlinks",
+        "outreach",
+        "link-building"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/backlink-hunter/"
+    },
     {
       "name": "bitcoin-tracker",
       "description": "Track Bitcoin prediction markets and alert on significant price moves",
@@ -26,6 +115,182 @@
       "created": "2026-01-30",
       "updated": "2026-01-30",
       "url": "/automations/bitcoin-tracker/"
+    },
+    {
+      "name": "Cold Email Personalizer",
+      "description": "Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "email",
+        "outreach",
+        "sales"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "email",
+        "outreach",
+        "sales",
+        "personalization"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/cold-email-personalizer/"
+    },
+    {
+      "name": "Community Infiltrator",
+      "description": "Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "community",
+        "slack",
+        "discord"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "community",
+        "slack",
+        "discord",
+        "monitoring",
+        "social-selling"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/community-infiltrator/"
+    },
+    {
+      "name": "Competitor Shadow",
+      "description": "Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "competitive-intelligence",
+        "monitoring",
+        "alerts"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "competitive-intelligence",
+        "monitoring",
+        "alerts",
+        "marketing"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/competitor-shadow/"
+    },
+    {
+      "name": "Content Syndication Network",
+      "description": "Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "content",
+        "syndication",
+        "cross-posting"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "content",
+        "syndication",
+        "cross-posting",
+        "marketing"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/content-syndication/"
+    },
+    {
+      "name": "Event Hijacker",
+      "description": "Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "events",
+        "cfp",
+        "speaking"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "events",
+        "cfp",
+        "speaking",
+        "networking"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/event-hijacker/"
+    },
+    {
+      "name": "Full-Funnel Attribution Detective",
+      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "attribution",
+        "analytics",
+        "customer-journey"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "attribution",
+        "analytics",
+        "customer-journey",
+        "data"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/attribution-detective/"
+    },
+    {
+      "name": "Hacker News Timing Bot",
+      "description": "Monitor HN activity patterns, detect optimal posting conditions, alert when it is time to submit.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "web_fetch",
+        "messaging"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "hacker-news",
+        "timing",
+        "launch",
+        "content"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/hn-timing-bot/"
+    },
+    {
+      "name": "Micro-Influencer Outreach Machine",
+      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "influencer",
+        "outreach",
+        "social"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "influencer",
+        "outreach",
+        "social",
+        "partnerships"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/influencer-outreach/"
     },
     {
       "name": "molt-price-alert",
@@ -75,6 +340,184 @@
       "created": "2026-01-30",
       "updated": "2026-01-30",
       "url": "/automations/morning-brief/"
+    },
+    {
+      "name": "Newsletter Growth Engine",
+      "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "newsletter",
+        "growth",
+        "cross-promotion"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "newsletter",
+        "growth",
+        "cross-promotion",
+        "churn"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/newsletter-growth/"
+    },
+    {
+      "name": "Partnership Scout",
+      "description": "Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "partnerships",
+        "co-marketing",
+        "b2b"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "partnerships",
+        "co-marketing",
+        "b2b",
+        "outreach"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/partnership-scout/"
+    },
+    {
+      "name": "PR Newsjacking Bot",
+      "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "pr",
+        "news",
+        "journalists"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "pr",
+        "news",
+        "journalists",
+        "media",
+        "thought-leadership"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/pr-newsjacking/"
+    },
+    {
+      "name": "Pricing Page Intelligence",
+      "description": "Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "pricing",
+        "competitors",
+        "monitoring"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "pricing",
+        "competitors",
+        "monitoring",
+        "strategy"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/pricing-intelligence/"
+    },
+    {
+      "name": "Review Farm Defense System",
+      "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "reviews",
+        "reputation",
+        "customer-success"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "reviews",
+        "reputation",
+        "customer-success",
+        "alerts"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/review-defense/"
+    },
+    {
+      "name": "SEO Gap Assassin",
+      "description": "Analyze competitors, find keywords they rank for that you do not, generate content briefs for the top gaps.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "web_search",
+        "web_fetch",
+        "file_system"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "seo",
+        "keywords",
+        "content-strategy",
+        "competitive-analysis"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/seo-gap-assassin/"
+    },
+    {
+      "name": "Social Proof Collector",
+      "description": "Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "testimonials",
+        "social-proof",
+        "monitoring"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "testimonials",
+        "social-proof",
+        "monitoring",
+        "marketing",
+        "content"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/social-proof-collector/"
+    },
+    {
+      "name": "Support-to-Content Pipeline",
+      "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
+      "author": "unknown",
+      "version": "1.0.0",
+      "requires": [
+        "support",
+        "content",
+        "documentation"
+      ],
+      "trigger": "manual",
+      "schedule": null,
+      "tags": [
+        "support",
+        "content",
+        "documentation",
+        "customer-success"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/support-to-content/"
     },
     {
       "name": "youtube-competitor-tracker",
