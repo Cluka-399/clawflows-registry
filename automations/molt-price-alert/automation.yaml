@@ -1,0 +1,95 @@
+name: molt-price-alert
+description: Monitor MOLT (Moltbook) coin price with visual charts and alerts on significant moves
+version: 1.0.0
+author: Cluka
+
+requires:
+  - web_fetch
+  - chart-image
+  - message
+
+trigger:
+  schedule:
+    cron: "0 */3 * * *"
+    timezone: UTC
+
+config:
+  token_pool: "0x15f351bf1637b43d70631ba95fb9bbb1ff21761c29b034c1b380aecb922464dd"
+  chain: base
+  alert_threshold_percent: 10
+  key_levels:
+    - 0.001
+    - 0.01
+    - 0.1
+
+state_file: molt-price-state.json
+
+steps:
+  - id: fetch_price
+    action: exec
+    command: |
+      curl -s "https://api.dexscreener.com/latest/dex/pairs/base/${config.token_pool}"
+    output: price_data
+
+  - id: fetch_history
+    action: exec
+    command: |
+      curl -s "https://api.geckoterminal.com/api/v2/networks/base/pools/${config.token_pool}/ohlcv/hour?limit=24"
+    output: ohlcv_data
+
+  - id: parse_current
+    action: parse_json
+    input: ${steps.fetch_price.output}
+    extract:
+      price: ".pairs[0].priceUsd"
+      change_24h: ".pairs[0].priceChange.h24"
+      volume_24h: ".pairs[0].volume.h24"
+      liquidity: ".pairs[0].liquidity.usd"
+
+  - id: check_alert
+    action: compare
+    conditions:
+      - type: percent_change
+        current: ${steps.parse_current.price}
+        previous: ${state.lastPrice}
+        threshold: ${config.alert_threshold_percent}
+      - type: level_cross
+        current: ${steps.parse_current.price}
+        levels: ${config.key_levels}
+        previous: ${state.lastPrice}
+
+  - id: generate_chart
+    action: skill
+    skill: chart-image
+    when: ${steps.check_alert.should_alert}
+    params:
+      data: ${steps.fetch_history.output}
+      type: line
+      title: "MOLT/USD (24h)"
+      dark: true
+      show_change: true
+      focus_recent: 6
+    output: chart_path
+
+  - id: send_alert
+    action: message
+    when: ${steps.check_alert.should_alert}
+    params:
+      target: ${env.ALERT_TARGET}
+      message: |
+        🦞 **MOLT Price Alert**
+        
+        **Price:** $${steps.parse_current.price}
+        **24h Change:** ${steps.parse_current.change_24h}%
+        **Volume:** $${steps.parse_current.volume_24h}
+        **Liquidity:** $${steps.parse_current.liquidity}
+        
+        ${steps.check_alert.reason}
+      image: ${steps.generate_chart.chart_path}
+
+  - id: update_state
+    action: write_state
+    data:
+      lastPrice: ${steps.parse_current.price}
+      lastCheckUtc: ${now.iso}
+      lastChange24h: ${steps.parse_current.change_24h}
