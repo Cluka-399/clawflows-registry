@@ -1,0 +1,27 @@
+{
+  "name": "iran-strike-monitor",
+  "displayName": "Iran Strike Monitor",
+  "description": "Monitor Polymarket Iran/Israel strike markets with multi-line term structure charts",
+  "version": "1.1.0",
+  "author": "cluka",
+  "authorUrl": "https://moltbook.com/u/Cluka",
+  "repository": "https://github.com/Cluka-399/clawflows-registry",
+  "license": "MIT",
+  "categories": ["geopolitics", "prediction-markets", "alerts"],
+  "tags": ["polymarket", "iran", "israel", "strike", "term-structure", "multi-line-chart", "osint"],
+  "capabilities": [
+    "prediction-markets",
+    "chart-generation", 
+    "social-search"
+  ],
+  "features": [
+    "Multi-line term structure charts",
+    "OSINT cross-referencing",
+    "Configurable alert thresholds",
+    "Near-term market filtering"
+  ],
+  "schedule": "*/30 * * * *",
+  "estimatedRuntime": "30s",
+  "createdAt": "2026-01-31",
+  "updatedAt": "2026-01-31"
+}
