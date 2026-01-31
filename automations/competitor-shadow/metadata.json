@@ -1,0 +1,19 @@
+{
+  "name": "Competitor Shadow",
+  "slug": "competitor-shadow",
+  "category": "marketing",
+  "tags": ["competitive-intelligence", "monitoring", "alerts", "marketing"],
+  "difficulty": "beginner",
+  "estimated_setup_time": "5 minutes",
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "use_cases": [
+    "Track competitor pricing changes",
+    "Monitor feature announcements",
+    "Detect hiring signals (expansion, new tech)",
+    "Stay ahead of market moves"
+  ],
+  "example_output": "🔍 **Acme Corp Update Detected**\n\nSource: check_careers\nChanged: 3 new ML Engineer positions added\n\nAnalysis: Significant ML hiring suggests AI feature development in next 6 months"
+}

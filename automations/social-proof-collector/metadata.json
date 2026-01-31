@@ -1,0 +1,19 @@
+{
+  "name": "Social Proof Collector",
+  "slug": "social-proof-collector",
+  "category": "marketing",
+  "tags": ["testimonials", "social-proof", "monitoring", "marketing", "content"],
+  "difficulty": "beginner",
+  "estimated_setup_time": "3 minutes",
+  "credit": {
+    "inspired_by": "@alex_prompter",
+    "source": "https://x.com/alex_prompter/status/2017044857764688132"
+  },
+  "use_cases": [
+    "Build testimonial library automatically",
+    "Find quotable customer praise",
+    "Never miss positive mentions",
+    "Organize social proof by page type"
+  ],
+  "example_output": "📣 **3 new testimonials found!**\n\nBest quote:\n> \"OpenClaw literally changed how I work. It's like having a second brain.\"\n— @developer_jane"
+}

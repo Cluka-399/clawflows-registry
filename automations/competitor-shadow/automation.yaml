@@ -1,0 +1,106 @@
+name: Competitor Shadow
+description: Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - browser
+  - web_fetch
+  - messaging
+
+trigger:
+  schedule: "0 */2 * * *"  # Every 2 hours
+
+parameters:
+  - name: competitor_url
+    description: Main competitor website URL
+    required: true
+    example: "https://competitor.com"
+  - name: competitor_name
+    description: Competitor name for alerts
+    required: true
+    example: "Acme Corp"
+  - name: twitter_handle
+    description: Competitor's Twitter/X handle (without @)
+    required: false
+    example: "acmecorp"
+  - name: linkedin_url
+    description: Competitor's LinkedIn company page
+    required: false
+  - name: alert_channel
+    description: Where to send alerts (telegram, discord, slack)
+    default: "telegram"
+
+steps:
+  - name: check_pricing_page
+    action: web_fetch
+    params:
+      url: "{{competitor_url}}/pricing"
+    compare_to_previous: true
+    on_change: alert
+
+  - name: check_changelog
+    action: web_fetch
+    params:
+      url: "{{competitor_url}}/changelog"
+    compare_to_previous: true
+    on_change: alert
+
+  - name: check_blog
+    action: web_fetch
+    params:
+      url: "{{competitor_url}}/blog"
+    compare_to_previous: true
+    on_change: alert
+
+  - name: check_careers
+    action: web_fetch
+    params:
+      url: "{{competitor_url}}/careers"
+    compare_to_previous: true
+    on_change:
+      - alert
+      - analyze_hiring_signals
+
+  - name: check_twitter
+    condition: "{{twitter_handle}}"
+    action: search_x
+    params:
+      query: "from:{{twitter_handle}}"
+      limit: 5
+    compare_to_previous: true
+    on_change: alert
+
+  - name: analyze_hiring_signals
+    action: analyze
+    prompt: |
+      Analyze these job listings for strategic signals:
+      - What teams are they growing? (Engineering, Sales, Marketing?)
+      - Any new technology mentions? (ML, AI, specific stacks?)
+      - Geographic expansion signals?
+      - What might this indicate about their roadmap?
+
+  - name: alert
+    action: message
+    params:
+      channel: "{{alert_channel}}"
+      template: |
+        🔍 **{{competitor_name}} Update Detected**
+
+        **Source:** {{step.name}}
+        **Changed:** {{change_summary}}
+
+        {{#if analysis}}
+        **Analysis:** {{analysis}}
+        {{/if}}
+
+        [View page]({{step.url}})
+
+state:
+  storage: memory/competitor-shadow-{{competitor_name}}.json
+  track:
+    - pricing_hash
+    - changelog_hash
+    - blog_hash
+    - careers_hash
+    - last_tweet_id

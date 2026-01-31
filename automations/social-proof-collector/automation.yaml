@@ -1,0 +1,127 @@
+name: Social Proof Collector
+description: Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.
+version: 1.0.0
+author: Cluka (inspired by @alex_prompter)
+
+requires:
+  - web_search
+  - web_fetch
+  - file_system
+
+trigger:
+  schedule: "0 9 * * *"  # Daily at 9am
+
+parameters:
+  - name: brand_name
+    description: Your brand/product name to search for
+    required: true
+    example: "OpenClaw"
+  - name: brand_aliases
+    description: Alternative names or common misspellings
+    required: false
+    example: ["Openclaw", "Open Claw"]
+  - name: exclude_terms
+    description: Terms to exclude (reduce false positives)
+    required: false
+    example: ["-job", "-hiring"]
+  - name: output_file
+    description: Where to save collected testimonials
+    default: "memory/social-proof.md"
+
+steps:
+  - name: search_twitter
+    action: search_x
+    params:
+      query: "{{brand_name}} (love OR amazing OR great OR awesome OR fantastic OR 🔥 OR 💯) -is:retweet"
+      limit: 20
+    extract:
+      - author_name
+      - author_handle
+      - author_title
+      - text
+      - url
+      - engagement
+
+  - name: search_reddit
+    action: web_search
+    params:
+      query: "site:reddit.com {{brand_name}}"
+      limit: 10
+    filter: positive_sentiment
+
+  - name: search_hackernews
+    action: web_fetch
+    params:
+      url: "https://hn.algolia.com/api/v1/search?query={{brand_name}}&tags=comment"
+    filter: positive_sentiment
+
+  - name: search_linkedin
+    action: web_search
+    params:
+      query: "site:linkedin.com {{brand_name}} recommend"
+      limit: 10
+
+  - name: analyze_sentiment
+    action: analyze
+    prompt: |
+      For each mention, classify as:
+      - STRONG_POSITIVE: Enthusiastic endorsement, would work as testimonial
+      - POSITIVE: Generally favorable but not quotable
+      - NEUTRAL: Just a mention
+      - NEGATIVE: Complaint or criticism (flag for review)
+
+      Extract the best quote from STRONG_POSITIVE mentions.
+
+  - name: format_testimonials
+    action: transform
+    template: |
+      ## New Social Proof Found ({{date}})
+
+      {{#each strong_positive}}
+      ### From {{author_name}} (@{{author_handle}})
+      {{#if author_title}}*{{author_title}}*{{/if}}
+
+      > "{{quote}}"
+
+      - **Source:** {{platform}}
+      - **Link:** {{url}}
+      - **Engagement:** {{engagement}}
+      - **Best for:** {{suggested_page}}
+
+      ---
+      {{/each}}
+
+  - name: suggest_placement
+    action: analyze
+    prompt: |
+      For each testimonial, suggest where it would work best:
+      - Homepage: General enthusiasm, broad appeal
+      - Pricing page: Mentions value, ROI, worth the cost
+      - Feature page: Praises specific feature
+      - Comparison page: Mentions switching from competitor
+
+  - name: save_to_library
+    action: file_append
+    params:
+      path: "{{output_file}}"
+      content: "{{format_testimonials.output}}"
+
+  - name: alert_new_finds
+    condition: "{{strong_positive.length > 0}}"
+    action: message
+    params:
+      template: |
+        📣 **{{strong_positive.length}} new testimonials found!**
+
+        Best quote:
+        > "{{strong_positive[0].quote}}"
+        — {{strong_positive[0].author_name}}
+
+        Full list saved to {{output_file}}
+
+state:
+  storage: memory/social-proof-state.json
+  track:
+    - seen_urls
+    - total_collected
+    - last_run
