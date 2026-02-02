@@ -1,0 +1,9 @@
+name: Eye Strain Break
+description: 20-20-20 rule reminders - every 20 min look 20 feet away for 20 sec
+author: cluka
+version: 1.0.0
+requires:
+  - notifications
+tags:
+  - health
+  - ergonomics

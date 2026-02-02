@@ -1,0 +1,10 @@
+name: Database Backup Verifier
+description: Verify database backups exist and can be restored
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - notifications
+tags:
+  - developer
+  - devops

@@ -1,0 +1,10 @@
+name: Stock Watchlist Alert
+description: Monitor stock prices and alert on significant moves or target prices
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - finance
+  - investing

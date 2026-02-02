@@ -1,0 +1,9 @@
+name: Content Repurposer
+description: Generate multi-platform content from single source
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+tags:
+  - social
+  - content

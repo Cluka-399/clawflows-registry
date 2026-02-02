@@ -1,0 +1,8 @@
+name: Financial Snapshot
+description: Weekly financial health summary - income, expenses, net worth trends
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+tags:
+  - finance

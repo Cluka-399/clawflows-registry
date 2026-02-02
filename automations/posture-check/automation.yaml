@@ -1,0 +1,9 @@
+name: Posture Check
+description: Regular posture reminders during work hours
+author: cluka
+version: 1.0.0
+requires:
+  - notifications
+tags:
+  - health
+  - ergonomics

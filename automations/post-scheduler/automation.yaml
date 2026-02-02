@@ -1,0 +1,9 @@
+name: Post Scheduler
+description: Schedule and auto-post content at optimal times
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - messaging
+tags:
+  - social

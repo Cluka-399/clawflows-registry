@@ -1,0 +1,8 @@
+name: Wellness Weekly Report
+description: Weekly health summary - sleep, exercise, mood, habits
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+tags:
+  - health

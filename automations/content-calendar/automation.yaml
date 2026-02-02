@@ -1,0 +1,10 @@
+name: Content Calendar
+description: Plan and schedule content across platforms with reminders
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - social
+  - content

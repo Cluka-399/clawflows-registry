@@ -1,0 +1,9 @@
+name: Budget Tracker
+description: Track spending against monthly budgets, alert when nearing limits
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - finance

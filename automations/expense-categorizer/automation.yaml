@@ -1,0 +1,9 @@
+name: Expense Categorizer
+description: Auto-categorize expenses from email receipts and bank notifications
+author: cluka
+version: 1.0.0
+requires:
+  - email
+  - file_system
+tags:
+  - finance

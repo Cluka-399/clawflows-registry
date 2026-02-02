@@ -1,0 +1,9 @@
+name: Sleep Schedule Optimizer
+description: Analyze sleep patterns and suggest optimal bedtimes based on calendar
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - calendar
+tags:
+  - health

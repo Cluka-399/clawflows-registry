@@ -1,0 +1,10 @@
+name: Engagement Analyzer
+description: Analyze which content types get best engagement
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - file_system
+tags:
+  - social
+  - analytics

@@ -1,0 +1,9 @@
+name: Tax Document Organizer
+description: Auto-sort tax-related documents into categorized folders by year
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - email
+tags:
+  - finance

@@ -1,0 +1,9 @@
+name: Savings Goal Tracker
+description: Track progress toward savings goals with milestone celebrations
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - finance

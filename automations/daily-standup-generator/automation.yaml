@@ -1,0 +1,11 @@
+name: Daily Standup Generator
+description: Generate standup update from git commits, completed tasks, and calendar
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - calendar
+  - messaging
+tags:
+  - productivity
+  - developer

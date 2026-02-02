@@ -1,85 +1,10 @@
-name: invoice-reminder
-description: Track unpaid invoices and send payment reminders
+name: Invoice Reminder
+description: Track unpaid invoices and send payment reminders at configurable intervals
 author: cluka
 version: 1.0.0
-
 requires:
-  - capability: storage
-
-trigger:
-  schedule: "0 9 * * 1,4"  # Monday and Thursday 9am
-
-config:
-  invoices_file:
-    description: "JSON file with invoice data"
-    default: "invoices.json"
-  
-  reminder_days:
-    description: "Days overdue before first reminder"
-    default: 7
-  
-  escalation_days:
-    description: "Days overdue before escalation"
-    default: 30
-
-steps:
-  - name: load-invoices
-    capability: storage
-    method: read
-    path: "${config.invoices_file}"
-    capture: invoices_raw
-
-  - name: analyze
-    action: evaluate
-    script: |
-      const invoices = JSON.parse(invoices_raw || '[]');
-      const now = Date.now();
-      const reminderMs = ${config.reminder_days} * 24 * 60 * 60 * 1000;
-      const escalationMs = ${config.escalation_days} * 24 * 60 * 60 * 1000;
-      
-      const overdue = [];
-      const escalated = [];
-      let totalOwed = 0;
-      
-      for (const inv of invoices) {
-        if (inv.paid) continue;
-        
-        const dueDate = new Date(inv.dueDate).getTime();
-        const daysOverdue = Math.floor((now - dueDate) / (24 * 60 * 60 * 1000));
-        
-        if (daysOverdue > 0) {
-          const item = { ...inv, daysOverdue };
-          totalOwed += inv.amount || 0;
-          
-          if (now - dueDate > escalationMs) {
-            escalated.push(item);
-          } else if (now - dueDate > reminderMs) {
-            overdue.push(item);
-          }
-        }
-      }
-      
-      return {
-        overdue,
-        escalated,
-        totalOwed,
-        needsAttention: overdue.length > 0 || escalated.length > 0
-      };
-    capture: result
-
-  - name: notify
-    condition: "result.needsAttention"
-    action: notify
-    message: |
-      💰 Invoice Reminder
-      
-      ${result.escalated.length > 0 ? `🔴 **ESCALATED** (${config.escalation_days}+ days):\n${result.escalated.map(i => `• ${i.client}: $${i.amount} (${i.daysOverdue} days overdue)`).join('\n')}\n\n` : ''}
-      ${result.overdue.length > 0 ? `🟡 **Overdue** (${config.reminder_days}+ days):\n${result.overdue.map(i => `• ${i.client}: $${i.amount} (${i.daysOverdue} days overdue)`).join('\n')}\n\n` : ''}
-      Total outstanding: $${result.totalOwed}
-      
-      Consider sending payment reminders to these clients.
-
+  - file_system
+  - email
 tags:
-  - business
   - finance
-  - invoices
+  - business

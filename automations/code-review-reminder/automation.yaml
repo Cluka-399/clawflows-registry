@@ -1,0 +1,9 @@
+name: Code Review Reminder
+description: Remind about pending code reviews older than threshold
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - developer

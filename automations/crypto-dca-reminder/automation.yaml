@@ -1,0 +1,10 @@
+name: Crypto DCA Reminder
+description: Dollar-cost averaging reminders on your schedule with current prices
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - finance
+  - crypto

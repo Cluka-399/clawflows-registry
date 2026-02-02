@@ -1,0 +1,9 @@
+name: Hydration Reminder
+description: Smart water reminders adjusted for activity and weather
+author: cluka
+version: 1.0.0
+requires:
+  - notifications
+  - web_fetch
+tags:
+  - health

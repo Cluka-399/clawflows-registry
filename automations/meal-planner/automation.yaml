@@ -1,0 +1,9 @@
+name: Meal Planner
+description: Weekly meal planning with shopping list generation
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+tags:
+  - health
+  - planning

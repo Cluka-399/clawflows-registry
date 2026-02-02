@@ -1,0 +1,10 @@
+name: Comment Moderator
+description: Auto-moderate comments based on rules and sentiment
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - messaging
+tags:
+  - social
+  - moderation

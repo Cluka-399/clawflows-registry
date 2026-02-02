@@ -1,0 +1,10 @@
+name: Security Advisory Monitor
+description: Monitor security advisories for your tech stack
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - developer
+  - security

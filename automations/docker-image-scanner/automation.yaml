@@ -1,0 +1,10 @@
+name: Docker Image Scanner
+description: Scan Docker images for vulnerabilities on schedule
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - notifications
+tags:
+  - developer
+  - security

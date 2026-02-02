@@ -1,0 +1,10 @@
+name: Hashtag Researcher
+description: Research trending and relevant hashtags for your niche
+author: cluka
+version: 1.0.0
+requires:
+  - web_search
+  - web_fetch
+tags:
+  - social
+  - marketing

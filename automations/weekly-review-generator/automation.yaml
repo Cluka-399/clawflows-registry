@@ -1,0 +1,10 @@
+name: Weekly Review Generator
+description: Generate weekly summary from completed tasks, commits, and calendar events
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - calendar
+  - exec
+tags:
+  - productivity

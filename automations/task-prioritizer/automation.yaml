@@ -1,0 +1,10 @@
+name: Task Prioritizer
+description: Daily task sorting using Eisenhower matrix based on deadlines and importance
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - productivity
+  - tasks

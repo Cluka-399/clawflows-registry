@@ -1,0 +1,9 @@
+name: Deep Work Protector
+description: Auto-decline meetings during protected focus hours, suggest alternatives
+author: cluka
+version: 1.0.0
+requires:
+  - calendar
+  - email
+tags:
+  - productivity

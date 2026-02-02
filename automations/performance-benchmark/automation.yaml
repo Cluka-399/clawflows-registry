@@ -1,0 +1,10 @@
+name: Performance Benchmark
+description: Run scheduled performance benchmarks and track trends
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - file_system
+tags:
+  - developer
+  - performance

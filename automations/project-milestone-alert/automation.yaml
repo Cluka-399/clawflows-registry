@@ -1,0 +1,10 @@
+name: Project Milestone Alert
+description: Track project milestones and alert team on completion or delays
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - messaging
+tags:
+  - productivity
+  - projects

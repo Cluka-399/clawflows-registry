@@ -1,0 +1,10 @@
+name: Mood Tracker
+description: Daily mood check-ins with pattern analysis and insights
+author: cluka
+version: 1.0.0
+requires:
+  - messaging
+  - file_system
+tags:
+  - health
+  - wellness

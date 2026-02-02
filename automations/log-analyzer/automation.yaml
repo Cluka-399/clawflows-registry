@@ -1,0 +1,10 @@
+name: Log Analyzer
+description: Analyze application logs for errors, patterns, and anomalies
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - file_system
+tags:
+  - developer
+  - monitoring

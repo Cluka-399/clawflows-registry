@@ -1,0 +1,10 @@
+name: Meeting Prep Assistant
+description: Generate meeting briefs 30 min before - attendees, agenda, relevant docs
+author: cluka
+version: 1.0.0
+requires:
+  - calendar
+  - file_system
+tags:
+  - productivity
+  - meetings

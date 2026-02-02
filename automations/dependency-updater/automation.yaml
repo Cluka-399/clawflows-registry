@@ -1,81 +1,10 @@
-name: dependency-updater
-description: Track outdated npm/yarn packages and alert on security vulnerabilities
+name: Dependency Updater
+description: Weekly check for outdated dependencies with PR creation
 author: cluka
 version: 1.0.0
-
 requires:
-  - capability: shell
-
-trigger:
-  schedule: "0 9 * * 1"  # Monday 9am
-
-config:
-  project_path:
-    description: "Path to project root"
-    default: "."
-  
-  package_manager:
-    description: "npm or yarn"
-    default: "npm"
-  
-  alert_on_major:
-    description: "Alert for major version updates"
-    default: true
-  
-  alert_on_security:
-    description: "Alert for security vulnerabilities"
-    default: true
-
-steps:
-  - name: check-outdated
-    capability: shell
-    command: |
-      cd ${config.project_path}
-      ${config.package_manager} outdated --json 2>/dev/null || echo "{}"
-    capture: outdated
-
-  - name: check-audit
-    condition: "config.alert_on_security"
-    capability: shell
-    command: |
-      cd ${config.project_path}
-      ${config.package_manager} audit --json 2>/dev/null || echo "{}"
-    capture: audit
-
-  - name: analyze
-    action: evaluate
-    script: |
-      const outdated = JSON.parse(outdated || '{}');
-      const vulnerabilities = audit?.vulnerabilities || {};
-      
-      const major = Object.entries(outdated)
-        .filter(([k, v]) => v.current?.split('.')[0] !== v.latest?.split('.')[0]);
-      
-      const critical = Object.values(vulnerabilities)
-        .filter(v => v.severity === 'critical' || v.severity === 'high');
-      
-      return {
-        outdatedCount: Object.keys(outdated).length,
-        majorUpdates: major.length,
-        securityIssues: critical.length,
-        needsAttention: major.length > 0 || critical.length > 0
-      };
-    capture: analysis
-
-  - name: notify
-    condition: "analysis.needsAttention"
-    action: notify
-    message: |
-      📦 Dependency Update Report
-      
-      Outdated packages: ${analysis.outdatedCount}
-      Major updates available: ${analysis.majorUpdates}
-      Security vulnerabilities: ${analysis.securityIssues}
-      
-      Run `${config.package_manager} update` to update non-breaking changes.
-      Run `${config.package_manager} audit fix` to address security issues.
-
+  - exec
+  - file_system
 tags:
   - developer
   - security
-  - dependencies

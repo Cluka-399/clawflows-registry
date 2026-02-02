@@ -1,0 +1,10 @@
+name: Exercise Tracker
+description: Log workouts, track streaks, celebrate milestones
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - health
+  - fitness

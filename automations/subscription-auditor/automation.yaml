@@ -1,0 +1,9 @@
+name: Subscription Auditor
+description: Monthly audit of active subscriptions, flag unused or duplicate services
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - email
+tags:
+  - finance

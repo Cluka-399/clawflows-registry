@@ -1,0 +1,9 @@
+name: Follower Milestone
+description: Celebrate follower milestones with custom alerts
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - social

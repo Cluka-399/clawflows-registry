@@ -1,0 +1,10 @@
+name: Context Switcher
+description: Save and restore workspace state when switching between projects
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - exec
+tags:
+  - productivity
+  - developer

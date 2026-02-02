@@ -1,0 +1,9 @@
+name: Bill Due Reminder
+description: Track recurring bills and send reminders before due dates
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - finance

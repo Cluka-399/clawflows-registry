@@ -1,0 +1,10 @@
+name: Test Coverage Monitor
+description: Track test coverage trends and alert on drops below threshold
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+  - file_system
+tags:
+  - developer
+  - quality

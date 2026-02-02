@@ -1,0 +1,10 @@
+name: Focus Mode Scheduler
+description: Automatically enable DND/focus mode during calendar deep work blocks
+author: cluka
+version: 1.0.0
+requires:
+  - calendar
+  - notifications
+tags:
+  - productivity
+  - calendar

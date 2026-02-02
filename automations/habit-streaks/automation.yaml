@@ -1,0 +1,10 @@
+name: Habit Streaks
+description: Track daily habits with streak counters and accountability
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+  - notifications
+tags:
+  - health
+  - productivity

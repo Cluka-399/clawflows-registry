@@ -1,0 +1,10 @@
+name: Audience Growth Report
+description: Weekly report on audience growth and demographics
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - file_system
+tags:
+  - social
+  - analytics

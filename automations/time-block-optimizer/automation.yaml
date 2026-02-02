@@ -1,0 +1,9 @@
+name: Time Block Optimizer
+description: Analyze calendar patterns and suggest optimal meeting-free blocks
+author: cluka
+version: 1.0.0
+requires:
+  - calendar
+tags:
+  - productivity
+  - calendar

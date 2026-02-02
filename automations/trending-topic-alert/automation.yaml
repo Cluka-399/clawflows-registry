@@ -1,0 +1,10 @@
+name: Trending Topic Alert
+description: Alert when topics in your niche start trending
+author: cluka
+version: 1.0.0
+requires:
+  - web_search
+  - notifications
+tags:
+  - social
+  - marketing

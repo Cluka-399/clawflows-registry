@@ -1,0 +1,9 @@
+name: Medication Reminder
+description: Configurable medication reminders with confirmation tracking
+author: cluka
+version: 1.0.0
+requires:
+  - notifications
+  - file_system
+tags:
+  - health

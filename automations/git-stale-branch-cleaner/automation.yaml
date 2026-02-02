@@ -1,0 +1,9 @@
+name: Git Stale Branch Cleaner
+description: Identify and clean up merged or stale git branches
+author: cluka
+version: 1.0.0
+requires:
+  - exec
+tags:
+  - developer
+  - maintenance
