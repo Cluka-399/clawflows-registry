@@ -1010,7 +1010,7 @@
             <h3>${escapeHtml(a.name)}</h3>
             <p>${escapeHtml(a.description || '')}</p>
             <div class="tags">
-              ${(a.requires || []).map(c => `<span class="tag capability">${c}</span>`).join('')}
+              ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
             </div>
           </a>
         `).join('');
