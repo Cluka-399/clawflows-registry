@@ -33,8 +33,12 @@ config:
     description: "How far back to search (1-30)"
     default: 1
   
+  language:
+    description: "Output language (english, hebrew, french, spanish, german, etc)"
+    default: "english"
+  
   voice:
-    description: "TTS voice to use"
+    description: "TTS voice to use (auto-selects multilingual voice if non-English)"
     default: "adam"
   
   max_tweets:
@@ -85,6 +89,26 @@ steps:
       formatted
     capture: topTweets
 
+  - name: select-voice
+    action: evaluate
+    expression: |
+      // Select appropriate voice for language
+      // ElevenLabs multilingual voices work better for non-English
+      const multilingualVoices = {
+        'hebrew': 'adam',      // Adam has good Hebrew support
+        'french': 'antoine',   // French voice
+        'spanish': 'mateo',    // Spanish voice  
+        'german': 'viktor',    // German voice
+        'default': 'adam'      // Multilingual fallback
+      };
+      const lang = config.language.toLowerCase();
+      if (lang === 'english') {
+        config.voice || 'adam'
+      } else {
+        multilingualVoices[lang] || multilingualVoices['default']
+      }
+    capture: selectedVoice
+
   - name: generate-summary
     capability: llm-analysis
     method: summarize
@@ -93,16 +117,19 @@ steps:
       prompt: |
         Create an audio briefing script about "${config.topic}" based on these X/Twitter posts.
         
+        **LANGUAGE: Write the ENTIRE script in ${config.language.toUpperCase()}.**
+        ${config.language.toLowerCase() !== 'english' ? `Translate all content to ${config.language}. Keep names and product names in their original form.` : ''}
+        
         Requirements:
         - Write for TEXT-TO-SPEECH (will be read aloud)
-        - Use conversational, natural language
+        - Use conversational, natural language appropriate for ${config.language}
         - No URLs, hashtags, or @ mentions (spell out names)
         - No emojis or special characters
-        - Start with "Here's what's new on X about ${config.topic}"
+        - Start with an appropriate greeting for ${config.language} speakers
         - Go through each notable post in detail - who said it, what they said, why it matters
         - Add context and connections between posts when relevant
         - Include engagement numbers when impressive (likes, retweets)
-        - Target 3 MINUTES when read aloud (~450-500 words)
+        - Target 3 MINUTES when read aloud (~450-500 words equivalent)
         - End with overall sentiment/vibe and key takeaways
         
         Posts to summarize:
@@ -132,7 +159,8 @@ steps:
     method: speak
     args:
       text: "${audioScript}"
-      voice: "${config.voice}"
+      voice: "${selectedVoice}"
+      model: "eleven_multilingual_v2"
     capture: audioFile
 
   - name: deliver-briefing

@@ -38,13 +38,30 @@ days: 3
 |--------|---------|-------------|
 | `topic` | (required) | What to search for |
 | `days` | 1 | How far back to search |
-| `voice` | adam | ElevenLabs voice |
+| `language` | english | Output language (english, hebrew, french, spanish, german) |
+| `voice` | adam | ElevenLabs voice (auto-selects for language) |
 | `max_tweets` | 15 | Max tweets to summarize |
 | `duration_minutes` | 3 | Target audio length |
 | `include_text` | true | Include text summary |
 | `send_file` | true | Send audio file directly |
 | `channel` | discord | Channel to send to |
 | `target` | - | Channel/chat ID for delivery |
+
+## Multi-language Examples
+
+```yaml
+# Hebrew briefing
+topic: "OpenClaw"
+language: "hebrew"
+
+# French tech news
+topic: "AI startups Paris"
+language: "french"
+
+# Spanish crypto update  
+topic: "Bitcoin"
+language: "spanish"
+```
 
 ## Requirements
 
