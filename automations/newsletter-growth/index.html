@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter Growth Engine — ClawFlows</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root {
+      --bg-primary: #0a0a12;
+      --bg-card: #1a1a28;
+      --accent: #ff6b6b;
+      --text-primary: #f0f0f5;
+      --text-secondary: #9090a0;
+      --border: #2a2a3a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Space Grotesk', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .back-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    h1 { font-size: 2rem; margin: 1rem 0; }
+    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .description {
+      background: var(--bg-card);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+    }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tag {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--accent);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .install {
+      background: var(--bg-card);
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../" class="back-link">← All Automations</a>
+    <h1>Newsletter Growth Engine</h1>
+    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
+    <div class="description">
+      <p>Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.</p>
+    </div>
+    <h3>Requirements</h3>
+    <div class="tags">
+      <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span>
+    </div>
+    <h3>Install</h3>
+    <div class="install">clawflows install newsletter-growth</div>
+    <footer>
+      <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
+    </footer>
+  </div>
+</body>
+</html>
