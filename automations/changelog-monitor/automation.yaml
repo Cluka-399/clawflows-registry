@@ -1,0 +1,99 @@
+name: changelog-monitor
+description: Monitor GitHub releases and changelogs for projects you use
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "0 10 * * *"  # Daily 10am
+
+config:
+  repos:
+    description: "Comma-separated GitHub repos (owner/repo format)"
+    required: true
+  
+  github_token:
+    description: "GitHub token for API access"
+    secret: true
+  
+  state_file:
+    description: "File to track seen releases"
+    default: "changelog-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: fetch-releases
+    capability: http
+    loop: "${config.repos.split(',')}"
+    method: GET
+    url: "https://api.github.com/repos/${item.trim()}/releases?per_page=3"
+    headers:
+      Authorization: "Bearer ${config.github_token}"
+      Accept: "application/vnd.github+json"
+    capture: releases
+    continueOnError: true
+
+  - name: find-new
+    action: evaluate
+    script: |
+      const seen = new Set(JSON.parse(previous_state || '[]'));
+      const repos = '${config.repos}'.split(',').map(r => r.trim());
+      const newReleases = [];
+      
+      for (let i = 0; i < repos.length; i++) {
+        const repo = repos[i];
+        const repoReleases = releases?.[i] || [];
+        
+        for (const release of (Array.isArray(repoReleases) ? repoReleases : [])) {
+          const id = `${repo}:${release.tag_name}`;
+          if (!seen.has(id)) {
+            newReleases.push({
+              repo,
+              tag: release.tag_name,
+              name: release.name || release.tag_name,
+              url: release.html_url,
+              body: release.body?.slice(0, 300),
+              published: release.published_at,
+              prerelease: release.prerelease
+            });
+            seen.add(id);
+          }
+        }
+      }
+      
+      return {
+        releases: newReleases.filter(r => !r.prerelease),
+        prereleases: newReleases.filter(r => r.prerelease),
+        seenIds: Array.from(seen).slice(-500)
+      };
+    capture: result
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(result.seenIds)}"
+
+  - name: notify
+    condition: "result.releases.length > 0"
+    action: notify
+    message: |
+      📦 New Releases
+      
+      ${result.releases.map(r => `**${r.repo}** → ${r.tag}
+      ${r.name !== r.tag ? r.name + '\n' : ''}${r.body ? r.body + '...' : ''}
+      ${r.url}`).join('\n\n')}
+
+tags:
+  - developer
+  - github
+  - releases

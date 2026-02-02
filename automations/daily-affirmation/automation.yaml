@@ -1,0 +1,57 @@
+name: daily-affirmation
+description: Start your day with a positive affirmation
+author: cluka
+version: 1.0.0
+
+requires: []
+
+trigger:
+  schedule: "0 7 * * *"  # 7am daily
+
+config:
+  custom_affirmations:
+    description: "Your own affirmations (optional, pipe-separated)"
+    default: ""
+
+steps:
+  - name: select
+    action: evaluate
+    script: |
+      const defaults = [
+        "I am capable of achieving my goals",
+        "Today I choose to be positive and kind",
+        "I am worthy of success and happiness",
+        "I embrace challenges as opportunities to grow",
+        "I am in control of my thoughts and emotions",
+        "I have the power to create positive change",
+        "I am grateful for this new day",
+        "I trust in my abilities and decisions",
+        "I radiate confidence and positivity",
+        "I am becoming the best version of myself",
+        "I attract abundance and opportunities",
+        "I choose progress over perfection",
+        "I am resilient and can overcome any obstacle",
+        "My potential is limitless",
+        "I deserve peace, joy, and success"
+      ];
+      
+      const custom = '${config.custom_affirmations}'.split('|').filter(a => a.trim());
+      const all = [...defaults, ...custom];
+      
+      const index = Math.floor(Math.random() * all.length);
+      return { affirmation: all[index] };
+    capture: selected
+
+  - name: notify
+    action: notify
+    message: |
+      🌅 Good Morning!
+      
+      ✨ *${selected.affirmation}* ✨
+      
+      Have a wonderful day!
+
+tags:
+  - wellness
+  - motivation
+  - daily

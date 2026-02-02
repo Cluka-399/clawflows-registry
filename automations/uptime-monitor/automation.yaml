@@ -1,0 +1,110 @@
+name: uptime-monitor
+description: Monitor website uptime and response times
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+
+config:
+  urls:
+    description: "Comma-separated URLs to monitor"
+    required: true
+  
+  timeout_seconds:
+    description: "Request timeout"
+    default: 10
+  
+  slow_threshold_ms:
+    description: "Response time to consider slow"
+    default: 3000
+  
+  state_file:
+    description: "File to track status history"
+    default: "uptime-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: check-urls
+    capability: http
+    loop: "${config.urls.split(',')}"
+    method: GET
+    url: "${item.trim()}"
+    timeout: "${config.timeout_seconds * 1000}"
+    capture: responses
+    captureMetrics: true
+    continueOnError: true
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const prevState = JSON.parse(previous_state || '{}');
+      const slowThreshold = ${config.slow_threshold_ms};
+      const urls = '${config.urls}'.split(',').map(u => u.trim());
+      
+      const results = [];
+      const alerts = [];
+      
+      for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        const resp = responses?.[i];
+        const wasDown = prevState[url]?.status === 'down';
+        
+        let status = 'up';
+        let responseTime = resp?.metrics?.duration || 0;
+        
+        if (!resp || resp.error) {
+          status = 'down';
+        } else if (resp.status >= 400) {
+          status = 'down';
+        } else if (responseTime > slowThreshold) {
+          status = 'slow';
+        }
+        
+        results.push({ url, status, responseTime, statusCode: resp?.status });
+        
+        // Alert on status change
+        if (status === 'down' && !wasDown) {
+          alerts.push({ type: 'down', url, message: `🔴 ${url} is DOWN` });
+        } else if (status !== 'down' && wasDown) {
+          alerts.push({ type: 'recovered', url, message: `🟢 ${url} is back UP` });
+        } else if (status === 'slow') {
+          alerts.push({ type: 'slow', url, message: `🟡 ${url} is slow (${responseTime}ms)` });
+        }
+      }
+      
+      const newState = {};
+      results.forEach(r => { newState[r.url] = { status: r.status, lastCheck: Date.now() }; });
+      
+      return { results, alerts, state: newState };
+    capture: analysis
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(analysis.state)}"
+
+  - name: alert
+    condition: "analysis.alerts.length > 0"
+    action: notify
+    priority: high
+    message: |
+      🖥️ Uptime Alert
+      
+      ${analysis.alerts.map(a => a.message).join('\n')}
+
+tags:
+  - monitoring
+  - uptime
+  - devops

@@ -1,0 +1,82 @@
+name: weather-commute
+description: Weather-based commute recommendations
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: weather
+
+trigger:
+  schedule: "0 7 * * 1-5"  # Weekdays 7am
+
+config:
+  location:
+    description: "Your location for weather"
+    default: "New York"
+  
+  commute_time_minutes:
+    description: "Your typical commute time"
+    default: 30
+  
+  rain_threshold_percent:
+    description: "Rain probability to warn about"
+    default: 30
+
+steps:
+  - name: get-weather
+    capability: weather
+    method: getCurrentWeather
+    args:
+      location: "${config.location}"
+    capture: current
+
+  - name: get-forecast
+    capability: weather
+    method: getHourlyForecast
+    args:
+      location: "${config.location}"
+      hours: 12
+    capture: forecast
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const rainThreshold = ${config.rain_threshold_percent};
+      const commuteTime = ${config.commute_time_minutes};
+      
+      // Check commute hours (assume leave at 8am, return at 6pm)
+      const morningHours = (forecast || []).slice(0, 3);
+      const eveningHours = (forecast || []).slice(9, 12);
+      
+      const morningRain = morningHours.some(h => (h.precipitation_probability || 0) > rainThreshold);
+      const eveningRain = eveningHours.some(h => (h.precipitation_probability || 0) > rainThreshold);
+      
+      const recommendations = [];
+      if (morningRain) recommendations.push('☔ Bring an umbrella for morning commute');
+      if (eveningRain) recommendations.push('🌧️ Rain expected for evening commute');
+      if (current?.temperature < 5) recommendations.push('🧥 Bundle up - it\'s cold!');
+      if (current?.temperature > 30) recommendations.push('🌡️ It\'s hot - stay hydrated');
+      if (current?.wind_speed > 40) recommendations.push('💨 Strong winds today');
+      
+      return {
+        current: current,
+        morningRain,
+        eveningRain,
+        recommendations,
+        needsHeadsUp: recommendations.length > 0
+      };
+    capture: analysis
+
+  - name: notify
+    action: notify
+    message: |
+      🚗 Commute Weather Report
+      
+      **${config.location}:** ${analysis.current?.temperature || '?'}°C, ${analysis.current?.condition || 'Unknown'}
+      
+      ${analysis.recommendations.length > 0 ? analysis.recommendations.join('\n') : '✅ Clear commute expected!'}
+
+tags:
+  - weather
+  - commute
+  - daily

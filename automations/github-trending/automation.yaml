@@ -1,0 +1,76 @@
+name: github-trending
+description: Daily digest of trending GitHub repositories
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+
+trigger:
+  schedule: "0 10 * * *"  # 10am daily
+
+config:
+  languages:
+    description: "Languages to track (empty for all)"
+    default: ""
+  
+  spoken_language:
+    description: "Spoken language filter"
+    default: "en"
+  
+  max_repos:
+    description: "Maximum repos to show"
+    default: 10
+
+steps:
+  - name: fetch-trending
+    capability: http
+    method: GET
+    url: "https://github.com/trending${config.languages ? '/' + config.languages.split(',')[0] : ''}?since=daily&spoken_language_code=${config.spoken_language}"
+    capture: trending_html
+
+  - name: parse
+    action: evaluate
+    script: |
+      const html = trending_html || '';
+      const maxRepos = ${config.max_repos};
+      
+      // Extract repo info from HTML
+      const repos = [];
+      const repoMatches = html.match(/<article class="Box-row"[\s\S]*?<\/article>/gi) || [];
+      
+      for (const match of repoMatches.slice(0, maxRepos)) {
+        const nameMatch = match.match(/href="\/([^"]+)"[^>]*>\s*<span[^>]*>([^<]+)<\/span>\s*\/\s*<span[^>]*>([^<]+)<\/span>/);
+        const descMatch = match.match(/<p class="col-9[^"]*"[^>]*>([^<]+)<\/p>/);
+        const starsMatch = match.match(/(\d+,?\d*)\s*stars\s*today/i);
+        const langMatch = match.match(/<span itemprop="programmingLanguage">([^<]+)<\/span>/);
+        
+        if (nameMatch) {
+          repos.push({
+            name: nameMatch[2]?.trim() + '/' + nameMatch[3]?.trim(),
+            url: 'https://github.com/' + nameMatch[1],
+            description: descMatch?.[1]?.trim() || '',
+            starsToday: starsMatch?.[1] || '?',
+            language: langMatch?.[1] || ''
+          });
+        }
+      }
+      
+      return { repos, count: repos.length };
+    capture: result
+
+  - name: notify
+    condition: "result.count > 0"
+    action: notify
+    message: |
+      ⭐ GitHub Trending Today
+      ${config.languages ? `(${config.languages})` : ''}
+      
+      ${result.repos.map((r, i) => `${i+1}. **${r.name}** (+${r.starsToday}⭐)
+         ${r.description.slice(0, 80)}
+         ${r.url}`).join('\n\n')}
+
+tags:
+  - developer
+  - github
+  - trending

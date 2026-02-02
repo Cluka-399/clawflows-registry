@@ -1,0 +1,132 @@
+name: crypto-portfolio
+description: Track your crypto portfolio value and alert on significant changes
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "0 */4 * * *"  # Every 4 hours
+
+config:
+  holdings:
+    description: "Comma-separated coin:amount pairs (e.g., BTC:0.5,ETH:2)"
+    required: true
+  
+  alert_threshold_percent:
+    description: "Alert when portfolio changes by this percent"
+    default: 5
+  
+  currency:
+    description: "Fiat currency for values"
+    default: "usd"
+  
+  state_file:
+    description: "File to track portfolio history"
+    default: "crypto-portfolio-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: parse-holdings
+    action: evaluate
+    script: |
+      const pairs = '${config.holdings}'.split(',');
+      const holdings = {};
+      const coins = [];
+      for (const pair of pairs) {
+        const [coin, amount] = pair.split(':');
+        if (coin && amount) {
+          holdings[coin.toLowerCase().trim()] = parseFloat(amount);
+          coins.push(coin.toLowerCase().trim());
+        }
+      }
+      return { holdings, coins: coins.join(',') };
+    capture: parsed
+
+  - name: fetch-prices
+    capability: http
+    method: GET
+    url: "https://api.coingecko.com/api/v3/simple/price?ids=${parsed.coins}&vs_currencies=${config.currency}&include_24hr_change=true"
+    capture: prices
+
+  - name: calculate
+    action: evaluate
+    script: |
+      const holdings = ${JSON.stringify(parsed.holdings)};
+      const priceData = JSON.parse(prices || '{}');
+      const prev = JSON.parse(previous_state || '{}');
+      const currency = '${config.currency}';
+      const threshold = ${config.alert_threshold_percent};
+      
+      let totalValue = 0;
+      const positions = [];
+      
+      for (const [coin, amount] of Object.entries(holdings)) {
+        const price = priceData[coin]?.[currency] || 0;
+        const change24h = priceData[coin]?.[currency + '_24h_change'] || 0;
+        const value = price * amount;
+        totalValue += value;
+        
+        positions.push({
+          coin: coin.toUpperCase(),
+          amount,
+          price,
+          value,
+          change24h: change24h.toFixed(2)
+        });
+      }
+      
+      const prevValue = prev.totalValue || totalValue;
+      const changePercent = ((totalValue - prevValue) / prevValue * 100).toFixed(2);
+      const shouldAlert = Math.abs(changePercent) >= threshold;
+      
+      return {
+        positions,
+        totalValue,
+        changePercent,
+        shouldAlert,
+        state: { totalValue, timestamp: Date.now() }
+      };
+    capture: result
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(result.state)}"
+
+  - name: alert
+    condition: "result.shouldAlert"
+    action: notify
+    priority: high
+    message: |
+      ${result.changePercent >= 0 ? '📈' : '📉'} Crypto Portfolio Alert
+      
+      Portfolio ${result.changePercent >= 0 ? 'up' : 'down'} ${Math.abs(result.changePercent)}%
+      
+      **Total: $${result.totalValue.toFixed(2)}**
+      
+      ${result.positions.map(p => `• ${p.coin}: ${p.amount} @ $${p.price.toFixed(2)} = $${p.value.toFixed(2)} (${p.change24h}% 24h)`).join('\n')}
+
+  - name: summary
+    condition: "!result.shouldAlert"
+    action: notify
+    message: |
+      💰 Crypto Portfolio Update
+      
+      **Total: $${result.totalValue.toFixed(2)}** (${result.changePercent}% since last check)
+      
+      ${result.positions.map(p => `• ${p.coin}: $${p.value.toFixed(2)}`).join('\n')}
+
+tags:
+  - crypto
+  - finance
+  - portfolio

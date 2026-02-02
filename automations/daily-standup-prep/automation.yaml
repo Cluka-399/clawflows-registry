@@ -1,0 +1,71 @@
+name: daily-standup-prep
+description: Prepare your daily standup by summarizing recent activity
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: shell
+  - capability: calendar
+
+trigger:
+  schedule: "0 9 * * 1-5"  # Weekdays 9am
+
+config:
+  git_repos:
+    description: "Comma-separated paths to git repos"
+    default: "."
+  
+  include_calendar:
+    description: "Include today's meetings"
+    default: true
+  
+  author_email:
+    description: "Git author email to filter commits"
+    required: false
+
+steps:
+  - name: get-commits
+    capability: shell
+    command: |
+      yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+      for repo in ${config.git_repos}; do
+        cd "$repo" 2>/dev/null || continue
+        echo "=== $(basename $(pwd)) ==="
+        git log --since="$yesterday" --oneline ${config.author_email ? '--author=' + config.author_email : ''} 2>/dev/null | head -10
+      done
+    capture: commits
+
+  - name: get-calendar
+    condition: "config.include_calendar"
+    capability: calendar
+    method: listEvents
+    args:
+      start: "today"
+      range: "1d"
+    capture: meetings
+
+  - name: compose
+    action: template
+    template: |
+      📋 **Daily Standup Prep**
+      
+      **Yesterday's commits:**
+      ${commits || 'No commits found'}
+      
+      **Today's meetings:**
+      ${meetings?.length ? meetings.map(m => `• ${m.time}: ${m.title}`).join('\n') : 'No meetings scheduled'}
+      
+      **Template:**
+      • Yesterday I...
+      • Today I will...
+      • Blockers:
+    capture: standup
+
+  - name: notify
+    action: notify
+    message: "${standup}"
+
+tags:
+  - productivity
+  - standup
+  - daily

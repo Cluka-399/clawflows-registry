@@ -1,0 +1,124 @@
+name: api-health-check
+description: Comprehensive API health monitoring with endpoint validation
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+
+config:
+  endpoints:
+    description: "JSON array of endpoint configs [{url, method, expected_status, name}]"
+    required: true
+  
+  timeout_ms:
+    description: "Request timeout in milliseconds"
+    default: 5000
+  
+  state_file:
+    description: "File to track health history"
+    default: "api-health-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: check-endpoints
+    capability: http
+    loop: "${JSON.parse(config.endpoints)}"
+    method: "${item.method || 'GET'}"
+    url: "${item.url}"
+    timeout: "${config.timeout_ms}"
+    headers: "${item.headers || {}}"
+    capture: responses
+    captureMetrics: true
+    continueOnError: true
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const endpoints = JSON.parse('${config.endpoints}');
+      const prevState = JSON.parse(previous_state || '{}');
+      
+      const results = [];
+      const alerts = [];
+      
+      for (let i = 0; i < endpoints.length; i++) {
+        const ep = endpoints[i];
+        const resp = responses?.[i];
+        const wasHealthy = prevState[ep.url]?.healthy !== false;
+        
+        const healthy = resp && !resp.error && 
+          (resp.status === (ep.expected_status || 200));
+        const latency = resp?.metrics?.duration || 0;
+        
+        results.push({
+          name: ep.name || ep.url,
+          url: ep.url,
+          healthy,
+          status: resp?.status,
+          latency,
+          error: resp?.error
+        });
+        
+        if (!healthy && wasHealthy) {
+          alerts.push({
+            type: 'down',
+            name: ep.name || ep.url,
+            error: resp?.error || `Status ${resp?.status}`
+          });
+        } else if (healthy && !wasHealthy) {
+          alerts.push({
+            type: 'recovered',
+            name: ep.name || ep.url
+          });
+        }
+      }
+      
+      const newState = {};
+      results.forEach(r => { newState[r.url] = { healthy: r.healthy, lastCheck: Date.now() }; });
+      
+      const healthyCount = results.filter(r => r.healthy).length;
+      
+      return { 
+        results, 
+        alerts, 
+        state: newState,
+        healthyCount,
+        totalCount: results.length,
+        allHealthy: healthyCount === results.length
+      };
+    capture: analysis
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(analysis.state)}"
+
+  - name: alert
+    condition: "analysis.alerts.length > 0"
+    action: notify
+    priority: high
+    message: |
+      🏥 API Health Alert
+      
+      ${analysis.alerts.map(a => a.type === 'down' 
+        ? `🔴 **${a.name}** is DOWN: ${a.error}`
+        : `🟢 **${a.name}** recovered`
+      ).join('\n')}
+      
+      Overall: ${analysis.healthyCount}/${analysis.totalCount} healthy
+
+tags:
+  - api
+  - monitoring
+  - devops

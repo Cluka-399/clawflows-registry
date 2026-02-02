@@ -1,0 +1,105 @@
+name: code-quality-report
+description: Weekly code quality report with linting and complexity metrics
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: shell
+
+trigger:
+  schedule: "0 9 * * 1"  # Monday 9am
+
+config:
+  project_path:
+    description: "Path to project root"
+    default: "."
+  
+  language:
+    description: "javascript, typescript, or python"
+    default: "typescript"
+  
+  include_complexity:
+    description: "Include cyclomatic complexity analysis"
+    default: true
+
+steps:
+  - name: run-linter
+    capability: shell
+    command: |
+      cd ${config.project_path}
+      case "${config.language}" in
+        javascript|typescript)
+          npx eslint . --format json 2>/dev/null | head -c 10000 || echo "[]"
+          ;;
+        python)
+          python -m pylint **/*.py --output-format=json 2>/dev/null | head -c 10000 || echo "[]"
+          ;;
+      esac
+    capture: lint_output
+
+  - name: count-files
+    capability: shell
+    command: |
+      cd ${config.project_path}
+      case "${config.language}" in
+        javascript) find . -name "*.js" -not -path "*/node_modules/*" | wc -l ;;
+        typescript) find . -name "*.ts" -not -path "*/node_modules/*" | wc -l ;;
+        python) find . -name "*.py" -not -path "*/.venv/*" | wc -l ;;
+      esac
+    capture: file_count
+
+  - name: count-lines
+    capability: shell
+    command: |
+      cd ${config.project_path}
+      case "${config.language}" in
+        javascript) find . -name "*.js" -not -path "*/node_modules/*" -exec cat {} + | wc -l ;;
+        typescript) find . -name "*.ts" -not -path "*/node_modules/*" -exec cat {} + | wc -l ;;
+        python) find . -name "*.py" -not -path "*/.venv/*" -exec cat {} + | wc -l ;;
+      esac
+    capture: line_count
+
+  - name: analyze
+    action: evaluate
+    script: |
+      let issues = [];
+      try { issues = JSON.parse(lint_output || '[]'); } catch (e) {}
+      
+      const errors = Array.isArray(issues) 
+        ? issues.reduce((sum, f) => sum + (f.errorCount || 0), 0)
+        : 0;
+      const warnings = Array.isArray(issues)
+        ? issues.reduce((sum, f) => sum + (f.warningCount || 0), 0)
+        : 0;
+      
+      return {
+        files: parseInt(file_count) || 0,
+        lines: parseInt(line_count) || 0,
+        errors: errors,
+        warnings: warnings,
+        grade: errors === 0 && warnings < 10 ? 'A' : 
+               errors < 5 && warnings < 25 ? 'B' :
+               errors < 15 ? 'C' : 'D'
+      };
+    capture: analysis
+
+  - name: notify
+    action: notify
+    message: |
+      📊 Weekly Code Quality Report
+      
+      Project: ${config.project_path}
+      Language: ${config.language}
+      
+      📁 ${analysis.files} files, ${analysis.lines} lines
+      ❌ ${analysis.errors} errors
+      ⚠️ ${analysis.warnings} warnings
+      
+      Grade: ${analysis.grade}
+      
+      ${analysis.errors > 0 ? 'Run linter to see details.' : 'Great job! No errors found.'}
+
+tags:
+  - developer
+  - quality
+  - linting

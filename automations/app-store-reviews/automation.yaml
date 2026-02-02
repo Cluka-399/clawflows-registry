@@ -1,0 +1,117 @@
+name: app-store-reviews
+description: Monitor App Store and Google Play reviews for your app
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "0 */4 * * *"  # Every 4 hours
+
+config:
+  app_store_id:
+    description: "Apple App Store app ID"
+    required: false
+  
+  play_store_id:
+    description: "Google Play package name"
+    required: false
+  
+  country:
+    description: "Country code for App Store"
+    default: "us"
+  
+  alert_on_low_rating:
+    description: "Alert on reviews <= this rating"
+    default: 3
+  
+  state_file:
+    description: "File to track seen reviews"
+    default: "app-reviews-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: fetch-app-store
+    condition: "config.app_store_id"
+    capability: http
+    method: GET
+    url: "https://itunes.apple.com/${config.country}/rss/customerreviews/id=${config.app_store_id}/sortBy=mostRecent/json"
+    capture: app_store_response
+    continueOnError: true
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const seen = new Set(JSON.parse(previous_state || '[]'));
+      const alertThreshold = ${config.alert_on_low_rating};
+      const newReviews = [];
+      const lowRatingReviews = [];
+      
+      // Parse App Store reviews
+      try {
+        const data = JSON.parse(app_store_response || '{}');
+        const entries = data?.feed?.entry || [];
+        
+        for (const entry of entries) {
+          if (entry['im:name']) continue; // Skip app entry
+          const id = entry.id?.label;
+          const rating = parseInt(entry['im:rating']?.label) || 5;
+          const title = entry.title?.label;
+          const content = entry.content?.label;
+          const author = entry.author?.name?.label;
+          
+          if (id && !seen.has(id)) {
+            const review = { id, rating, title, content: content?.slice(0, 200), author, source: 'App Store' };
+            newReviews.push(review);
+            if (rating <= alertThreshold) lowRatingReviews.push(review);
+            seen.add(id);
+          }
+        }
+      } catch (e) {}
+      
+      return {
+        newReviews,
+        lowRatingReviews,
+        seenIds: Array.from(seen).slice(-200),
+        needsAlert: lowRatingReviews.length > 0
+      };
+    capture: result
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(result.seenIds)}"
+
+  - name: notify-low
+    condition: "result.needsAlert"
+    action: notify
+    priority: high
+    message: |
+      ⚠️ Low Rating Reviews Alert
+      
+      ${result.lowRatingReviews.map(r => `**${r.rating}⭐** - ${r.title || 'No title'}
+      "${r.content}"
+      — ${r.author} (${r.source})`).join('\n\n')}
+
+  - name: notify-summary
+    condition: "result.newReviews.length > 0"
+    action: notify
+    message: |
+      📱 New App Reviews
+      
+      ${result.newReviews.length} new reviews found
+      Low ratings (≤${config.alert_on_low_rating}⭐): ${result.lowRatingReviews.length}
+
+tags:
+  - business
+  - reviews
+  - mobile

@@ -1,0 +1,86 @@
+name: expense-tracker
+description: Track and categorize expenses with weekly summaries
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: storage
+
+trigger:
+  schedule: "0 18 * * 0"  # Sunday 6pm
+
+config:
+  expenses_file:
+    description: "JSON file with expense entries"
+    default: "expenses.json"
+  
+  budget:
+    description: "Monthly budget amount"
+    default: 5000
+  
+  categories:
+    description: "Expense categories to track"
+    default: "food,transport,entertainment,utilities,shopping,other"
+
+steps:
+  - name: load-expenses
+    capability: storage
+    method: read
+    path: "${config.expenses_file}"
+    capture: expenses_raw
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const expenses = JSON.parse(expenses_raw || '[]');
+      const budget = ${config.budget};
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      // Filter this month's expenses
+      const monthExpenses = expenses.filter(e => new Date(e.date) >= monthStart);
+      const weekExpenses = expenses.filter(e => new Date(e.date) >= weekStart);
+      
+      // Calculate totals
+      const monthTotal = monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const weekTotal = weekExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      
+      // By category
+      const byCategory = {};
+      for (const e of monthExpenses) {
+        const cat = e.category || 'other';
+        byCategory[cat] = (byCategory[cat] || 0) + e.amount;
+      }
+      
+      const budgetUsed = (monthTotal / budget * 100).toFixed(1);
+      const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+      const dailyBudget = ((budget - monthTotal) / daysLeft).toFixed(2);
+      
+      return {
+        monthTotal,
+        weekTotal,
+        byCategory,
+        budgetUsed,
+        dailyBudget,
+        overBudget: monthTotal > budget
+      };
+    capture: analysis
+
+  - name: notify
+    action: notify
+    message: |
+      💸 Weekly Expense Summary
+      
+      **This Week:** $${analysis.weekTotal.toFixed(2)}
+      **This Month:** $${analysis.monthTotal.toFixed(2)} / $${config.budget} (${analysis.budgetUsed}%)
+      
+      **By Category:**
+      ${Object.entries(analysis.byCategory).map(([k, v]) => `• ${k}: $${v.toFixed(2)}`).join('\n')}
+      
+      ${analysis.overBudget ? '⚠️ Over budget!' : `Daily budget remaining: $${analysis.dailyBudget}`}
+
+tags:
+  - finance
+  - expenses
+  - budget

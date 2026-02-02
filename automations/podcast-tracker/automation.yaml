@@ -1,0 +1,86 @@
+name: podcast-tracker
+description: Track new episodes from your podcast subscriptions
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+  - capability: storage
+
+trigger:
+  schedule: "0 7 * * *"  # 7am daily
+
+config:
+  podcast_feeds:
+    description: "Comma-separated RSS feed URLs of podcasts"
+    required: true
+  
+  state_file:
+    description: "File to track seen episodes"
+    default: "podcast-tracker-state.json"
+
+steps:
+  - name: load-state
+    capability: storage
+    method: read
+    path: "${config.state_file}"
+    capture: previous_state
+    continueOnError: true
+
+  - name: fetch-feeds
+    capability: http
+    loop: "${config.podcast_feeds.split(',')}"
+    method: GET
+    url: "${item.trim()}"
+    capture: feeds
+    continueOnError: true
+
+  - name: find-new
+    action: evaluate
+    script: |
+      const seen = new Set(JSON.parse(previous_state || '[]'));
+      const newEpisodes = [];
+      
+      for (const feed of (feeds || [])) {
+        if (!feed) continue;
+        const showName = feed.match(/<title>([^<]+)<\/title>/)?.[1] || 'Unknown';
+        const items = feed.match(/<item>[\s\S]*?<\/item>/gi) || [];
+        
+        for (const item of items.slice(0, 3)) {
+          const title = item.match(/<title>([^<]+)<\/title>/i)?.[1];
+          const guid = item.match(/<guid[^>]*>([^<]+)<\/guid>/i)?.[1];
+          const link = item.match(/<enclosure[^>]+url="([^"]+)"/i)?.[1] ||
+                       item.match(/<link>([^<]+)<\/link>/i)?.[1];
+          
+          const id = guid || title;
+          if (id && !seen.has(id)) {
+            newEpisodes.push({ show: showName, title, link, id });
+            seen.add(id);
+          }
+        }
+      }
+      
+      return { 
+        episodes: newEpisodes, 
+        seenIds: Array.from(seen).slice(-500)
+      };
+    capture: result
+
+  - name: save-state
+    capability: storage
+    method: write
+    path: "${config.state_file}"
+    content: "${JSON.stringify(result.seenIds)}"
+
+  - name: notify
+    condition: "result.episodes.length > 0"
+    action: notify
+    message: |
+      🎙️ New Podcast Episodes
+      
+      ${result.episodes.map(e => `**${e.show}**\n${e.title}\n${e.link || ''}`).join('\n\n')}
+
+tags:
+  - content
+  - podcasts
+  - entertainment

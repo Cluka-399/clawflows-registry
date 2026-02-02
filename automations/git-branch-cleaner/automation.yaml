@@ -1,0 +1,98 @@
+name: git-branch-cleaner
+description: Identify and clean up stale git branches
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: shell
+
+trigger:
+  schedule: "0 10 * * 5"  # Friday 10am
+
+config:
+  repo_path:
+    description: "Path to git repository"
+    default: "."
+  
+  stale_days:
+    description: "Days without commits to consider stale"
+    default: 30
+  
+  exclude_branches:
+    description: "Branches to never suggest deleting"
+    default: "main,master,develop,staging,production"
+  
+  auto_delete:
+    description: "Automatically delete merged branches"
+    default: false
+
+steps:
+  - name: fetch-all
+    capability: shell
+    command: |
+      cd ${config.repo_path}
+      git fetch --all --prune 2>/dev/null
+    
+  - name: find-stale
+    capability: shell
+    command: |
+      cd ${config.repo_path}
+      cutoff=$(date -d "-${config.stale_days} days" +%s 2>/dev/null || date -v-${config.stale_days}d +%s)
+      for branch in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
+        lastcommit=$(git log -1 --format=%ct "$branch" 2>/dev/null)
+        if [ "$lastcommit" -lt "$cutoff" ] 2>/dev/null; then
+          echo "$branch"
+        fi
+      done
+    capture: stale_branches
+
+  - name: find-merged
+    capability: shell
+    command: |
+      cd ${config.repo_path}
+      git branch --merged main 2>/dev/null | grep -v "^\*" | grep -v "main" | grep -v "master" | tr -d ' '
+    capture: merged_branches
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const excluded = '${config.exclude_branches}'.split(',');
+      const stale = (stale_branches || '').split('\n').filter(b => b && !excluded.includes(b));
+      const merged = (merged_branches || '').split('\n').filter(b => b && !excluded.includes(b));
+      
+      return {
+        staleCount: stale.length,
+        staleBranches: stale.slice(0, 10),
+        mergedCount: merged.length,
+        mergedBranches: merged.slice(0, 10),
+        needsAttention: stale.length > 0 || merged.length > 0
+      };
+    capture: analysis
+
+  - name: delete-merged
+    condition: "config.auto_delete && analysis.mergedCount > 0"
+    capability: shell
+    command: |
+      cd ${config.repo_path}
+      for branch in ${analysis.mergedBranches.join(' ')}; do
+        git branch -d "$branch" 2>/dev/null
+      done
+
+  - name: notify
+    condition: "analysis.needsAttention"
+    action: notify
+    message: |
+      🌿 Git Branch Cleanup Report
+      
+      Stale branches (>${config.stale_days} days): ${analysis.staleCount}
+      ${analysis.staleBranches.map(b => '  - ' + b).join('\n')}
+      
+      Merged branches: ${analysis.mergedCount}
+      ${analysis.mergedBranches.map(b => '  - ' + b).join('\n')}
+      
+      ${config.auto_delete ? 'Merged branches auto-deleted.' : 'Run cleanup manually.'}
+
+tags:
+  - developer
+  - git
+  - cleanup

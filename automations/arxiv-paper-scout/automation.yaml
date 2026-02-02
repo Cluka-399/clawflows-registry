@@ -1,0 +1,81 @@
+name: arxiv-paper-scout
+description: Find new arXiv papers matching your research interests
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+
+trigger:
+  schedule: "0 9 * * 1-5"  # Weekdays 9am
+
+config:
+  categories:
+    description: "arXiv categories (cs.AI, cs.LG, etc.)"
+    default: "cs.AI,cs.LG,cs.CL"
+  
+  keywords:
+    description: "Keywords to search for in abstracts"
+    default: "language model,transformer,agent"
+  
+  max_results:
+    description: "Maximum papers to return"
+    default: 10
+
+steps:
+  - name: fetch-papers
+    capability: http
+    method: GET
+    url: "http://export.arxiv.org/api/query?search_query=cat:${config.categories.split(',')[0]}&sortBy=submittedDate&sortOrder=descending&max_results=50"
+    capture: arxiv_response
+
+  - name: parse-papers
+    action: evaluate
+    script: |
+      const keywords = '${config.keywords}'.toLowerCase().split(',').map(k => k.trim());
+      const maxResults = ${config.max_results};
+      
+      const entries = (arxiv_response || '').match(/<entry>[\s\S]*?<\/entry>/gi) || [];
+      const papers = [];
+      
+      for (const entry of entries) {
+        const title = entry.match(/<title>([^<]+)<\/title>/)?.[1]?.trim();
+        const summary = entry.match(/<summary>([^<]+)<\/summary>/)?.[1]?.trim();
+        const link = entry.match(/<id>([^<]+)<\/id>/)?.[1];
+        const authors = (entry.match(/<author><name>([^<]+)<\/name><\/author>/gi) || [])
+          .map(a => a.match(/<name>([^<]+)<\/name>/)?.[1])
+          .filter(Boolean)
+          .slice(0, 3);
+        
+        const text = (title + ' ' + summary).toLowerCase();
+        const matches = keywords.some(k => text.includes(k));
+        
+        if (matches && title) {
+          papers.push({
+            title: title.replace(/\n/g, ' '),
+            authors: authors.join(', '),
+            link: link,
+            preview: summary?.slice(0, 200) + '...'
+          });
+        }
+        
+        if (papers.length >= maxResults) break;
+      }
+      
+      return { papers, count: papers.length };
+    capture: result
+
+  - name: notify
+    condition: "result.count > 0"
+    action: notify
+    message: |
+      📚 arXiv Paper Scout
+      
+      Found ${result.count} papers matching: ${config.keywords}
+      
+      ${result.papers.map(p => `**${p.title}**\n${p.authors}\n${p.link}`).join('\n\n')}
+
+tags:
+  - research
+  - papers
+  - ai

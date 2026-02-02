@@ -1,0 +1,87 @@
+name: product-hunt-daily
+description: Daily digest of top Product Hunt launches
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+
+trigger:
+  schedule: "0 18 * * *"  # 6pm daily (after voting settles)
+
+config:
+  min_upvotes:
+    description: "Minimum upvotes to include"
+    default: 100
+  
+  categories:
+    description: "Categories to filter (empty for all)"
+    default: ""
+  
+  max_products:
+    description: "Maximum products to show"
+    default: 5
+
+steps:
+  - name: fetch-products
+    capability: http
+    method: GET
+    url: "https://www.producthunt.com/frontend/graphql"
+    headers:
+      Content-Type: "application/json"
+    body: |
+      {
+        "query": "query { posts(first: 20, order: RANKING) { edges { node { id name tagline votesCount url thumbnail { url } } } } }"
+      }
+    capture: ph_response
+    continueOnError: true
+
+  - name: fallback-scrape
+    condition: "!ph_response || ph_response.error"
+    capability: http
+    method: GET
+    url: "https://www.producthunt.com"
+    capture: ph_html
+
+  - name: parse
+    action: evaluate
+    script: |
+      const minUpvotes = ${config.min_upvotes};
+      const maxProducts = ${config.max_products};
+      
+      let products = [];
+      
+      // Try GraphQL response first
+      try {
+        const data = JSON.parse(ph_response || '{}');
+        const edges = data?.data?.posts?.edges || [];
+        products = edges.map(e => ({
+          name: e.node.name,
+          tagline: e.node.tagline,
+          votes: e.node.votesCount,
+          url: e.node.url || `https://www.producthunt.com/posts/${e.node.id}`
+        }));
+      } catch (e) {}
+      
+      // Filter and limit
+      products = products
+        .filter(p => p.votes >= minUpvotes)
+        .slice(0, maxProducts);
+      
+      return { products, count: products.length };
+    capture: result
+
+  - name: notify
+    condition: "result.count > 0"
+    action: notify
+    message: |
+      🚀 Product Hunt Today
+      
+      Top launches (${config.min_upvotes}+ upvotes):
+      
+      ${result.products.map((p, i) => `${i+1}. **${p.name}** (${p.votes} ⬆️)\n   ${p.tagline}\n   ${p.url}`).join('\n\n')}
+
+tags:
+  - products
+  - startups
+  - daily

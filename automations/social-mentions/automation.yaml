@@ -1,0 +1,82 @@
+name: social-mentions
+description: Track brand mentions across social platforms
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: social-search
+
+trigger:
+  schedule: "0 */6 * * *"  # Every 6 hours
+
+config:
+  keywords:
+    description: "Keywords/brand names to track"
+    required: true
+  
+  platforms:
+    description: "Platforms to search (x,reddit,hn)"
+    default: "x"
+  
+  exclude_own:
+    description: "Your handles to exclude from results"
+    default: ""
+  
+  sentiment_filter:
+    description: "Filter by sentiment (all,positive,negative)"
+    default: "all"
+
+steps:
+  - name: search-x
+    condition: "config.platforms.includes('x')"
+    capability: social-search
+    method: searchX
+    args:
+      query: "${config.keywords}"
+      days: 1
+    capture: x_results
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const excluded = '${config.exclude_own}'.toLowerCase().split(',');
+      const mentions = [];
+      
+      for (const result of (x_results || [])) {
+        const author = result.author?.toLowerCase() || '';
+        if (excluded.some(e => author.includes(e))) continue;
+        
+        mentions.push({
+          platform: 'X',
+          author: result.author,
+          content: result.content?.slice(0, 200),
+          url: result.url,
+          engagement: result.likes || 0
+        });
+      }
+      
+      // Sort by engagement
+      mentions.sort((a, b) => b.engagement - a.engagement);
+      
+      return { 
+        mentions: mentions.slice(0, 10),
+        count: mentions.length
+      };
+    capture: result
+
+  - name: notify
+    condition: "result.count > 0"
+    action: notify
+    message: |
+      📢 Social Mentions Report
+      
+      Found ${result.count} mentions of: ${config.keywords}
+      
+      ${result.mentions.map(m => `**@${m.author}** (${m.platform})
+      "${m.content}"
+      ${m.url}`).join('\n\n')}
+
+tags:
+  - social
+  - marketing
+  - mentions

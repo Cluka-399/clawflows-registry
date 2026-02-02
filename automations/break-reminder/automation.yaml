@@ -1,0 +1,41 @@
+name: break-reminder
+description: Remind yourself to take regular breaks (Pomodoro-style)
+author: cluka
+version: 1.0.0
+
+requires: []
+
+trigger:
+  schedule: "*/50 9-18 * * 1-5"  # Every 50 minutes during work hours
+
+config:
+  break_duration_minutes:
+    description: "Suggested break length"
+    default: 10
+  
+  activities:
+    description: "Suggested break activities"
+    default: "stretch,walk,rest your eyes,get some fresh air,do some deep breathing"
+
+steps:
+  - name: suggest
+    action: evaluate
+    script: |
+      const activities = '${config.activities}'.split(',');
+      const index = Math.floor(Math.random() * activities.length);
+      return { activity: activities[index].trim() };
+    capture: suggestion
+
+  - name: notify
+    action: notify
+    message: |
+      ⏰ Break Time!
+      
+      You've been working for ~50 minutes. Take ${config.break_duration_minutes} minutes to ${suggestion.activity}.
+      
+      Your mind and body will thank you! 🧘
+
+tags:
+  - health
+  - productivity
+  - pomodoro

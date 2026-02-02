@@ -1,0 +1,47 @@
+name: water-reminder
+description: Periodic reminders to stay hydrated
+author: cluka
+version: 1.0.0
+
+requires: []
+
+trigger:
+  schedule: "0 9-18/2 * * 1-5"  # Every 2 hours, 9am-6pm, weekdays
+
+config:
+  daily_goal_ml:
+    description: "Daily water intake goal in ml"
+    default: 2000
+  
+  glass_size_ml:
+    description: "Size of one glass in ml"
+    default: 250
+  
+  messages:
+    description: "Rotation of reminder messages"
+    default: "Time to hydrate!,Don't forget to drink water,Water break!,Stay hydrated"
+
+steps:
+  - name: pick-message
+    action: evaluate
+    script: |
+      const messages = '${config.messages}'.split(',');
+      const index = Math.floor(Math.random() * messages.length);
+      const glasses = Math.ceil(${config.daily_goal_ml} / ${config.glass_size_ml});
+      return { 
+        message: messages[index],
+        glasses: glasses
+      };
+    capture: reminder
+
+  - name: notify
+    action: notify
+    message: |
+      💧 ${reminder.message}
+      
+      Goal: ${reminder.glasses} glasses today (${config.daily_goal_ml}ml)
+
+tags:
+  - health
+  - wellness
+  - reminder

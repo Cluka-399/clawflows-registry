@@ -1,0 +1,83 @@
+name: domain-expiry-monitor
+description: Monitor domain registration expiration dates
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: shell
+
+trigger:
+  schedule: "0 9 * * 1"  # Monday 9am
+
+config:
+  domains:
+    description: "Comma-separated domains to monitor"
+    required: true
+  
+  warning_days:
+    description: "Days before expiry to warn"
+    default: 60
+  
+  critical_days:
+    description: "Days before expiry for critical alert"
+    default: 30
+
+steps:
+  - name: check-domains
+    capability: shell
+    command: |
+      for domain in $(echo "${config.domains}" | tr ',' ' '); do
+        expiry=$(whois "$domain" 2>/dev/null | grep -iE "expir|renewal" | head -1 | grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" | head -1)
+        if [ -n "$expiry" ]; then
+          expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$expiry" +%s 2>/dev/null)
+          now_epoch=$(date +%s)
+          days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+          echo "$domain:$days_left:$expiry"
+        else
+          echo "$domain:-1:unknown"
+        fi
+      done
+    capture: domain_info
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const warningDays = ${config.warning_days};
+      const criticalDays = ${config.critical_days};
+      
+      const results = [];
+      const critical = [];
+      const warning = [];
+      
+      for (const line of (domain_info || '').split('\n')) {
+        if (!line.trim()) continue;
+        const [domain, daysStr, expiry] = line.split(':');
+        const days = parseInt(daysStr);
+        
+        const item = { domain, daysLeft: days, expiry };
+        results.push(item);
+        
+        if (days > 0 && days <= criticalDays) {
+          critical.push(item);
+        } else if (days > 0 && days <= warningDays) {
+          warning.push(item);
+        }
+      }
+      
+      return { results, critical, warning, needsAlert: critical.length > 0 || warning.length > 0 };
+    capture: analysis
+
+  - name: alert
+    condition: "analysis.needsAlert"
+    action: notify
+    priority: "${analysis.critical.length > 0 ? 'high' : 'normal'}"
+    message: |
+      🌐 Domain Expiry Alert
+      
+      ${analysis.critical.length > 0 ? `🔴 **RENEW NOW** (expires in <${config.critical_days} days):\n${analysis.critical.map(d => `• ${d.domain}: ${d.daysLeft} days (${d.expiry})`).join('\n')}\n\n` : ''}
+      ${analysis.warning.length > 0 ? `🟡 **Coming up** (expires in <${config.warning_days} days):\n${analysis.warning.map(d => `• ${d.domain}: ${d.daysLeft} days`).join('\n')}` : ''}
+
+tags:
+  - domains
+  - monitoring
+  - business

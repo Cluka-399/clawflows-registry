@@ -11,7 +11,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/ab-test-automator/"
     },
@@ -26,7 +26,7 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/affiliate-builder/"
     },
@@ -41,9 +41,62 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/agent-drift-detector/"
+    },
+    {
+      "name": "api-health-check",
+      "description": "Comprehensive API health monitoring with endpoint validation",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "api",
+        "monitoring",
+        "devops"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/api-health-check/"
+    },
+    {
+      "name": "app-store-reviews",
+      "description": "Monitor App Store and Google Play reviews for your app",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "business",
+        "reviews",
+        "mobile"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/app-store-reviews/"
+    },
+    {
+      "name": "arxiv-paper-scout",
+      "description": "Find new arXiv papers matching your research interests",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http"
+      ],
+      "tags": [
+        "research",
+        "papers",
+        "ai"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/arxiv-paper-scout/"
     },
     {
       "name": "Full-Funnel Attribution Detective",
@@ -55,7 +108,7 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/attribution-detective/"
     },
@@ -70,7 +123,7 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/backlink-hunter/"
     },
@@ -85,7 +138,7 @@
         "capability: social-search"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/bitcoin-tracker/"
     },
@@ -101,9 +154,76 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/bookmark-organizer/"
+    },
+    {
+      "name": "break-reminder",
+      "description": "Remind yourself to take regular breaks (Pomodoro-style)",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": "[]",
+      "tags": [
+        "health",
+        "productivity",
+        "pomodoro"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/break-reminder/"
+    },
+    {
+      "name": "changelog-monitor",
+      "description": "Monitor GitHub releases and changelogs for projects you use",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "developer",
+        "github",
+        "releases"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/changelog-monitor/"
+    },
+    {
+      "name": "cicd-status-monitor",
+      "description": "Monitor CI/CD pipeline status and alert on failures",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http"
+      ],
+      "tags": [
+        "developer",
+        "ci-cd",
+        "monitoring"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/cicd-status-monitor/"
+    },
+    {
+      "name": "code-quality-report",
+      "description": "Weekly code quality report with linting and complexity metrics",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell"
+      ],
+      "tags": [
+        "developer",
+        "quality",
+        "linting"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/code-quality-report/"
     },
     {
       "name": "Cold Email Personalizer",
@@ -116,7 +236,7 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/cold-email-personalizer/"
     },
@@ -130,7 +250,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/community-infiltrator/"
     },
@@ -145,7 +265,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/competitor-shadow/"
     },
@@ -160,9 +280,42 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/content-syndication/"
+    },
+    {
+      "name": "crypto-portfolio",
+      "description": "Track your crypto portfolio value and alert on significant changes",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "crypto",
+        "finance",
+        "portfolio"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/crypto-portfolio/"
+    },
+    {
+      "name": "daily-affirmation",
+      "description": "Start your day with a positive affirmation",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": "[]",
+      "tags": [
+        "wellness",
+        "motivation",
+        "daily"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/daily-affirmation/"
     },
     {
       "name": "daily-news-digest",
@@ -176,9 +329,78 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/daily-news-digest/"
+    },
+    {
+      "name": "daily-standup-prep",
+      "description": "Prepare your daily standup by summarizing recent activity",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell",
+        "capability: calendar"
+      ],
+      "tags": [
+        "productivity",
+        "standup",
+        "daily"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/daily-standup-prep/"
+    },
+    {
+      "name": "dependency-updater",
+      "description": "Track outdated npm/yarn packages and alert on security vulnerabilities",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell"
+      ],
+      "tags": [
+        "developer",
+        "security",
+        "dependencies"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/dependency-updater/"
+    },
+    {
+      "name": "domain-expiry-monitor",
+      "description": "Monitor domain registration expiration dates",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell"
+      ],
+      "tags": [
+        "domains",
+        "monitoring",
+        "business"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/domain-expiry-monitor/"
+    },
+    {
+      "name": "email-digest",
+      "description": "Summarize unread emails into a daily digest",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: email"
+      ],
+      "tags": [
+        "email",
+        "productivity",
+        "digest"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/email-digest/"
     },
     {
       "name": "Event Hijacker",
@@ -191,9 +413,26 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/event-hijacker/"
+    },
+    {
+      "name": "expense-tracker",
+      "description": "Track and categorize expenses with weekly summaries",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: storage"
+      ],
+      "tags": [
+        "finance",
+        "expenses",
+        "budget"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/expense-tracker/"
     },
     {
       "name": "focus-time-report",
@@ -206,9 +445,26 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/focus-time-report/"
+    },
+    {
+      "name": "git-branch-cleaner",
+      "description": "Identify and clean up stale git branches",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell"
+      ],
+      "tags": [
+        "developer",
+        "git",
+        "cleanup"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/git-branch-cleaner/"
     },
     {
       "name": "github-stale-prs",
@@ -220,9 +476,26 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/github-stale-prs/"
+    },
+    {
+      "name": "github-trending",
+      "description": "Daily digest of trending GitHub repositories",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http"
+      ],
+      "tags": [
+        "developer",
+        "github",
+        "trending"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/github-trending/"
     },
     {
       "name": "Hacker News Timing Bot",
@@ -234,7 +507,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/hn-timing-bot/"
     },
@@ -249,7 +522,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/inbox-zero-helper/"
     },
@@ -264,9 +537,26 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/influencer-outreach/"
+    },
+    {
+      "name": "invoice-reminder",
+      "description": "Track unpaid invoices and send payment reminders",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: storage"
+      ],
+      "tags": [
+        "business",
+        "finance",
+        "invoices"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/invoice-reminder/"
     },
     {
       "name": "100-Platform Launch Blitz",
@@ -279,7 +569,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/launch-blitz/"
     },
@@ -294,7 +584,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/learning-digest/"
     },
@@ -310,7 +600,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/meeting-prep/"
     },
@@ -325,7 +615,7 @@
         "message"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/molt-price-alert/"
     },
@@ -340,7 +630,7 @@
         "capability: tts"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/morning-brief/"
     },
@@ -355,7 +645,7 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/newsletter-growth/"
     },
@@ -370,9 +660,27 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/partnership-scout/"
+    },
+    {
+      "name": "podcast-tracker",
+      "description": "Track new episodes from your podcast subscriptions",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "content",
+        "podcasts",
+        "entertainment"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/podcast-tracker/"
     },
     {
       "name": "PR Newsjacking Bot",
@@ -386,7 +694,7 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/pr-newsjacking/"
     },
@@ -401,9 +709,26 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/pricing-intelligence/"
+    },
+    {
+      "name": "product-hunt-daily",
+      "description": "Daily digest of top Product Hunt launches",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http"
+      ],
+      "tags": [
+        "products",
+        "startups",
+        "daily"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/product-hunt-daily/"
     },
     {
       "name": "repeat-task-detector",
@@ -416,7 +741,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/repeat-task-detector/"
     },
@@ -431,9 +756,26 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/review-defense/"
+    },
+    {
+      "name": "rss-digest",
+      "description": "Aggregate multiple RSS feeds into a daily digest",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http"
+      ],
+      "tags": [
+        "content",
+        "news",
+        "rss"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/rss-digest/"
     },
     {
       "name": "SEO Gap Assassin",
@@ -446,9 +788,26 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/seo-gap-assassin/"
+    },
+    {
+      "name": "social-mentions",
+      "description": "Track brand mentions across social platforms",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: social-search"
+      ],
+      "tags": [
+        "social",
+        "marketing",
+        "mentions"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/social-mentions/"
     },
     {
       "name": "Social Proof Collector",
@@ -461,9 +820,26 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/social-proof-collector/"
+    },
+    {
+      "name": "ssl-certificate-monitor",
+      "description": "Monitor SSL certificate expiration dates",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: shell"
+      ],
+      "tags": [
+        "security",
+        "ssl",
+        "monitoring"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/ssl-certificate-monitor/"
     },
     {
       "name": "standup-notes",
@@ -476,7 +852,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/standup-notes/"
     },
@@ -490,9 +866,59 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/support-to-content/"
+    },
+    {
+      "name": "uptime-monitor",
+      "description": "Monitor website uptime and response times",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: http",
+        "capability: storage"
+      ],
+      "tags": [
+        "monitoring",
+        "uptime",
+        "devops"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/uptime-monitor/"
+    },
+    {
+      "name": "water-reminder",
+      "description": "Periodic reminders to stay hydrated",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": "[]",
+      "tags": [
+        "health",
+        "wellness",
+        "reminder"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/water-reminder/"
+    },
+    {
+      "name": "weather-commute",
+      "description": "Weather-based commute recommendations",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "capability: weather"
+      ],
+      "tags": [
+        "weather",
+        "commute",
+        "daily"
+      ],
+      "created": "2026-02-02",
+      "updated": "2026-02-02",
+      "url": "/automations/weather-commute/"
     },
     {
       "name": "weekly-retro-generator",
@@ -506,7 +932,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/weekly-retro-generator/"
     },
@@ -527,7 +953,7 @@
         "tts",
         "x-twitter"
       ],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/x-audio-brief/"
     },
@@ -542,10 +968,10 @@
         "capability: chart-generation"
       ],
       "tags": [],
-      "created": "2026-01-31",
+      "created": "2026-02-02",
       "updated": "2026-02-02",
       "url": "/automations/youtube-competitor-tracker/"
     }
   ],
-  "count": 36
+  "count": 61
 }

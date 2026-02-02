@@ -1,0 +1,77 @@
+name: cicd-status-monitor
+description: Monitor CI/CD pipeline status and alert on failures
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+
+trigger:
+  schedule: "*/30 * * * *"  # Every 30 minutes
+
+config:
+  provider:
+    description: "github or gitlab"
+    default: "github"
+  
+  repo:
+    description: "owner/repo format"
+    required: true
+  
+  branch:
+    description: "Branch to monitor"
+    default: "main"
+  
+  github_token:
+    description: "GitHub Personal Access Token"
+    secret: true
+
+steps:
+  - name: fetch-status
+    capability: http
+    method: GET
+    url: "https://api.github.com/repos/${config.repo}/actions/runs?branch=${config.branch}&per_page=5"
+    headers:
+      Authorization: "Bearer ${config.github_token}"
+      Accept: "application/vnd.github+json"
+    capture: runs
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const workflow_runs = runs?.workflow_runs || [];
+      const latest = workflow_runs[0];
+      
+      if (!latest) return { status: 'unknown', message: 'No runs found' };
+      
+      const failed = workflow_runs.filter(r => r.conclusion === 'failure');
+      const inProgress = workflow_runs.filter(r => r.status === 'in_progress');
+      
+      return {
+        status: latest.conclusion || latest.status,
+        latestRun: latest.name,
+        latestUrl: latest.html_url,
+        failedCount: failed.length,
+        inProgress: inProgress.length,
+        needsAlert: latest.conclusion === 'failure'
+      };
+    capture: analysis
+
+  - name: alert
+    condition: "analysis.needsAlert"
+    action: notify
+    message: |
+      🔴 CI/CD Pipeline Failed
+      
+      Repository: ${config.repo}
+      Branch: ${config.branch}
+      Workflow: ${analysis.latestRun}
+      
+      ${analysis.latestUrl}
+      
+      Recent failures: ${analysis.failedCount}/5 runs
+
+tags:
+  - developer
+  - ci-cd
+  - monitoring

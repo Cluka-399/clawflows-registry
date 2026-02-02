@@ -1,0 +1,83 @@
+name: ssl-certificate-monitor
+description: Monitor SSL certificate expiration dates
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: shell
+
+trigger:
+  schedule: "0 9 * * *"  # Daily 9am
+
+config:
+  domains:
+    description: "Comma-separated domains to check"
+    required: true
+  
+  warning_days:
+    description: "Days before expiry to warn"
+    default: 30
+  
+  critical_days:
+    description: "Days before expiry for critical alert"
+    default: 7
+
+steps:
+  - name: check-certs
+    capability: shell
+    command: |
+      for domain in $(echo "${config.domains}" | tr ',' ' '); do
+        expiry=$(echo | openssl s_client -servername $domain -connect $domain:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+        if [ -n "$expiry" ]; then
+          expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "$expiry" +%s 2>/dev/null)
+          now_epoch=$(date +%s)
+          days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+          echo "$domain:$days_left:$expiry"
+        else
+          echo "$domain:-1:unknown"
+        fi
+      done
+    capture: cert_info
+
+  - name: analyze
+    action: evaluate
+    script: |
+      const warningDays = ${config.warning_days};
+      const criticalDays = ${config.critical_days};
+      
+      const results = [];
+      const critical = [];
+      const warning = [];
+      
+      for (const line of (cert_info || '').split('\n')) {
+        if (!line.trim()) continue;
+        const [domain, daysStr, expiry] = line.split(':');
+        const days = parseInt(daysStr);
+        
+        const item = { domain, daysLeft: days, expiry };
+        results.push(item);
+        
+        if (days <= criticalDays) {
+          critical.push(item);
+        } else if (days <= warningDays) {
+          warning.push(item);
+        }
+      }
+      
+      return { results, critical, warning, needsAlert: critical.length > 0 || warning.length > 0 };
+    capture: analysis
+
+  - name: alert
+    condition: "analysis.needsAlert"
+    action: notify
+    priority: "${analysis.critical.length > 0 ? 'high' : 'normal'}"
+    message: |
+      🔐 SSL Certificate Alert
+      
+      ${analysis.critical.length > 0 ? `🔴 **CRITICAL** (expires in <${config.critical_days} days):\n${analysis.critical.map(c => `• ${c.domain}: ${c.daysLeft} days (${c.expiry})`).join('\n')}\n\n` : ''}
+      ${analysis.warning.length > 0 ? `🟡 **Warning** (expires in <${config.warning_days} days):\n${analysis.warning.map(c => `• ${c.domain}: ${c.daysLeft} days`).join('\n')}` : ''}
+
+tags:
+  - security
+  - ssl
+  - monitoring

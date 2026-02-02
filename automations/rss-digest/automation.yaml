@@ -1,0 +1,75 @@
+name: rss-digest
+description: Aggregate multiple RSS feeds into a daily digest
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: http
+
+trigger:
+  schedule: "0 8 * * *"  # 8am daily
+
+config:
+  feeds:
+    description: "Comma-separated list of RSS feed URLs"
+    required: true
+  
+  max_items_per_feed:
+    description: "Maximum items to include per feed"
+    default: 5
+  
+  hours_back:
+    description: "Only include items from last N hours"
+    default: 24
+
+steps:
+  - name: fetch-feeds
+    capability: http
+    loop: "${config.feeds.split(',')}"
+    method: GET
+    url: "${item.trim()}"
+    headers:
+      Accept: "application/rss+xml, application/xml"
+    capture: feed_responses
+    continueOnError: true
+
+  - name: parse-feeds
+    action: evaluate
+    script: |
+      const hoursBack = ${config.hours_back};
+      const maxItems = ${config.max_items_per_feed};
+      const cutoff = Date.now() - (hoursBack * 60 * 60 * 1000);
+      
+      const items = [];
+      for (const resp of (feed_responses || [])) {
+        if (!resp) continue;
+        // Simple RSS parsing - extract titles and links
+        const titleMatches = resp.match(/<item>[\s\S]*?<title>([^<]+)<\/title>[\s\S]*?<link>([^<]+)<\/link>/gi) || [];
+        let count = 0;
+        for (const match of titleMatches) {
+          if (count >= maxItems) break;
+          const title = match.match(/<title>([^<]+)<\/title>/i)?.[1];
+          const link = match.match(/<link>([^<]+)<\/link>/i)?.[1];
+          if (title && link) {
+            items.push({ title: title.trim(), link: link.trim() });
+            count++;
+          }
+        }
+      }
+      return { items: items.slice(0, 20), count: items.length };
+    capture: parsed
+
+  - name: notify
+    condition: "parsed.count > 0"
+    action: notify
+    message: |
+      📰 Daily RSS Digest
+      
+      ${parsed.items.map(i => `• ${i.title}\n  ${i.link}`).join('\n\n')}
+      
+      ${parsed.count} items from ${config.feeds.split(',').length} feeds
+
+tags:
+  - content
+  - news
+  - rss

@@ -1,0 +1,82 @@
+name: email-digest
+description: Summarize unread emails into a daily digest
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: email
+
+trigger:
+  schedule: "0 8 * * *"  # 8am daily
+
+config:
+  max_emails:
+    description: "Maximum emails to include"
+    default: 20
+  
+  priority_senders:
+    description: "Email addresses to highlight"
+    default: ""
+  
+  auto_archive:
+    description: "Archive digested emails"
+    default: false
+
+steps:
+  - name: fetch-unread
+    capability: email
+    method: listUnread
+    args:
+      limit: "${config.max_emails}"
+    capture: emails
+
+  - name: categorize
+    action: evaluate
+    script: |
+      const priority = '${config.priority_senders}'.toLowerCase().split(',').filter(Boolean);
+      const emails = emails || [];
+      
+      const priorityEmails = [];
+      const regularEmails = [];
+      
+      for (const email of emails) {
+        const from = email.from?.toLowerCase() || '';
+        const isPriority = priority.some(p => from.includes(p));
+        
+        const summary = {
+          from: email.from,
+          subject: email.subject,
+          preview: email.body?.slice(0, 100),
+          date: email.date,
+          id: email.id
+        };
+        
+        if (isPriority) {
+          priorityEmails.push(summary);
+        } else {
+          regularEmails.push(summary);
+        }
+      }
+      
+      return {
+        priority: priorityEmails,
+        regular: regularEmails,
+        total: emails.length
+      };
+    capture: categorized
+
+  - name: notify
+    condition: "categorized.total > 0"
+    action: notify
+    message: |
+      📧 Email Digest (${categorized.total} unread)
+      
+      ${categorized.priority.length > 0 ? `**⭐ Priority:**\n${categorized.priority.map(e => `• ${e.from}: ${e.subject}`).join('\n')}\n\n` : ''}
+      **Other:**
+      ${categorized.regular.slice(0, 10).map(e => `• ${e.from}: ${e.subject}`).join('\n')}
+      ${categorized.regular.length > 10 ? `\n...and ${categorized.regular.length - 10} more` : ''}
+
+tags:
+  - email
+  - productivity
+  - digest
