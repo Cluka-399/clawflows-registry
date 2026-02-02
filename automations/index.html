@@ -185,6 +185,11 @@
   </div>
   
   <script>
+    
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    
     async function loadAutomations() {
       const container = document.getElementById('automations-grid');
       const countEl = document.getElementById('count');
@@ -202,13 +207,13 @@
         }
         
         container.innerHTML = automations.map(a => `
-          <a href="./${a.name}/" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${a.name}', from: 'listing'})">
+          <a href="./${escapeHtml(a.name)}/" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}', from: 'listing'})">
             <div class="automation-meta">
               <span>v${a.version || '1.0.0'}</span>
-              <span>by ${a.author || 'anonymous'}</span>
+              <span>by ${escapeHtml(a.author || 'anonymous')}</span>
             </div>
-            <h3>${a.name}</h3>
-            <p>${a.description || ''}</p>
+            <h3>${escapeHtml(a.name)}</h3>
+            <p>${escapeHtml(a.description || '')}</p>
             <div class="tags">
               ${(a.requires || []).map(c => `<span class="tag">${c}</span>`).join('')}
             </div>
