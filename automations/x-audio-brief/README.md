@@ -39,9 +39,12 @@ days: 3
 | `topic` | (required) | What to search for |
 | `days` | 1 | How far back to search |
 | `voice` | adam | ElevenLabs voice |
-| `max_tweets` | 10 | Max tweets to summarize |
+| `max_tweets` | 15 | Max tweets to summarize |
+| `duration_minutes` | 3 | Target audio length |
 | `include_text` | true | Include text summary |
-| `delivery` | notify | notify, file, or both |
+| `send_file` | true | Send audio file directly |
+| `channel` | discord | Channel to send to |
+| `target` | - | Channel/chat ID for delivery |
 
 ## Requirements
 

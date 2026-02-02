@@ -39,15 +39,27 @@ config:
   
   max_tweets:
     description: "Maximum tweets to include in summary"
-    default: 10
+    default: 15
+  
+  duration_minutes:
+    description: "Target audio length in minutes"
+    default: 3
   
   include_text:
     description: "Include text summary alongside audio"
     default: true
   
-  delivery:
-    description: "How to deliver (notify, file, both)"
-    default: "notify"
+  send_file:
+    description: "Send audio file via message (not just path)"
+    default: true
+  
+  channel:
+    description: "Channel to send to (discord, telegram, etc)"
+    default: "discord"
+  
+  target:
+    description: "Channel/chat ID to send the file to"
+    required: false
 
 steps:
   - name: search-x
@@ -87,9 +99,11 @@ steps:
         - No URLs, hashtags, or @ mentions (spell out names)
         - No emojis or special characters
         - Start with "Here's what's new on X about ${config.topic}"
-        - Highlight the most interesting takes and trends
-        - Keep it under 2 minutes when read aloud (~300 words)
-        - End with a brief takeaway or vibe check
+        - Go through each notable post in detail - who said it, what they said, why it matters
+        - Add context and connections between posts when relevant
+        - Include engagement numbers when impressive (likes, retweets)
+        - Target 3 MINUTES when read aloud (~450-500 words)
+        - End with overall sentiment/vibe and key takeaways
         
         Posts to summarize:
         ${topTweets.map(t => `- ${t.author}: ${t.content}`).join('\n')}
@@ -122,12 +136,24 @@ steps:
     capture: audioFile
 
   - name: deliver-briefing
+    action: message
+    method: send
+    args:
+      channel: "${config.channel}"
+      target: "${config.target}"
+      message: |
+        🎙️ **X Audio Brief: ${config.topic}**
+        
+        ${config.include_text ? textSummary : ''}
+      filePath: "${audioFile}"
+    condition: "${config.send_file && config.target}"
+
+  - name: fallback-notify
     action: notify
     message: |
       🎙️ **X Audio Brief: ${config.topic}**
       
       ${config.include_text ? textSummary : ''}
       
-      🔊 Audio attached
-    attachments:
-      - "${audioFile}"
+      🔊 Audio: ${audioFile}
+    condition: "${!config.send_file || !config.target}"
