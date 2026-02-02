@@ -207,7 +207,7 @@
         }
         
         container.innerHTML = automations.map(a => `
-          <a href="./${escapeHtml(a.name)}/" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}', from: 'listing'})">
+          <a href="${a.url || "#"}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}', from: 'listing'})">
             <div class="automation-meta">
               <span>v${a.version || '1.0.0'}</span>
               <span>by ${escapeHtml(a.author || 'anonymous')}</span>
