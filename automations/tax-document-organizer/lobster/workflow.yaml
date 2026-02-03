@@ -1,0 +1,124 @@
+# Lobster workflow: tax-document-organizer
+# Scan a directory for tax documents, categorize by type, report missing ones.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"docs_dir":"/path/to/tax-docs","tax_year":"2025"}'
+#
+# Expected directory structure: flat folder with tax-related files
+# Categories: W-2, 1099, 1098, receipts, donations, medical, property tax, etc.
+#
+# Requires: jq
+
+name: tax-document-organizer
+description: Scan directory for tax documents, categorize by type, report missing ones
+
+args:
+  docs_dir:
+    description: "Path to directory containing tax documents"
+  tax_year:
+    description: "Tax year to organize for"
+    default: "2025"
+
+steps:
+  - id: scan-docs
+    command: |
+      dir="${docs_dir}"
+      if [ ! -d "$dir" ]; then
+        echo '{"error":"Directory not found: ${docs_dir}"}' >&2
+        echo '{"files":[]}'
+        exit 1
+      fi
+      # Scan all files and output as JSON
+      echo '['
+      first=true
+      find "$dir" -maxdepth 2 -type f \( -name "*.pdf" -o -name "*.jpg" -o -name "*.png" -o -name "*.doc" -o -name "*.docx" -o -name "*.csv" -o -name "*.txt" -o -name "*.xlsx" \) 2>/dev/null | sort | while read -r f; do
+        fname=$(basename "$f")
+        fsize=$(stat -c%s "$f" 2>/dev/null || echo "0")
+        fdate=$(stat -c%Y "$f" 2>/dev/null || echo "0")
+        if [ "$first" = true ]; then first=false; else echo ','; fi
+        printf '{"path":"%s","name":"%s","size":%s,"modified":%s}' "$f" "$fname" "$fsize" "$fdate"
+      done
+      echo ']'
+
+  - id: categorize-docs
+    stdin: $scan-docs.stdout
+    command: |
+      cat > /tmp/lb_taxdocs.json
+      jq -c '
+        # Categorization rules based on filename patterns
+        def categorize:
+          (. | ascii_downcase) as $name |
+          if ($name | test("w-?2|w2")) then "W-2 (Wages)"
+          elif ($name | test("1099-?(misc|nec|int|div|b|s|r|g|k|sa|c)")) then "1099 (Income)"
+          elif ($name | test("1099")) then "1099 (Income)"
+          elif ($name | test("1098-?(t|e|c)?[^0-9]|1098")) then "1098 (Deductions)"
+          elif ($name | test("receipt|expense")) then "Receipts & Expenses"
+          elif ($name | test("donat|charit|contrib|501c")) then "Charitable Donations"
+          elif ($name | test("medic|health|dental|vision|hsa|fsa|pharma|rx")) then "Medical Expenses"
+          elif ($name | test("property.?tax|prop.?tax|real.?estate")) then "Property Tax"
+          elif ($name | test("mortgage|home.?loan")) then "Mortgage Interest"
+          elif ($name | test("invest|stock|trade|capital|brokerage|dividend")) then "Investment Records"
+          elif ($name | test("business|self.?employ|freelance|invoice|contract")) then "Business/Self-Employment"
+          elif ($name | test("child|depend|daycare|tuition|student|529|education")) then "Education/Dependents"
+          elif ($name | test("insurance|premium")) then "Insurance"
+          elif ($name | test("state.?tax|local.?tax|salt")) then "State & Local Tax"
+          elif ($name | test("retire|ira|401k|pension|roth")) then "Retirement"
+          else "Uncategorized"
+          end;
+
+        [.[] | . + {category: (.name | categorize)}] |
+        {
+          files: .,
+          total_files: length,
+          by_category: (group_by(.category) | map({
+            category: .[0].category,
+            count: length,
+            files: [.[].name]
+          }) | sort_by(.category)),
+          categories_found: ([.[].category] | unique | sort)
+        }
+      ' /tmp/lb_taxdocs.json
+      rm -f /tmp/lb_taxdocs.json
+
+  - id: check-missing
+    stdin: $categorize-docs.stdout
+    command: |
+      cat > /tmp/lb_taxcat.json
+      jq -c --arg year "${tax_year}" '
+        # Common tax document categories everyone should have
+        ["W-2 (Wages)", "1099 (Income)", "Receipts & Expenses", "Medical Expenses",
+         "Charitable Donations", "Insurance", "Investment Records"] as $common |
+        .categories_found as $found |
+        ($common - $found) as $missing |
+        . + {
+          missing_categories: $missing,
+          missing_count: ($missing | length),
+          tax_year: $year
+        }
+      ' /tmp/lb_taxcat.json
+      rm -f /tmp/lb_taxcat.json
+
+  - id: report
+    stdin: $check-missing.stdout
+    command: |
+      cat > /tmp/lb_tax_report.json
+      jq -r '
+        "📁 Tax Document Organizer — \(.tax_year)\n" +
+        "========================================\n\n" +
+        "📄 Found \(.total_files) document(s)\n\n" +
+        "--- Documents by Category ---\n" +
+        (.by_category | map(
+          "  📂 \(.category) (\(.count)):\n" +
+          (.files | map("     • \(.)") | join("\n"))
+        ) | join("\n\n")) +
+        "\n\n" +
+        if .missing_count > 0 then
+          "⚠️  Potentially Missing Documents (\(.missing_count)):\n" +
+          (.missing_categories | map("   ❓ \(.)") | join("\n")) +
+          "\n\n💡 These are common tax document categories not found in your folder.\n" +
+          "   They may not apply to you, but double-check before filing.\n"
+        else
+          "✅ All common tax document categories found!\n"
+        end
+      ' /tmp/lb_tax_report.json
+      rm -f /tmp/lb_tax_report.json

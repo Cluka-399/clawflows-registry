@@ -1,0 +1,142 @@
+# Lobster workflow: ssl-certificate-monitor
+# Check SSL certificate expiration dates using openssl
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"domains":"github.com,google.com","warning_days":"30","critical_days":"7"}'
+#
+# Requires: jq, curl, openssl
+#
+# No external APIs needed - connects directly to HTTPS endpoints
+
+name: ssl-certificate-monitor
+description: Monitor SSL certificate expiration dates and alert on upcoming expiries
+
+args:
+  domains:
+    description: "Comma-separated list of domains to check"
+    default: "clawhub.com,moltbook.com,clawflows.com"
+  warning_days:
+    description: "Days before expiry to show warning"
+    default: "30"
+  critical_days:
+    description: "Days before expiry for critical alert"
+    default: "14"
+
+steps:
+  - id: check-certs
+    command: |
+      results="[]"
+      now_epoch=$(date +%s)
+      for domain in $(echo "${domains}" | tr ',' ' '); do
+        # Get cert expiry date via openssl
+        expiry_str=$(echo | timeout 10 openssl s_client -servername "$domain" -connect "$domain":443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+
+        if [ -n "$expiry_str" ]; then
+          # Parse the date - openssl gives format like "Mar  5 12:00:00 2026 GMT"
+          expiry_epoch=$(date -d "$expiry_str" +%s 2>/dev/null || echo "0")
+          if [ "$expiry_epoch" = "0" ]; then
+            # Fallback: try alternate parsing
+            expiry_epoch=$(date --date="$expiry_str" +%s 2>/dev/null || echo "0")
+          fi
+
+          if [ "$expiry_epoch" != "0" ]; then
+            days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+            expiry_date=$(date -d "$expiry_str" +%Y-%m-%d 2>/dev/null || echo "$expiry_str")
+
+            # Also get issuer
+            issuer=$(echo | timeout 10 openssl s_client -servername "$domain" -connect "$domain":443 2>/dev/null | openssl x509 -noout -issuer 2>/dev/null | sed 's/issuer=//' | head -1)
+
+            entry_tmp=$(mktemp)
+            jq -n --arg d "$domain" --arg dl "$days_left" --arg exp "$expiry_date" --arg iss "$issuer" \
+              '{domain: $d, days_left: ($dl | tonumber), expiry_date: $exp, issuer: $iss}' > "$entry_tmp"
+          else
+            entry_tmp=$(mktemp)
+            jq -n --arg d "$domain" \
+              '{domain: $d, days_left: -1, expiry_date: "parse_error", issuer: "unknown"}' > "$entry_tmp"
+          fi
+        else
+          entry_tmp=$(mktemp)
+          jq -n --arg d "$domain" \
+            '{domain: $d, days_left: -1, expiry_date: "unreachable", issuer: "unknown"}' > "$entry_tmp"
+        fi
+
+        results_tmp=$(mktemp)
+        printf '%s' "$results" > "$results_tmp"
+        results=$(jq -c --slurpfile e "$entry_tmp" '. + [$e[0]]' "$results_tmp")
+        rm -f "$results_tmp" "$entry_tmp"
+      done
+      echo "$results" | jq '.'
+
+  - id: analyze
+    command: |
+      certs_file=$(mktemp)
+      printf '%s' '$check-certs.stdout' > "$certs_file"
+
+      jq --arg warn "${warning_days}" --arg crit "${critical_days}" '
+        ($warn | tonumber) as $warn_d |
+        ($crit | tonumber) as $crit_d |
+        [.[] |
+          . + {
+            status: (
+              if .days_left < 0 then "error"
+              elif .days_left <= $crit_d then "critical"
+              elif .days_left <= $warn_d then "warning"
+              else "ok" end
+            )
+          }
+        ] as $results |
+        {
+          results: $results,
+          critical: [$results[] | select(.status == "critical")],
+          warning: [$results[] | select(.status == "warning")],
+          ok: [$results[] | select(.status == "ok")],
+          errors: [$results[] | select(.status == "error")],
+          needs_alert: ([$results[] | select(.status == "critical" or .status == "warning")] | length > 0)
+        }
+      ' "$certs_file"
+      rm -f "$certs_file"
+
+  - id: report
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_ssl_report.json
+      jq -r '
+        (if (.critical | length) > 0 then
+          "🚨 SSL CERTIFICATE ALERT — Expiring Soon!\n"
+        elif .needs_alert then
+          "⚠️ SSL Certificate Warning\n"
+        else
+          "🔐 SSL Certificate Report — All Good\n"
+        end) +
+
+        (if (.critical | length) > 0 then
+          "\n🔴 CRITICAL (< " + ("${critical_days}") + " days):\n" +
+          ([.critical[] |
+            "  • " + .domain + ": " + (.days_left | tostring) + " days left (expires " + .expiry_date + ")" +
+            "\n    Issuer: " + .issuer
+          ] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.warning | length) > 0 then
+          "\n🟡 Warning (< " + ("${warning_days}") + " days):\n" +
+          ([.warning[] |
+            "  • " + .domain + ": " + (.days_left | tostring) + " days left (expires " + .expiry_date + ")"
+          ] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.ok | length) > 0 then
+          "\n✅ Healthy:\n" +
+          ([.ok[] |
+            "  • " + .domain + ": " + (.days_left | tostring) + " days remaining (expires " + .expiry_date + ")"
+          ] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.errors | length) > 0 then
+          "\n❌ Errors:\n" +
+          ([.errors[] |
+            "  • " + .domain + ": could not check (" + .expiry_date + ")"
+          ] | join("\n")) + "\n"
+        else "" end)
+      ' /tmp/lb_ssl_report.json
+      rm -f /tmp/lb_ssl_report.json

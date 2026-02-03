@@ -1,0 +1,141 @@
+# Lobster workflow: weather-commute
+# Fetch weather for commute planning using wttr.in
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"location":"Tel+Aviv"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - wttr.in (weather data, no auth needed)
+
+name: weather-commute
+description: Weather-based commute recommendations for your morning
+
+args:
+  location:
+    description: "Your location for weather"
+    default: "New York"
+  rain_threshold:
+    description: "Rain probability percentage to warn about"
+    default: "30"
+
+steps:
+  - id: fetch-weather
+    command: |
+      tmpf=$(mktemp)
+      loc=$(echo "${location}" | tr ' ' '+')
+      curl -sf --max-time 15 \
+        "https://wttr.in/${loc}?format=j1" \
+        -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e '.current_condition' "$tmpf" >/dev/null 2>&1; then
+        jq '{
+          current: {
+            temp_c: (.current_condition[0].temp_C // "?"),
+            feels_like_c: (.current_condition[0].FeelsLikeC // "?"),
+            condition: (.current_condition[0].weatherDesc[0].value // "Unknown"),
+            humidity: (.current_condition[0].humidity // "?"),
+            wind_kph: (.current_condition[0].windspeedKmph // "0"),
+            wind_dir: (.current_condition[0].winddir16Point // "?"),
+            uv_index: (.current_condition[0].uvIndex // "0"),
+            visibility_km: (.current_condition[0].visibility // "?")
+          },
+          today_hourly: [(.weather[0].hourly // [])[] | {
+            time: .time,
+            temp_c: .tempC,
+            feels_like_c: .FeelsLikeC,
+            condition: (.weatherDesc[0].value // "Unknown"),
+            rain_chance: (.chanceofrain // "0"),
+            snow_chance: (.chanceofsnow // "0"),
+            wind_kph: .windspeedKmph
+          }],
+          today_astronomy: {
+            sunrise: (.weather[0].astronomy[0].sunrise // "?"),
+            sunset: (.weather[0].astronomy[0].sunset // "?")
+          }
+        }' "$tmpf"
+      else
+        echo '{"current":{"temp_c":"?","condition":"Unavailable"},"today_hourly":[],"today_astronomy":{}}'
+      fi
+      rm -f "$tmpf"
+
+  - id: analyze
+    command: |
+      weather_file=$(mktemp)
+      printf '%s' '$fetch-weather.stdout' > "$weather_file"
+
+      jq --arg rain_thresh "${rain_threshold}" '
+        ($rain_thresh | tonumber) as $thresh |
+        .current as $now |
+        # Morning commute: ~7am-10am (time 700-1000)
+        [.today_hourly[] | select((.time | tonumber) >= 600 and (.time | tonumber) <= 1000)] as $morning |
+        # Evening commute: ~5pm-8pm (time 1700-2000)
+        [.today_hourly[] | select((.time | tonumber) >= 1600 and (.time | tonumber) <= 2000)] as $evening |
+
+        ($morning | any((.rain_chance | tonumber) > $thresh)) as $morning_rain |
+        ($evening | any((.rain_chance | tonumber) > $thresh)) as $evening_rain |
+        ($now.temp_c | tonumber) as $temp |
+        ($now.wind_kph | tonumber) as $wind |
+
+        [] +
+        (if $morning_rain then ["☔ Bring an umbrella for morning commute"] else [] end) +
+        (if $evening_rain then ["🌧️ Rain expected for evening commute"] else [] end) +
+        (if $temp < 5 then ["🧥 Bundle up — it\u0027s cold!"] else [] end) +
+        (if $temp > 30 then ["🌡️ It\u0027s hot — stay hydrated"] else [] end) +
+        (if $temp >= 5 and $temp <= 15 then ["🧣 Cool weather — light jacket recommended"] else [] end) +
+        (if $wind > 40 then ["💨 Strong winds today (" + ($wind | tostring) + " km/h)"] else [] end) +
+        (if ($now.uv_index | tonumber) >= 6 then ["🕶️ High UV (" + $now.uv_index + ") — wear sunscreen"] else [] end)
+        | . as $recommendations |
+        {
+          current: $now,
+          morning_hours: $morning,
+          evening_hours: $evening,
+          morning_rain: $morning_rain,
+          evening_rain: $evening_rain,
+          recommendations: $recommendations,
+          astronomy: .today_astronomy
+        }
+      ' "$weather_file"
+      rm -f "$weather_file"
+
+  - id: report
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_weather_report.json
+      jq -r --arg loc "${location}" '
+        "🚗 Commute Weather Report — " + $loc + "\n" +
+        "\n🌡️ Current: " + .current.temp_c + "°C" +
+        " (feels like " + .current.feels_like_c + "°C)" +
+        "\n☁️ " + .current.condition +
+        "\n💧 Humidity: " + .current.humidity + "%" +
+        "\n💨 Wind: " + .current.wind_kph + " km/h " + .current.wind_dir +
+        "\n🌅 Sunrise: " + (.astronomy.sunrise // "?") +
+        " | 🌇 Sunset: " + (.astronomy.sunset // "?") +
+        "\n" +
+        (if (.recommendations | length) > 0 then
+          "\n📋 Recommendations:\n" +
+          ([.recommendations[] | "  " + .] | join("\n"))
+        else
+          "\n✅ Clear commute expected — no weather concerns!"
+        end) +
+        "\n" +
+        (if (.morning_hours | length) > 0 then
+          "\n🌅 Morning (7-10am):\n" +
+          ([.morning_hours[] |
+            "  " + (if (.time | length) <= 2 then "0" else "" end) +
+            (.time | if length <= 1 then "0:00" elif length <= 2 then (.[0:1] + ":00") elif length <= 3 then (.[0:1] + ":" + .[1:3]) else (.[0:2] + ":" + .[2:4]) end) +
+            " — " + .temp_c + "°C, " + .condition +
+            " (rain: " + .rain_chance + "%)"
+          ] | join("\n"))
+        else "" end) +
+        (if (.evening_hours | length) > 0 then
+          "\n\n🌆 Evening (5-8pm):\n" +
+          ([.evening_hours[] |
+            "  " + (.time | if length <= 2 then "0:00" elif length <= 3 then (.[0:1] + ":" + .[1:3]) else (.[0:2] + ":" + .[2:4]) end) +
+            " — " + .temp_c + "°C, " + .condition +
+            " (rain: " + .rain_chance + "%)"
+          ] | join("\n"))
+        else "" end)
+      ' /tmp/lb_weather_report.json
+      rm -f /tmp/lb_weather_report.json

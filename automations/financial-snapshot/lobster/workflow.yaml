@@ -1,0 +1,117 @@
+# Lobster workflow: financial-snapshot
+# Aggregate income, expenses, and savings into a dashboard-style report.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"finances_file":"/path/to/finances.json"}'
+#
+# Finances file format:
+#   {
+#     "income": [{"source":"Salary","amount":5000,"date":"2026-01-01"},{"source":"Freelance","amount":800,"date":"2026-01-15"}],
+#     "expenses": [{"category":"rent","amount":1500,"date":"2026-01-01"},{"category":"groceries","amount":400,"date":"2026-01-10"}],
+#     "savings": [{"account":"Emergency Fund","balance":10000},{"account":"401k","balance":45000}],
+#     "debts": [{"name":"Student Loan","balance":15000,"rate":4.5},{"name":"Credit Card","balance":2000,"rate":19.9}]
+#   }
+#
+# Requires: jq
+
+name: financial-snapshot
+description: Aggregate income, expenses, savings, and debts into a financial dashboard
+
+args:
+  finances_file:
+    description: "Path to JSON file with income, expenses, savings, and debts"
+
+steps:
+  - id: load-finances
+    command: |
+      if [ ! -f "${finances_file}" ]; then
+        echo '{"error":"Finances file not found: ${finances_file}"}' >&2
+        echo '{}'
+        exit 1
+      fi
+      cat "${finances_file}"
+
+  - id: compute-snapshot
+    stdin: $load-finances.stdout
+    command: |
+      cat > /tmp/lb_finances.json
+      jq -c '
+        # Income totals
+        (.income // []) as $income |
+        ($income | map(.amount) | add // 0) as $total_income |
+        ($income | group_by(.source) | map({source: .[0].source, total: (map(.amount) | add)})) as $income_by_source |
+
+        # Expense totals
+        (.expenses // []) as $expenses |
+        ($expenses | map(.amount) | add // 0) as $total_expenses |
+        ($expenses | group_by(.category) | map({category: .[0].category, total: (map(.amount) | add)}) | sort_by(-.total)) as $expenses_by_cat |
+
+        # Savings
+        (.savings // []) as $savings |
+        ($savings | map(.balance) | add // 0) as $total_savings |
+
+        # Debts
+        (.debts // []) as $debts |
+        ($debts | map(.balance) | add // 0) as $total_debt |
+
+        # Net worth & cash flow
+        ($total_income - $total_expenses) as $net_cashflow |
+        ($total_savings - $total_debt) as $net_worth |
+        (if $total_income > 0 then ($total_expenses / $total_income * 100 | round) else 0 end) as $expense_ratio |
+        (if $total_income > 0 then ($net_cashflow / $total_income * 100 | round) else 0 end) as $savings_rate |
+
+        {
+          total_income: ($total_income | . * 100 | round / 100),
+          total_expenses: ($total_expenses | . * 100 | round / 100),
+          net_cashflow: ($net_cashflow | . * 100 | round / 100),
+          total_savings: ($total_savings | . * 100 | round / 100),
+          total_debt: ($total_debt | . * 100 | round / 100),
+          net_worth: ($net_worth | . * 100 | round / 100),
+          expense_ratio: $expense_ratio,
+          savings_rate: $savings_rate,
+          income_by_source: $income_by_source,
+          expenses_by_category: $expenses_by_cat,
+          savings_accounts: $savings,
+          debts: $debts
+        }
+      ' /tmp/lb_finances.json
+      rm -f /tmp/lb_finances.json
+
+  - id: report
+    stdin: $compute-snapshot.stdout
+    command: |
+      cat > /tmp/lb_snap_report.json
+      jq -r '
+        "💰 Financial Snapshot\n" +
+        "=====================\n\n" +
+        "📈 INCOME: $\(.total_income)\n" +
+        (.income_by_source | map("   \(.source): $\(.total)") | join("\n")) +
+        "\n\n📉 EXPENSES: $\(.total_expenses) (\(.expense_ratio)% of income)\n" +
+        (.expenses_by_category | map("   \(.category): $\(.total)") | join("\n")) +
+        "\n\n💵 CASH FLOW: " +
+        (if .net_cashflow >= 0 then "✅ +$\(.net_cashflow) (\(.savings_rate)% savings rate)"
+         else "🔴 -$\(-.net_cashflow) (spending exceeds income!)" end) +
+        "\n\n🏦 SAVINGS: $\(.total_savings)\n" +
+        (.savings_accounts | map("   \(.account): $\(.balance)") | join("\n")) +
+        "\n\n💳 DEBTS: $\(.total_debt)\n" +
+        (if (.debts | length) > 0 then
+          (.debts | sort_by(-.rate) | map("   \(.name): $\(.balance) @ \(.rate)%") | join("\n"))
+        else "   None! 🎉" end) +
+        "\n\n📊 NET WORTH: " +
+        (if .net_worth >= 0 then "✅ $\(.net_worth)" else "🔴 -$\(-.net_worth)" end) +
+        "\n" +
+        "\n--- Health Indicators ---\n" +
+        (if .savings_rate >= 20 then "🟢" elif .savings_rate >= 10 then "🟡" else "🔴" end) +
+        " Savings Rate: \(.savings_rate)%" +
+        (if .savings_rate >= 20 then " (excellent)" elif .savings_rate >= 10 then " (good)" else " (needs improvement)" end) +
+        "\n" +
+        (if .expense_ratio <= 70 then "🟢" elif .expense_ratio <= 90 then "🟡" else "🔴" end) +
+        " Expense Ratio: \(.expense_ratio)%" +
+        "\n" +
+        (if .total_debt == 0 then "🟢 Debt Free!" else
+          (if .net_worth > 0 then "🟢" else "🔴" end) +
+          " Debt-to-Savings: " +
+          (if .total_savings > 0 then "\(.total_debt / .total_savings * 100 | round)%" else "N/A" end)
+        end)
+      ' /tmp/lb_snap_report.json
+      rm -f /tmp/lb_snap_report.json

@@ -1,0 +1,106 @@
+# Lobster workflow: savings-goal-tracker
+# Track savings progress toward goals with milestone celebrations
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"goals_file":"/path/to/savings-goals.json"}'
+#
+# Goals file format (JSON array):
+#   [
+#     {"name":"Emergency Fund","target":10000,"saved":6500,"deadline":"2026-06-01"},
+#     {"name":"Vacation","target":3000,"saved":1200,"deadline":"2026-08-15"}
+#   ]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: savings-goal-tracker
+description: Track progress toward savings goals with milestone celebrations
+
+args:
+  goals_file:
+    description: "Path to JSON file with savings goals [{name, target, saved, deadline}]"
+
+steps:
+  - id: load-goals
+    command: |
+      if [ ! -f "${goals_file}" ]; then
+        echo '{"error":"Goals file not found: ${goals_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${goals_file}"
+
+  - id: calculate-progress
+    stdin: $load-goals.stdout
+    command: |
+      cat > /tmp/lb_goals.json
+      today=$(date +%Y-%m-%d)
+      jq -c --arg today "$today" '
+        [.[] |
+          (.saved / .target * 100 | . * 10 | round / 10) as $pct |
+          (.target - .saved) as $remaining |
+          # Days until deadline (rough calc)
+          ((.deadline | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber)) -
+           ($today | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber))
+          ) as $days_left |
+          # Required daily/monthly savings
+          (if $days_left > 0 then ($remaining / $days_left * 100 | round / 100) else 0 end) as $daily_needed |
+          . + {
+            pct: $pct,
+            remaining: $remaining,
+            days_left: $days_left,
+            daily_needed: $daily_needed,
+            monthly_needed: ($daily_needed * 30 * 100 | round / 100),
+            on_track: ($days_left > 0 and $daily_needed >= 0),
+            milestone: (
+              if $pct >= 100 then "complete"
+              elif $pct >= 75 then "75pct"
+              elif $pct >= 50 then "50pct"
+              elif $pct >= 25 then "25pct"
+              else "starting" end
+            )
+          }
+        ] | sort_by(-.pct)
+      ' /tmp/lb_goals.json
+      rm -f /tmp/lb_goals.json
+
+  - id: report
+    stdin: $calculate-progress.stdout
+    command: |
+      cat > /tmp/lb_progress.json
+      jq -r '
+        def progress_bar(pct):
+          ((pct / 10) | floor) as $filled |
+          (10 - $filled) as $empty |
+          ("█" * $filled) + ("░" * $empty);
+
+        def milestone_icon:
+          if .milestone == "complete" then "🏆"
+          elif .milestone == "75pct" then "🌟"
+          elif .milestone == "50pct" then "⭐"
+          elif .milestone == "25pct" then "🎯"
+          else "🚀" end;
+
+        if length == 0 then
+          "💰 No savings goals configured."
+        else
+          . as $all |
+          ([.[].saved] | add) as $total_saved |
+          ([.[].target] | add) as $total_target |
+          ($total_saved / $total_target * 100 | . * 10 | round / 10) as $total_pct |
+          "💰 Savings Goal Progress\n" +
+          "═══════════════════════\n" +
+          ([$all[] |
+            "\(milestone_icon) \(.name)\n" +
+            "   \(progress_bar(.pct)) \(.pct)%\n" +
+            "   $\(.saved) / $\(.target)" +
+            (if .milestone == "complete" then " ✅ GOAL REACHED!"
+             else " — $\(.remaining) to go"
+             end) +
+            (if .milestone != "complete" and .days_left > 0 then
+              "\n   📅 \(.days_left) days left — need ~$\(.monthly_needed)/month"
+            else "" end)
+          ] | join("\n\n")) +
+          "\n\n💵 Total saved: $\($total_saved) / $\($total_target) (\($total_pct)%)"
+        end
+      ' /tmp/lb_progress.json
+      rm -f /tmp/lb_progress.json

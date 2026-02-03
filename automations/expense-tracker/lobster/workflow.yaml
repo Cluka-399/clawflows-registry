@@ -1,0 +1,110 @@
+# Lobster workflow: expense-tracker
+# Read expenses from JSON, categorize, show monthly totals
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"expenses_file":"/path/to/expenses.json","budget":"5000"}'
+#
+# Expenses file format (JSON array):
+#   [
+#     {"date":"2026-02-01","amount":45.50,"category":"food","description":"Groceries"},
+#     {"date":"2026-02-02","amount":12.00,"category":"transport","description":"Bus pass"}
+#   ]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: expense-tracker
+description: Track and categorize expenses with weekly summaries
+
+args:
+  expenses_file:
+    description: "Path to JSON file with expense entries [{date, amount, category, description}]"
+  budget:
+    description: "Monthly budget amount"
+    default: "5000"
+
+steps:
+  - id: load-expenses
+    command: |
+      if [ ! -f "${expenses_file}" ]; then
+        echo '{"error":"Expenses file not found: ${expenses_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${expenses_file}"
+
+  - id: analyze
+    stdin: $load-expenses.stdout
+    command: |
+      cat > /tmp/lb_expenses.json
+      month_start=$(date +%Y-%m-01)
+      week_ago=$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || date -v-7d +%Y-%m-%d)
+      day_of_month=$(date +%-d)
+      days_in_month=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%-d 2>/dev/null || echo 30)
+      budget=${budget}
+      jq -c --arg month_start "$month_start" \
+             --arg week_ago "$week_ago" \
+             --argjson day "$day_of_month" \
+             --argjson dim "$days_in_month" \
+             --argjson budget "$budget" '
+        # Split into month and week
+        ([.[] | select(.date >= $month_start)] ) as $month |
+        ([.[] | select(.date >= $week_ago)] ) as $week |
+        # Month total
+        ($month | map(.amount) | add // 0) as $month_total |
+        ($week | map(.amount) | add // 0) as $week_total |
+        # By category (this month)
+        ($month | group_by(.category) |
+          [.[] | {
+            category: .[0].category,
+            total: (map(.amount) | add),
+            count: length
+          }] | sort_by(-.total)
+        ) as $by_cat |
+        # Budget calculations
+        ($month_total / $budget * 100 | . * 10 | round / 10) as $pct_used |
+        (($budget - $month_total) / (($dim - $day) | if . <= 0 then 1 else . end) | . * 100 | round / 100) as $daily_remaining |
+        {
+          month_total: ($month_total * 100 | round / 100),
+          week_total: ($week_total * 100 | round / 100),
+          by_category: $by_cat,
+          budget: $budget,
+          pct_used: $pct_used,
+          daily_remaining: $daily_remaining,
+          days_left: ($dim - $day),
+          over_budget: ($month_total > $budget),
+          top_expense: ($month | sort_by(-.amount) | .[0] // null)
+        }
+      ' /tmp/lb_expenses.json
+      rm -f /tmp/lb_expenses.json
+
+  - id: report
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_analysis.json
+      jq -r '
+        def budget_bar(pct):
+          ((pct / 10) | floor | if . > 10 then 10 else . end) as $filled |
+          (10 - $filled) as $empty |
+          ("█" * $filled) + ("░" * $empty);
+
+        "💸 Expense Report\n" +
+        "═══════════════════\n\n" +
+        "📅 This Week: $\(.week_total)\n" +
+        "📅 This Month: $\(.month_total) / $\(.budget)\n" +
+        "   \(budget_bar(.pct_used)) \(.pct_used)%\n\n" +
+        "📊 By Category:\n" +
+        (.by_category | if length == 0 then "   No expenses yet"
+         else [.[] |
+           "   • \(.category): $\(.total * 100 | round / 100) (\(.count) txns)"
+         ] | join("\n") end) +
+        "\n\n" +
+        (if .over_budget then
+          "🚨 OVER BUDGET by $\(.month_total - .budget)!"
+        else
+          "💵 \(.days_left) days left — $\(.daily_remaining)/day remaining"
+        end) +
+        (if .top_expense then
+          "\n🏷️ Largest expense: $\(.top_expense.amount) (\(.top_expense.description // .top_expense.category))"
+        else "" end)
+      ' /tmp/lb_analysis.json
+      rm -f /tmp/lb_analysis.json

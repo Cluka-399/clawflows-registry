@@ -1,0 +1,5 @@
+[
+  {"name": "Vitamin D", "times": ["08:00", "20:00"], "dosage": "1000 IU"},
+  {"name": "Omega-3", "times": ["12:00"], "dosage": "1 capsule"},
+  {"name": "Magnesium", "times": ["22:00"], "dosage": "400mg"}
+]

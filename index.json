@@ -580,7 +580,7 @@
       "tags": [
         "productivity"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/deadline-tracker/"
@@ -651,7 +651,7 @@
         "monitoring",
         "business"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/domain-expiry-monitor/"
@@ -721,7 +721,7 @@
         "health",
         "fitness"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/exercise-tracker/"
@@ -738,7 +738,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/expense-categorizer/"
@@ -756,7 +756,7 @@
         "expenses",
         "budget"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/expense-tracker/"
@@ -773,7 +773,7 @@
         "health",
         "ergonomics"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/eye-strain-break/"
@@ -789,7 +789,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/financial-snapshot/"
@@ -858,7 +858,7 @@
         "git",
         "cleanup"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/git-branch-cleaner/"
@@ -890,7 +890,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/github-stale-prs/"
@@ -908,7 +908,7 @@
         "github",
         "trending"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/github-trending/"
@@ -926,7 +926,7 @@
         "health",
         "productivity"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/habit-streaks/"
@@ -976,7 +976,7 @@
       "tags": [
         "health"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/hydration-reminder/"
@@ -1026,7 +1026,7 @@
         "finance",
         "business"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/invoice-reminder/"
@@ -1110,7 +1110,7 @@
       "tags": [
         "health"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/medication-reminder/"
@@ -1161,7 +1161,7 @@
         "message"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/molt-price-alert/"
@@ -1179,7 +1179,7 @@
         "health",
         "wellness"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/mood-tracker/"
@@ -1229,7 +1229,7 @@
         "developer",
         "security"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/npm-audit-scheduler/"
@@ -1316,7 +1316,7 @@
         "health",
         "ergonomics"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/posture-check/"
@@ -1367,7 +1367,7 @@
         "startups",
         "daily"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/product-hunt-daily/"
@@ -1452,7 +1452,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/savings-goal-tracker/"
@@ -1573,7 +1573,7 @@
         "ssl",
         "monitoring"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/ssl-certificate-monitor/"
@@ -1607,7 +1607,7 @@
         "finance",
         "investing"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/stock-watchlist-alert/"
@@ -1624,7 +1624,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/subscription-auditor/"
@@ -1674,7 +1674,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/tax-document-organizer/"
@@ -1780,7 +1780,7 @@
         "commute",
         "daily"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/weather-commute/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 15
+  "lobster_ready": 40
 }

@@ -1,0 +1,157 @@
+# Lobster workflow: stock-watchlist-alert
+# Monitor stock prices and alert on significant moves
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"symbols":"AAPL,MSFT,GOOG","alert_threshold":"5"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - Yahoo Finance v8 quote API (no auth needed)
+
+name: stock-watchlist-alert
+description: Monitor stock prices and alert on significant moves or target prices
+
+args:
+  symbols:
+    description: "Comma-separated stock symbols to watch"
+    default: "AAPL,MSFT,GOOG"
+  alert_threshold:
+    description: "Alert if any stock moves more than this percentage since last check"
+    default: "5"
+  state_file:
+    description: "Path to state file for tracking last known prices"
+    default: "/tmp/clawflows-stock-watchlist-state.json"
+
+steps:
+  - id: fetch-prices
+    command: |
+      tmpf=$(mktemp)
+      symbols="${symbols}"
+      url="https://query1.finance.yahoo.com/v8/finance/spark?symbols=${symbols}&range=1d&interval=1d"
+      curl -sf --max-time 15 \
+        -H "User-Agent: Mozilla/5.0" \
+        "$url" -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e '.spark' "$tmpf" >/dev/null 2>&1; then
+        jq '[.spark.result[] | {
+          symbol: .symbol,
+          price: (.response[0].meta.regularMarketPrice // 0),
+          previous_close: (.response[0].meta.chartPreviousClose // 0),
+          day_change_pct: (if (.response[0].meta.chartPreviousClose // 0) > 0 then
+            (((.response[0].meta.regularMarketPrice // 0) - (.response[0].meta.chartPreviousClose // 0)) / (.response[0].meta.chartPreviousClose // 0) * 100 * 100 | round / 100)
+          else 0 end)
+        }]' "$tmpf"
+      else
+        # Fallback: try individual quote endpoint
+        result="["
+        first=true
+        for sym in $(echo "$symbols" | tr ',' ' '); do
+          qf=$(mktemp)
+          curl -sf --max-time 10 \
+            -H "User-Agent: Mozilla/5.0" \
+            "https://query1.finance.yahoo.com/v8/finance/chart/${sym}?range=1d&interval=1d" \
+            -o "$qf" 2>/dev/null
+          if [ -s "$qf" ] && jq -e '.chart.result[0]' "$qf" >/dev/null 2>&1; then
+            entry=$(jq -c '{
+              symbol: .chart.result[0].meta.symbol,
+              price: (.chart.result[0].meta.regularMarketPrice // 0),
+              previous_close: (.chart.result[0].meta.chartPreviousClose // 0),
+              day_change_pct: (if (.chart.result[0].meta.chartPreviousClose // 0) > 0 then
+                (((.chart.result[0].meta.regularMarketPrice // 0) - (.chart.result[0].meta.chartPreviousClose // 0)) / (.chart.result[0].meta.chartPreviousClose // 0) * 100 * 100 | round / 100)
+              else 0 end)
+            }' "$qf")
+            if [ "$first" = true ]; then first=false; else result="$result,"; fi
+            result="$result$entry"
+          fi
+          rm -f "$qf"
+        done
+        result="$result]"
+        echo "$result" | jq '.'
+      fi
+      rm -f "$tmpf"
+
+  - id: load-state
+    command: |
+      cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: analyze
+    command: |
+      prices_file=$(mktemp)
+      state_tmp=$(mktemp)
+      printf '%s' '$fetch-prices.stdout' > "$prices_file"
+      printf '%s' '$load-state.stdout' > "$state_tmp"
+
+      jq -n \
+        --slurpfile prices "$prices_file" \
+        --slurpfile state "$state_tmp" \
+        --arg threshold "${alert_threshold}" \
+      '
+        ($threshold | tonumber) as $thresh |
+        ($state[0] // {}) as $prev_state |
+        ($prices[0] // []) as $stocks |
+        [
+          $stocks[] |
+          . as $s |
+          ($prev_state[.symbol].price // 0) as $last_price |
+          (if $last_price > 0 then
+            ((.price - $last_price) / $last_price * 100 * 100 | round / 100)
+          else 0 end) as $change_from_last |
+          {
+            symbol: .symbol,
+            price: .price,
+            previous_close: .previous_close,
+            day_change_pct: .day_change_pct,
+            last_tracked_price: $last_price,
+            change_from_last_pct: $change_from_last,
+            significant: (if $last_price > 0 then
+              ($change_from_last > $thresh or $change_from_last < (0 - $thresh))
+            else false end),
+            first_run: ($last_price == 0)
+          }
+        ] as $analyzed |
+        {
+          stocks: $analyzed,
+          any_significant: ($analyzed | any(.significant)),
+          any_first_run: ($analyzed | any(.first_run)),
+          threshold: $thresh
+        }
+      '
+      rm -f "$prices_file" "$state_tmp"
+
+  - id: save-state
+    command: |
+      analysis_file=$(mktemp)
+      printf '%s' '$analyze.stdout' > "$analysis_file"
+      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      jq --arg t "$now" '
+        [.stocks[] | {key: .symbol, value: {price: .price, updated: $t}}] | from_entries
+      ' "$analysis_file" > "${state_file}"
+      cat "$analysis_file"
+      rm -f "$analysis_file"
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      cat > /tmp/lb_stock_report.json
+      jq -r '
+        (if .any_significant then
+          "🚨 STOCK WATCHLIST ALERT — Significant Move Detected!\n"
+        else
+          "📊 Stock Watchlist Update\n"
+        end) +
+        "⚙️  Alert threshold: ±" + (.threshold | tostring) + "%\n" +
+        "\n" +
+        ([.stocks[] |
+          (if .significant then "🔔 " else "  " end) +
+          "**" + .symbol + "**: $" + (.price | tostring) +
+          (if .first_run then
+            " (🆕 first run — tracking started)"
+          else
+            " | Day: " + (if .day_change_pct >= 0 then "+" else "" end) + (.day_change_pct | tostring) + "%" +
+            " | Since last: " + (if .change_from_last_pct >= 0 then "+" else "" end) + (.change_from_last_pct | tostring) + "%" +
+            (if .significant then " ⚠️" else "" end)
+          end)
+        ] | join("\n"))
+      ' /tmp/lb_stock_report.json
+      rm -f /tmp/lb_stock_report.json

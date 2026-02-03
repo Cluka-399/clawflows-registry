@@ -1,0 +1,36 @@
+# Lobster workflow: hydration-reminder
+# Picks a random hydration tip and outputs a water reminder
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"glass_size_ml":"350"}'
+#
+# Requires: (no external deps)
+
+name: hydration-reminder
+description: Smart water reminders with random hydration tips
+
+args:
+  tips:
+    description: "Comma-separated list of hydration tips"
+    default: "drink a full glass of water,try some herbal tea,add lemon to your water,have a glass of sparkling water,drink water before your next meal,fill up your water bottle,try coconut water for electrolytes,have a warm cup of water with honey"
+  glass_size_ml:
+    description: "Suggested glass size in milliliters"
+    default: "250"
+
+steps:
+  - id: pick-tip
+    command: |
+      echo "${tips}" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1
+
+  - id: format-reminder
+    stdin: $pick-tip.stdout
+    command: |
+      tip=$(cat)
+      cat <<EOF
+      💧 Hydration Check!
+
+      Time to ${tip}.
+
+      Aim for ${glass_size_ml}ml — your body needs water to stay sharp! 🚰
+      EOF

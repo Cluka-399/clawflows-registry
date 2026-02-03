@@ -1,0 +1,89 @@
+# Lobster workflow: github-stale-prs
+# Alert on pull requests that have been open too long
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repos":"owner/repo1,owner/repo2","stale_days":"7"}'
+#
+# Requires: jq, curl
+# Env: GITHUB_TOKEN (optional, for private repos / higher rate limits)
+
+name: github-stale-prs
+description: Alert on pull requests that have been open too long or need attention
+
+args:
+  repos:
+    description: "Comma-separated GitHub repos (owner/repo)"
+    default: "openai/openai-python"
+  stale_days:
+    description: "Days before a PR is considered stale"
+    default: "7"
+
+steps:
+  - id: fetch-prs
+    command: |
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+
+      for repo in $(echo "${repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        curl -sf \
+          -H "Accept: application/vnd.github+json" \
+          ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
+          "https://api.github.com/repos/$repo/pulls?state=open&per_page=100&sort=updated&direction=asc" \
+          2>/dev/null | jq -c --arg r "$repo" \
+            '[.[] | {repo:$r, number:.number, title:.title, author:.user.login, url:.html_url, created:.created_at, updated:.updated_at, draft:.draft, labels:[.labels[].name], reviewers:[.requested_reviewers[].login]}]' \
+          > /tmp/lb_prs_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_prs_chunk.json
+        jq -sc '.[0]+.[1]' "$tmpf" /tmp/lb_prs_chunk.json > /tmp/lb_prs_merged.json
+        mv /tmp/lb_prs_merged.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_prs_chunk.json
+
+  - id: categorize
+    stdin: $fetch-prs.stdout
+    command: |
+      cat > /tmp/lb_all_prs.json
+      stale_days=${stale_days}
+
+      # Parse dates correctly - GitHub uses ISO 8601 format: 2024-01-15T10:30:00Z
+      # Use substring to strip timezone and parse
+      jq -c --arg days "$stale_days" '
+        (now | floor) as $now |
+        ($days | tonumber) as $d |
+        ($d * 86400) as $threshold |
+        {
+          stale: [.[] | select($now - ((.updated[0:19] + "Z") | fromdate) > $threshold) | . + {days_old: (($now - ((.updated[0:19] + "Z") | fromdate)) / 86400 | floor)}],
+          needs_review: [.[] | select((.reviewers | length) > 0)],
+          drafts: [.[] | select(.draft == true)],
+          total: length
+        }
+      ' /tmp/lb_all_prs.json
+      rm -f /tmp/lb_all_prs.json
+
+  - id: report
+    stdin: $categorize.stdout
+    command: |
+      cat > /tmp/lb_pr_cats.json
+      stale=$(jq '.stale | length' /tmp/lb_pr_cats.json)
+      review=$(jq '.needs_review | length' /tmp/lb_pr_cats.json)
+      total=$(jq '.total' /tmp/lb_pr_cats.json)
+
+      if [ "$stale" = "0" ] && [ "$review" = "0" ]; then
+        echo "✅ All $total PRs look healthy — no stale or review-needed PRs."
+      else
+        echo "🔀 PR Status Report"
+        echo ""
+        if [ "$stale" != "0" ]; then
+          echo "⏰ Stale PRs (>${stale_days} days without update):"
+          jq -r '.stale[] | "  • #\(.number) \(.title) — @\(.author) (\(.days_old)d old)\n    \(.url)"' /tmp/lb_pr_cats.json
+          echo ""
+        fi
+        if [ "$review" != "0" ]; then
+          echo "👀 Awaiting Review:"
+          jq -r '.needs_review[] | "  • #\(.number) \(.title) — @\(.author)\n    Reviewers: \(.reviewers | join(", "))\n    \(.url)"' /tmp/lb_pr_cats.json
+          echo ""
+        fi
+        echo "📊 $total total open PRs"
+      fi
+      rm -f /tmp/lb_pr_cats.json

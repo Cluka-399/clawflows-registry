@@ -1,0 +1,78 @@
+# Lobster workflow: product-hunt-daily
+# Daily digest of top Product Hunt launches
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"max_products":"10"}'
+#
+# Requires: jq, curl
+
+name: product-hunt-daily
+description: Daily digest of top Product Hunt launches
+
+args:
+  max_products:
+    description: "Maximum products to show"
+    default: "5"
+
+steps:
+  - id: fetch-ph
+    command: |
+      # Fetch Product Hunt Atom feed
+      curl -sf -L \
+        -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+        "https://www.producthunt.com/feed" 2>/dev/null || echo ""
+
+  - id: parse-products
+    stdin: $fetch-ph.stdout
+    command: |
+      max=${max_products}
+      tmpin=$(mktemp)
+      cat > "$tmpin"
+
+      # Convert XML to JSON using jq (slurp raw input and parse)
+      # First extract entry blocks (may span multiple lines)
+      results='[]'
+      
+      # Use awk to extract entry blocks, then process each
+      awk '/<entry>/{flag=1; block=""} flag{block=block $0 ORS} /<\/entry>/{flag=0; print block}' "$tmpin" 2>/dev/null | head -n "$max" | while IFS= read -r entry; do
+        [ -z "$entry" ] && continue
+        # Extract title
+        title=$(echo "$entry" | sed -n 's/.*<title>\([^<]*\)<\/title>.*/\1/p' | head -1)
+        # Extract link href
+        link=$(echo "$entry" | sed -n 's/.*<link[^>]*href="\([^"]*\)".*rel="alternate".*/\1/p' | head -1)
+        [ -z "$link" ] && link=$(echo "$entry" | sed -n 's/.*<link[^>]*rel="alternate"[^>]*href="\([^"]*\)".*/\1/p' | head -1)
+        [ -z "$link" ] && link=$(echo "$entry" | sed -n 's/.*<link[^>]*href="\([^"]*\)".*/\1/p' | head -1)
+        # Extract content/description from CDATA or HTML encoded
+        desc=$(echo "$entry" | sed -n 's/.*<content[^>]*>.*&lt;p&gt;\([^&]*\)&lt;\/p&gt;.*/\1/p' | head -1)
+        [ -z "$desc" ] && desc=$(echo "$entry" | sed -n 's/.*&lt;p&gt;\([^&]*\)&lt;\/p&gt;.*/\1/p' | head -1)
+        
+        # Clean up newlines and extra spaces
+        title=$(echo "$title" | tr -d '\n' | xargs 2>/dev/null || echo "$title")
+        desc=$(echo "$desc" | tr -d '\n' | xargs 2>/dev/null || echo "$desc")
+        
+        # Output as JSON if we have both name and link
+        if [ -n "$title" ] && [ -n "$link" ]; then
+          echo "{\"name\":\"$title\",\"url\":\"$link\",\"tagline\":\"$desc\"}"
+        fi
+      done | jq -s '.' > /tmp/lb_parsed_feed.json 2>/dev/null || echo '[]' > /tmp/lb_parsed_feed.json
+
+      cat /tmp/lb_parsed_feed.json
+      rm -f "$tmpin" /tmp/lb_parsed_feed.json
+
+  - id: report
+    stdin: $parse-products.stdout
+    command: |
+      cat > /tmp/lb_ph_final.json
+      count=$(jq 'length' /tmp/lb_ph_final.json 2>/dev/null || echo 0)
+
+      if [ "$count" = "0" ] || [ "$count" = "null" ]; then
+        echo "🚀 Product Hunt Daily"
+        echo ""
+        echo "No products found in feed. Try visiting: https://www.producthunt.com"
+      else
+        echo "🚀 Product Hunt Today"
+        echo ""
+        jq -r 'to_entries[] | "\(.key+1). **\(.value.name)**\n   \(.value.tagline)\n   \(.value.url)\n"' /tmp/lb_ph_final.json
+      fi
+      rm -f /tmp/lb_ph_final.json

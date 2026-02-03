@@ -1,0 +1,91 @@
+# Lobster workflow: habit-streaks
+# Track daily habits with streak counters
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"habits_file":"/path/to/habits.json"}'
+#
+# Habits file format (JSON):
+#   {
+#     "habits": ["exercise","read","meditate"],
+#     "log": [
+#       {"date":"2026-02-03","completed":["exercise","read"]},
+#       {"date":"2026-02-02","completed":["exercise","read","meditate"]}
+#     ]
+#   }
+#
+# Requires: jq, date (GNU coreutils)
+
+name: habit-streaks
+description: Track daily habits with streak counters and accountability
+
+args:
+  habits_file:
+    description: "Path to JSON file with habits and daily log"
+
+steps:
+  - id: load-habits
+    command: |
+      if [ ! -f "${habits_file}" ]; then
+        echo '{"error":"Habits file not found: ${habits_file}"}' >&2
+        echo '{"habits":[],"log":[]}'
+        exit 1
+      fi
+      cat "${habits_file}"
+
+  - id: calculate-streaks
+    stdin: $load-habits.stdout
+    command: |
+      cat > /tmp/lb_habits.json
+      today=$(date +%Y-%m-%d)
+      jq -r --arg today "$today" '
+        .habits as $habits |
+        .log as $log |
+        # Sort log by date descending
+        ($log | sort_by(.date) | reverse) as $sorted |
+        # For each habit, calculate current streak
+        [$habits[] as $h |
+          # Walk backwards through sorted dates
+          {habit: $h} +
+          (reduce range(0; $sorted | length) as $i (
+            {streak: 0, broken: false, last_check: $today};
+            if .broken then .
+            else
+              ($sorted[$i].date) as $d |
+              # Check if this date has the habit completed
+              if ($sorted[$i].completed | index($h)) then
+                .streak += 1 | .last_check = $d
+              else
+                .broken = true
+              end
+            end
+          ) | {streak, last_check})
+        ] | sort_by(-.streak)
+      ' /tmp/lb_habits.json
+      rm -f /tmp/lb_habits.json
+
+  - id: report
+    stdin: $calculate-streaks.stdout
+    command: |
+      cat > /tmp/lb_streaks.json
+      jq -r '
+        if length == 0 then
+          "📋 No habits configured yet."
+        else
+          "🔥 Habit Streak Report\n" +
+          "═══════════════════════\n" +
+          ([.[] |
+            (if .streak >= 30 then "🏆"
+             elif .streak >= 7 then "⭐"
+             elif .streak >= 3 then "🔥"
+             elif .streak >= 1 then "✅"
+             else "❌" end) +
+            " \(.habit): \(.streak) day" +
+            (if .streak != 1 then "s" else "" end)
+          ] | join("\n")) +
+          "\n\nTotal active streaks: \([.[] | select(.streak > 0)] | length)/\(length)" +
+          (if ([.[] | .streak] | add) > 0 then
+            "\nLongest: \(.[0].habit) (\(.[0].streak) days)"
+          else "" end)
+        end
+      ' /tmp/lb_streaks.json
+      rm -f /tmp/lb_streaks.json

@@ -1,0 +1,98 @@
+# Lobster workflow: invoice-reminder
+# Track invoices in a JSON file, alert on overdue and upcoming ones.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"invoices_file":"/path/to/invoices.json","lookahead_days":"7"}'
+#
+# Invoices file format (JSON array):
+#   [{"id":"INV-001","client":"Acme Corp","amount":1500,"due_date":"2026-02-10","status":"unpaid"},...]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: invoice-reminder
+description: Track unpaid invoices and alert on overdue or upcoming due dates
+
+args:
+  invoices_file:
+    description: "Path to JSON file with invoices [{id, client, amount, due_date, status}]"
+  lookahead_days:
+    description: "Number of days ahead to check for upcoming invoices"
+    default: "7"
+
+steps:
+  - id: load-invoices
+    command: |
+      if [ ! -f "${invoices_file}" ]; then
+        echo '{"error":"Invoices file not found: ${invoices_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${invoices_file}"
+
+  - id: check-invoices
+    stdin: $load-invoices.stdout
+    command: |
+      cat > /tmp/lb_invoices.json
+      today=$(date +%Y-%m-%d)
+      today_epoch=$(date -d "$today" +%s)
+      lookahead=${lookahead_days}
+      lookahead_epoch=$((today_epoch + lookahead * 86400))
+      jq -c --arg today "$today" \
+             --argjson today_epoch "$today_epoch" \
+             --argjson lookahead_epoch "$lookahead_epoch" \
+             --arg look "${lookahead_days}" '
+        [.[] | select(.status == "unpaid" or .status == "pending") |
+          (.due_date | strptime("%Y-%m-%d") | mktime) as $due_epoch |
+          (($due_epoch - $today_epoch) / 86400 | floor) as $days_until |
+          . + {
+            days_until: $days_until,
+            overdue: ($days_until < 0),
+            due_soon: ($days_until >= 0 and $days_until <= ($look | tonumber)),
+            urgency: (if $days_until < 0 then "overdue"
+                      elif $days_until == 0 then "today"
+                      elif $days_until <= 2 then "urgent"
+                      elif $days_until <= ($look | tonumber) then "upcoming"
+                      else "ok" end)
+          }
+        ] | sort_by(.days_until) |
+        {
+          overdue: [.[] | select(.overdue)],
+          due_soon: [.[] | select(.due_soon)],
+          all_unpaid: .,
+          overdue_count: ([.[] | select(.overdue)] | length),
+          due_soon_count: ([.[] | select(.due_soon)] | length),
+          overdue_total: ([.[] | select(.overdue) | .amount] | add // 0),
+          due_soon_total: ([.[] | select(.due_soon) | .amount] | add // 0)
+        }
+      ' /tmp/lb_invoices.json
+      rm -f /tmp/lb_invoices.json
+
+  - id: report
+    stdin: $check-invoices.stdout
+    command: |
+      cat > /tmp/lb_inv_report.json
+      jq -r '
+        "📋 Invoice Reminder Report\n" +
+        "==========================\n\n" +
+        if .overdue_count > 0 then
+          "🔴 OVERDUE: \(.overdue_count) invoice(s) totaling $\(.overdue_total)\n" +
+          (.overdue | map(
+            "   ❗ \(.id) — \(.client): $\(.amount) (due \(.due_date), \(-.days_until) days overdue)"
+          ) | join("\n")) + "\n\n"
+        else "" end +
+        if .due_soon_count > 0 then
+          "🟡 UPCOMING: \(.due_soon_count) invoice(s) totaling $\(.due_soon_total)\n" +
+          (.due_soon | map(
+            (if .days_until == 0 then "   ⚡" elif .days_until <= 2 then "   ⏰" else "   📅" end) +
+            " \(.id) — \(.client): $\(.amount) (due \(.due_date)" +
+            (if .days_until == 0 then ", DUE TODAY!"
+             elif .days_until == 1 then ", due tomorrow"
+             else ", in \(.days_until) days" end) + ")"
+          ) | join("\n")) + "\n"
+        else "" end +
+        if .overdue_count == 0 and .due_soon_count == 0 then
+          "✅ No overdue or upcoming invoices.\n"
+        else "" end +
+        "\nTotal unpaid: \(.all_unpaid | length) invoice(s), $\([.all_unpaid[].amount] | add // 0)"
+      ' /tmp/lb_inv_report.json
+      rm -f /tmp/lb_inv_report.json

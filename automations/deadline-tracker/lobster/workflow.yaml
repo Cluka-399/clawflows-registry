@@ -1,0 +1,104 @@
+# Lobster workflow: deadline-tracker
+# Read deadlines from JSON, alert on approaching ones with escalation
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"deadlines_file":"/path/to/deadlines.json","lookahead_days":"7"}'
+#
+# Deadlines file format (JSON array):
+#   [
+#     {"name":"Tax filing","date":"2026-04-15","priority":"high"},
+#     {"name":"Project report","date":"2026-02-10","priority":"medium"}
+#   ]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: deadline-tracker
+description: Escalating reminders as deadlines approach - 7d, 3d, 1d, same day
+
+args:
+  deadlines_file:
+    description: "Path to JSON file with deadlines [{name, date, priority}]"
+  lookahead_days:
+    description: "Number of days ahead to check for deadlines"
+    default: "7"
+
+steps:
+  - id: load-deadlines
+    command: |
+      if [ ! -f "${deadlines_file}" ]; then
+        echo '{"error":"Deadlines file not found: ${deadlines_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${deadlines_file}"
+
+  - id: check-approaching
+    stdin: $load-deadlines.stdout
+    command: |
+      cat > /tmp/lb_deadlines.json
+      today=$(date +%Y-%m-%d)
+      today_epoch=$(date -d "$today" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$today" +%s)
+      lookahead=${lookahead_days}
+      jq -c --arg today "$today" \
+             --argjson today_epoch "$today_epoch" \
+             --argjson look "$lookahead" '
+        [.[] |
+          # Calculate days until deadline
+          ((.date | split("-") | .[0:3] |
+            (.[0] | tonumber) * 365 + (.[1] | tonumber) * 30 + (.[2] | tonumber)) -
+           ($today | split("-") | .[0:3] |
+            (.[0] | tonumber) * 365 + (.[1] | tonumber) * 30 + (.[2] | tonumber))
+          ) as $days_until |
+          select($days_until >= 0 and $days_until <= $look) |
+          . + {
+            days_until: $days_until,
+            urgency: (
+              if $days_until == 0 then "TODAY"
+              elif $days_until == 1 then "TOMORROW"
+              elif $days_until <= 3 then "SOON"
+              else "UPCOMING" end
+            )
+          }
+        ] | sort_by(.days_until)
+      ' /tmp/lb_deadlines.json
+      rm -f /tmp/lb_deadlines.json
+
+  - id: report
+    stdin: $check-approaching.stdout
+    command: |
+      cat > /tmp/lb_approaching.json
+      jq -r '
+        def urgency_icon:
+          if .urgency == "TODAY" then "🔴"
+          elif .urgency == "TOMORROW" then "🟠"
+          elif .urgency == "SOON" then "🟡"
+          else "🔵" end;
+
+        def priority_icon:
+          if .priority == "high" then "⚡"
+          elif .priority == "medium" then "📌"
+          else "📋" end;
+
+        if length == 0 then
+          "✅ No deadlines in the next ${lookahead_days} days."
+        else
+          "⏰ Deadline Alert — \(length) approaching\n" +
+          "═══════════════════════════════\n" +
+          ([.[] |
+            "\(urgency_icon) \(priority_icon) \(.name)\n" +
+            "   📅 \(.date) — " +
+            (if .days_until == 0 then "DUE TODAY!"
+             elif .days_until == 1 then "due tomorrow"
+             else "due in \(.days_until) days" end)
+          ] | join("\n")) +
+          "\n\n" +
+          (if [.[] | select(.urgency == "TODAY")] | length > 0 then
+            "🚨 \([.[] | select(.urgency == "TODAY")] | length) deadline(s) due TODAY!"
+          elif [.[] | select(.urgency == "TOMORROW")] | length > 0 then
+            "⚠️ \([.[] | select(.urgency == "TOMORROW")] | length) deadline(s) due tomorrow!"
+          else
+            "📊 Earliest deadline in \(.[0].days_until) days"
+          end)
+        end
+      ' /tmp/lb_approaching.json
+      rm -f /tmp/lb_approaching.json

@@ -1,0 +1,115 @@
+# Lobster workflow: expense-categorizer
+# Read expenses, categorize by keyword matching, and summarize.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"expenses_file":"/path/to/expenses.json"}'
+#
+# Expenses file format (JSON array):
+#   [{"date":"2026-01-15","description":"Uber ride downtown","amount":24.50},...]
+#
+# Requires: jq
+
+name: expense-categorizer
+description: Auto-categorize expenses by keyword matching and generate summary
+
+args:
+  expenses_file:
+    description: "Path to JSON file with expenses [{date, description, amount}]"
+  rules_file:
+    description: "Optional path to custom categorization rules JSON"
+    default: ""
+
+steps:
+  - id: load-expenses
+    command: |
+      if [ ! -f "${expenses_file}" ]; then
+        echo '{"error":"Expenses file not found: ${expenses_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${expenses_file}"
+
+  - id: categorize
+    stdin: $load-expenses.stdout
+    command: |
+      cat > /tmp/lb_expenses.json
+      # Built-in categorization rules (keyword → category)
+      cat > /tmp/lb_cat_rules.json << 'RULES'
+      {
+        "transport": ["uber","lyft","taxi","gas","fuel","parking","transit","subway","metro","train","flight","airline","delta","united","southwest"],
+        "food": ["restaurant","cafe","coffee","starbucks","mcdonald","pizza","grubhub","doordash","ubereats","grocery","supermarket","whole foods","trader joe","safeway","kroger"],
+        "utilities": ["electric","water","gas bill","internet","comcast","verizon","att","tmobile","phone bill","utility"],
+        "entertainment": ["netflix","spotify","hulu","disney","cinema","movie","concert","game","steam","playstation","xbox","apple tv"],
+        "shopping": ["amazon","walmart","target","ebay","etsy","clothing","shoes","electronics","best buy","costco"],
+        "health": ["pharmacy","cvs","walgreens","doctor","hospital","dental","gym","fitness","health","medical","insurance"],
+        "housing": ["rent","mortgage","maintenance","repair","furniture","ikea","home depot","plumber","electrician"],
+        "education": ["book","course","udemy","coursera","tuition","school","university","training"],
+        "subscription": ["subscription","membership","annual fee","monthly fee","premium"]
+      }
+      RULES
+      jq -c --slurpfile rules /tmp/lb_cat_rules.json '
+        ($rules[0]) as $cat_rules |
+        [.[] |
+          (.description | ascii_downcase) as $desc |
+          ([$cat_rules | to_entries[] |
+            select(.value | any(. as $kw | $desc | contains($kw)))
+          ] | if length > 0 then .[0].key else "uncategorized" end) as $category |
+          . + {category: $category}
+        ] |
+        {
+          categorized: .,
+          summary: (group_by(.category) | map({
+            category: .[0].category,
+            count: length,
+            total: (map(.amount) | add | . * 100 | round / 100),
+            avg: (map(.amount) | (add / length) | . * 100 | round / 100)
+          }) | sort_by(-.total)),
+          total: (map(.amount) | add | . * 100 | round / 100),
+          count: length,
+          uncategorized: ([.[] | select(.category == "uncategorized")] | length)
+        }
+      ' /tmp/lb_expenses.json
+      rm -f /tmp/lb_expenses.json /tmp/lb_cat_rules.json
+
+  - id: report
+    stdin: $categorize.stdout
+    command: |
+      cat > /tmp/lb_cat_report.json
+      jq -r '
+        "🏷️  Expense Categorizer Report\n" +
+        "==============================\n\n" +
+        "📊 \(.count) expenses totaling $\(.total)\n" +
+        (if .uncategorized > 0 then
+          "⚠️  \(.uncategorized) uncategorized expense(s)\n"
+        else
+          "✅ All expenses categorized!\n"
+        end) +
+        "\n--- By Category ---\n" +
+        (.summary | map(
+          "  \(.category): $\(.total) (\(.count) txns, avg $\(.avg))" +
+          " — \(.total / $parent.total * 100 | round)%"
+        ) | join("\n")) +
+        "\n\n--- Recent Expenses ---\n" +
+        (.categorized | sort_by(.date) | reverse | .[0:10] | map(
+          "  [\(.category)] \(.date) \(.description): $\(.amount)"
+        ) | join("\n"))
+      ' /tmp/lb_cat_report.json 2>/dev/null || \
+      jq -r '
+        "🏷️  Expense Categorizer Report\n" +
+        "==============================\n\n" +
+        "📊 \(.count) expenses totaling $\(.total)\n" +
+        (if .uncategorized > 0 then
+          "⚠️  \(.uncategorized) uncategorized expense(s)\n"
+        else
+          "✅ All expenses categorized!\n"
+        end) +
+        "\n--- By Category ---\n" +
+        (.summary | map(
+          "  \(.category): $\(.total) (\(.count) txns, avg $\(.avg))"
+        ) | join("\n")) +
+        "\n\n--- Recent Expenses ---\n" +
+        (.categorized | sort_by(.date) | reverse | .[0:10] | map(
+          "  [\(.category)] \(.date) \(.description): $\(.amount)"
+        ) | join("\n"))
+      ' /tmp/lb_cat_report.json
+      rm -f /tmp/lb_cat_report.json

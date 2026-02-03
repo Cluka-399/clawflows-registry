@@ -1,0 +1,148 @@
+# Lobster workflow: molt-price-alert
+# Monitor MOLT token price via DexScreener, alert on big moves
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"alert_threshold":"10"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - api.dexscreener.com (DEX pair data, no auth needed)
+
+name: molt-price-alert
+description: Monitor MOLT (Moltbook) coin price and alert on significant moves
+
+args:
+  token_pool:
+    description: "DexScreener pool address for MOLT"
+    default: "0x15f351bf1637b43d70631ba95fb9bbb1ff21761c29b034c1b380aecb922464dd"
+  chain:
+    description: "Blockchain network"
+    default: "base"
+  alert_threshold:
+    description: "Alert if price moves more than this percentage since last check"
+    default: "10"
+  state_file:
+    description: "Path to state file for tracking last known price"
+    default: "/tmp/clawflows-molt-price-state.json"
+
+steps:
+  - id: fetch-price
+    command: |
+      tmpf=$(mktemp)
+      curl -sf --max-time 15 \
+        "https://api.dexscreener.com/latest/dex/pairs/${chain}/${token_pool}" \
+        -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e '.pairs[0]' "$tmpf" >/dev/null 2>&1; then
+        jq '{
+          price_usd: (.pairs[0].priceUsd // "0" | tonumber),
+          price_native: (.pairs[0].priceNative // "0"),
+          change_5m: (.pairs[0].priceChange.m5 // 0),
+          change_1h: (.pairs[0].priceChange.h1 // 0),
+          change_6h: (.pairs[0].priceChange.h6 // 0),
+          change_24h: (.pairs[0].priceChange.h24 // 0),
+          volume_24h: (.pairs[0].volume.h24 // 0),
+          liquidity_usd: (.pairs[0].liquidity.usd // 0),
+          pair_name: (.pairs[0].baseToken.symbol + "/" + .pairs[0].quoteToken.symbol),
+          dex: (.pairs[0].dexId // "unknown")
+        }' "$tmpf"
+      else
+        echo '{"price_usd":0,"price_native":"0","change_5m":0,"change_1h":0,"change_6h":0,"change_24h":0,"volume_24h":0,"liquidity_usd":0,"pair_name":"MOLT/?","dex":"unknown"}'
+      fi
+      rm -f "$tmpf"
+
+  - id: load-state
+    command: |
+      cat "${state_file}" 2>/dev/null || echo '{"last_price":0,"last_check":""}'
+
+  - id: analyze
+    command: |
+      price_file=$(mktemp)
+      state_tmp=$(mktemp)
+      printf '%s' '$fetch-price.stdout' > "$price_file"
+      printf '%s' '$load-state.stdout' > "$state_tmp"
+
+      jq -n \
+        --slurpfile price "$price_file" \
+        --slurpfile state "$state_tmp" \
+        --arg threshold "${alert_threshold}" \
+      '
+        ($price[0] // {price_usd:0}) as $current |
+        ($state[0] // {last_price:0}) as $prev |
+        ($current.price_usd) as $now_price |
+        ($prev.last_price // 0) as $last |
+        (if $last > 0 then (($now_price - $last) / $last * 100 * 100 | round / 100) else 0 end) as $change_pct |
+        ($threshold | tonumber) as $thresh |
+        (if ($change_pct > $thresh) or ($change_pct < (0 - $thresh)) then true else false end) as $significant |
+        {
+          price_usd: $now_price,
+          last_price: $last,
+          change_from_last_pct: $change_pct,
+          significant: $significant,
+          threshold: $thresh,
+          pair_name: $current.pair_name,
+          dex: $current.dex,
+          change_5m: $current.change_5m,
+          change_1h: $current.change_1h,
+          change_6h: $current.change_6h,
+          change_24h: $current.change_24h,
+          volume_24h: $current.volume_24h,
+          liquidity_usd: $current.liquidity_usd,
+          first_run: ($last == 0)
+        }
+      '
+      rm -f "$price_file" "$state_tmp"
+
+  - id: save-state
+    command: |
+      analysis_file=$(mktemp)
+      printf '%s' '$analyze.stdout' > "$analysis_file"
+      price=$(jq -r '.price_usd' "$analysis_file")
+      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      jq -n --arg p "$price" --arg t "$now" \
+        '{last_price: ($p | tonumber), last_check: $t}' > "${state_file}"
+      cat "$analysis_file"
+      rm -f "$analysis_file"
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      cat > /tmp/lb_molt_report.json
+      jq -r '
+        (if .significant then
+          "🚨 MOLT PRICE ALERT — Significant Move!\n"
+        else
+          "🦞 MOLT Price Update\n"
+        end) +
+        "\n💰 Price: $" + (.price_usd | tostring) +
+        " (" + .pair_name + " on " + .dex + ")" +
+        (if .first_run then
+          "\n🆕 First run — tracking started"
+        else
+          "\n🔄 Change since last: " + (if .change_from_last_pct >= 0 then "+" else "" end) + (.change_from_last_pct | tostring) + "%" +
+          (if .significant then " ⚠️" else "" end) +
+          "\n   $" + (.last_price | tostring) + " → $" + (.price_usd | tostring)
+        end) +
+        "\n\n📊 Market Data:" +
+        "\n  5m: " + (if .change_5m >= 0 then "+" else "" end) + (.change_5m | tostring) + "%" +
+        " | 1h: " + (if .change_1h >= 0 then "+" else "" end) + (.change_1h | tostring) + "%" +
+        " | 6h: " + (if .change_6h >= 0 then "+" else "" end) + (.change_6h | tostring) + "%" +
+        " | 24h: " + (if .change_24h >= 0 then "+" else "" end) + (.change_24h | tostring) + "%" +
+        "\n  Volume 24h: $" + (if .volume_24h > 1000000 then
+          ((.volume_24h / 1000000 * 100 | round / 100) | tostring) + "M"
+        elif .volume_24h > 1000 then
+          ((.volume_24h / 1000 * 10 | round / 10) | tostring) + "k"
+        else
+          (.volume_24h | round | tostring)
+        end) +
+        " | Liquidity: $" + (if .liquidity_usd > 1000000 then
+          ((.liquidity_usd / 1000000 * 100 | round / 100) | tostring) + "M"
+        elif .liquidity_usd > 1000 then
+          ((.liquidity_usd / 1000 * 10 | round / 10) | tostring) + "k"
+        else
+          (.liquidity_usd | round | tostring)
+        end) +
+        "\n⚙️  Alert threshold: ±" + (.threshold | tostring) + "%"
+      ' /tmp/lb_molt_report.json
+      rm -f /tmp/lb_molt_report.json

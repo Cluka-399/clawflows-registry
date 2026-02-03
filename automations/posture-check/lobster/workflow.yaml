@@ -1,0 +1,32 @@
+# Lobster workflow: posture-check
+# Picks a random posture tip and outputs a reminder
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#
+# Requires: (no external deps)
+
+name: posture-check
+description: Regular posture reminders with ergonomic tips
+
+args:
+  tips:
+    description: "Comma-separated list of posture tips"
+    default: "sit up straight and align your ears over your shoulders,adjust your monitor to eye level,uncross your legs and plant feet flat on the floor,roll your shoulders back and down,check that your wrists are neutral on the keyboard,stand up and stretch for 30 seconds,engage your core muscles while sitting,adjust your chair height so thighs are parallel to the floor"
+
+steps:
+  - id: pick-tip
+    command: |
+      echo "${tips}" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1
+
+  - id: format-reminder
+    stdin: $pick-tip.stdout
+    command: |
+      tip=$(cat)
+      cat <<EOF
+      🪑 Posture Check!
+
+      Quick reminder: ${tip}.
+
+      Good posture reduces pain and boosts energy! 💪
+      EOF

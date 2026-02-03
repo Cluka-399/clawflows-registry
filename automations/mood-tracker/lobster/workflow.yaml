@@ -1,0 +1,93 @@
+# Lobster workflow: mood-tracker
+# Log mood to JSON file and show trends over last 7 days
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"mood_file":"/path/to/moods.json"}'
+#
+# Mood file format (JSON array):
+#   [
+#     {"date":"2026-02-03","mood":4,"note":"Good day at work"},
+#     {"date":"2026-02-02","mood":2,"note":"Tired"}
+#   ]
+#   mood: 1-5 scale (1=terrible, 2=bad, 3=neutral, 4=good, 5=great)
+#
+# Requires: jq, date (GNU coreutils)
+
+name: mood-tracker
+description: Daily mood check-ins with pattern analysis and insights
+
+args:
+  mood_file:
+    description: "Path to JSON file with mood entries [{date, mood, note}]"
+
+steps:
+  - id: load-moods
+    command: |
+      if [ ! -f "${mood_file}" ]; then
+        echo '{"error":"Mood file not found: ${mood_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${mood_file}"
+
+  - id: analyze-trends
+    stdin: $load-moods.stdout
+    command: |
+      cat > /tmp/lb_moods.json
+      week_ago=$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || date -v-7d +%Y-%m-%d)
+      jq -c --arg week_ago "$week_ago" '
+        # Filter last 7 days
+        [.[] | select(.date >= $week_ago)] | sort_by(.date) |
+        {
+          entries: .,
+          count: length,
+          avg: (if length > 0 then ([.[].mood] | add / length * 100 | round / 100) else 0 end),
+          best: (if length > 0 then (sort_by(-.mood) | .[0]) else null end),
+          worst: (if length > 0 then (sort_by(.mood) | .[0]) else null end),
+          trend: (
+            if length >= 2 then
+              ((.[-1].mood) - (.[0].mood)) as $diff |
+              if $diff > 0 then "improving"
+              elif $diff < 0 then "declining"
+              else "stable" end
+            else "insufficient_data" end
+          )
+        }
+      ' /tmp/lb_moods.json
+      rm -f /tmp/lb_moods.json
+
+  - id: report
+    stdin: $analyze-trends.stdout
+    command: |
+      cat > /tmp/lb_analysis.json
+      jq -r '
+        def mood_emoji(m):
+          if m >= 5 then "😄"
+          elif m >= 4 then "🙂"
+          elif m >= 3 then "😐"
+          elif m >= 2 then "😟"
+          else "😢" end;
+
+        def mood_bar(m):
+          ("█" * m) + ("░" * (5 - m));
+
+        if .count == 0 then
+          "📊 No mood entries in the last 7 days."
+        else
+          "🧠 Mood Report — Last 7 Days\n" +
+          "════════════════════════════\n\n" +
+          ([.entries[] |
+            "\(.date): \(mood_emoji(.mood)) \(mood_bar(.mood)) \(.mood)/5" +
+            (if .note and .note != "" then " — \(.note)" else "" end)
+          ] | join("\n")) +
+          "\n\n📈 Average: \(.avg)/5 \(mood_emoji(.avg | floor))" +
+          "\n📊 Trend: " +
+          (if .trend == "improving" then "↗️ Improving"
+           elif .trend == "declining" then "↘️ Declining"
+           elif .trend == "stable" then "➡️ Stable"
+           else "❓ Need more data" end) +
+          (if .best then "\n🌟 Best day: \(.best.date) (\(.best.mood)/5)" else "" end) +
+          (if .worst then "\n💙 Tough day: \(.worst.date) (\(.worst.mood)/5)" else "" end)
+        end
+      ' /tmp/lb_analysis.json
+      rm -f /tmp/lb_analysis.json

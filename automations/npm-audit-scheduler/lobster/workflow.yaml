@@ -1,0 +1,100 @@
+# Lobster workflow: npm-audit-scheduler
+# Run npm audit on a project and report vulnerabilities
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"project_dir":"/path/to/project"}'
+#
+# Requires: jq, npm
+
+name: npm-audit-scheduler
+description: Weekly npm audit with severity-based reporting
+
+args:
+  project_dir:
+    description: "Path to npm project directory"
+    default: "/data/clawd/lobster-engine"
+  severity_threshold:
+    description: "Minimum severity to report: info, low, moderate, high, critical"
+    default: "moderate"
+
+steps:
+  - id: run-audit
+    command: |
+      cd "${project_dir}" 2>/dev/null || { echo '{"error":"Directory not found: ${project_dir}"}'; exit 0; }
+      if [ ! -f "package.json" ]; then
+        echo '{"error":"No package.json found in ${project_dir}"}'
+        exit 0
+      fi
+      # npm audit returns non-zero if vulnerabilities found, so || true
+      npm audit --json 2>/dev/null || true
+
+  - id: parse-audit
+    stdin: $run-audit.stdout
+    command: |
+      cat > /tmp/lb_audit_raw.json
+      
+      # Check for error
+      error=$(jq -r '.error // ""' /tmp/lb_audit_raw.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo "{\"error\":\"$error\",\"total\":0}"
+        rm -f /tmp/lb_audit_raw.json
+        exit 0
+      fi
+
+      threshold="${severity_threshold}"
+      
+      # Parse npm audit JSON output
+      # npm audit JSON format has .vulnerabilities object (npm 7+) or .advisories (npm 6)
+      jq -c --arg thresh "$threshold" '
+        # Severity ranking
+        def sev_rank: if . == "critical" then 5 elif . == "high" then 4 elif . == "moderate" then 3 elif . == "low" then 2 elif . == "info" then 1 else 0 end;
+        ($thresh | sev_rank) as $min_rank |
+        
+        # npm 7+ format
+        if .vulnerabilities then
+          [.vulnerabilities | to_entries[] | .value |
+            select((.severity | sev_rank) >= $min_rank) |
+            {name: .name, severity: .severity, title: (.via[0] | if type=="object" then .title else . end), range: .range, fix_available: (.fixAvailable != false)}
+          ] | {vulns: ., total: length, metadata: {severity_threshold: $thresh}}
+        # npm 6 format
+        elif .advisories then
+          [.advisories | to_entries[] | .value |
+            select((.severity | sev_rank) >= $min_rank) |
+            {name: .module_name, severity: .severity, title: .title, range: .vulnerable_versions, fix_available: (.patched_versions != "<0.0.0")}
+          ] | {vulns: ., total: length, metadata: {severity_threshold: $thresh}}
+        else
+          {vulns: [], total: 0, metadata: {severity_threshold: $thresh, note: "No audit data found"}}
+        end
+      ' /tmp/lb_audit_raw.json
+      rm -f /tmp/lb_audit_raw.json
+
+  - id: report
+    stdin: $parse-audit.stdout
+    command: |
+      cat > /tmp/lb_audit_parsed.json
+      
+      error=$(jq -r '.error // ""' /tmp/lb_audit_parsed.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo "⚠️ npm audit error: $error"
+        rm -f /tmp/lb_audit_parsed.json
+        exit 0
+      fi
+
+      total=$(jq '.total' /tmp/lb_audit_parsed.json)
+      
+      if [ "$total" = "0" ]; then
+        echo "✅ npm audit clean — no vulnerabilities found at or above '${severity_threshold}' severity."
+      else
+        echo "🔒 npm Audit Report for ${project_dir}"
+        echo "Found $total vulnerabilities (threshold: ${severity_threshold}+)"
+        echo ""
+        
+        # Count by severity
+        jq -r '.vulns | group_by(.severity) | .[] | "  \(.[0].severity): \(length)"' /tmp/lb_audit_parsed.json
+        echo ""
+        
+        # List each vulnerability
+        jq -r '.vulns | sort_by(.severity | if .=="critical" then 0 elif .=="high" then 1 elif .=="moderate" then 2 else 3 end)[] |
+          "⚠️  \(.severity | ascii_upcase) — \(.name)\n   \(.title)\n   Range: \(.range)\n   Fix available: \(if .fix_available then "yes" else "no" end)\n"' /tmp/lb_audit_parsed.json
+      fi
+      rm -f /tmp/lb_audit_parsed.json

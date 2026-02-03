@@ -1,0 +1,109 @@
+# Lobster workflow: subscription-auditor
+# Read subscriptions JSON, calculate monthly/yearly totals, flag unused ones.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"subs_file":"/path/to/subscriptions.json","unused_days":"30"}'
+#
+# Subscriptions file format (JSON array):
+#   [{"name":"Netflix","cost":15.99,"billing":"monthly","last_used":"2026-01-15","category":"entertainment"},...]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: subscription-auditor
+description: Audit active subscriptions, calculate totals, flag unused or duplicate services
+
+args:
+  subs_file:
+    description: "Path to JSON file with subscriptions [{name, cost, billing, last_used, category}]"
+  unused_days:
+    description: "Days since last use to flag as unused"
+    default: "30"
+
+steps:
+  - id: load-subs
+    command: |
+      if [ ! -f "${subs_file}" ]; then
+        echo '{"error":"Subscriptions file not found: ${subs_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${subs_file}"
+
+  - id: analyze-subs
+    stdin: $load-subs.stdout
+    command: |
+      cat > /tmp/lb_subs.json
+      today=$(date +%Y-%m-%d)
+      today_epoch=$(date -d "$today" +%s)
+      unused_threshold=${unused_days}
+      jq -c --arg today "$today" \
+             --argjson today_epoch "$today_epoch" \
+             --argjson unused_thresh "$unused_threshold" '
+        # Calculate monthly cost for each sub
+        [.[] |
+          (if .billing == "yearly" or .billing == "annual" then .cost / 12
+           elif .billing == "quarterly" then .cost / 3
+           else .cost end) as $monthly |
+          (if .billing == "yearly" or .billing == "annual" then .cost
+           elif .billing == "quarterly" then .cost * 4
+           else .cost * 12 end) as $yearly |
+          (if .last_used then
+            ((.last_used | strptime("%Y-%m-%d") | mktime) as $used_epoch |
+             (($today_epoch - $used_epoch) / 86400 | floor))
+           else 999 end) as $days_since_use |
+          . + {
+            monthly_cost: ($monthly * 100 | round / 100),
+            yearly_cost: ($yearly * 100 | round / 100),
+            days_since_use: $days_since_use,
+            unused: ($days_since_use > $unused_thresh),
+            status: (if $days_since_use > $unused_thresh then "unused"
+                     elif $days_since_use > ($unused_thresh / 2) then "low-use"
+                     else "active" end)
+          }
+        ] | sort_by(-.monthly_cost) |
+        {
+          subscriptions: .,
+          total_monthly: (map(.monthly_cost) | add // 0 | . * 100 | round / 100),
+          total_yearly: (map(.yearly_cost) | add // 0 | . * 100 | round / 100),
+          count: length,
+          unused: [.[] | select(.unused)],
+          unused_count: ([.[] | select(.unused)] | length),
+          unused_monthly_waste: ([.[] | select(.unused) | .monthly_cost] | add // 0 | . * 100 | round / 100),
+          by_category: (group_by(.category) | map({
+            category: .[0].category,
+            count: length,
+            monthly: (map(.monthly_cost) | add | . * 100 | round / 100)
+          }) | sort_by(-.monthly))
+        }
+      ' /tmp/lb_subs.json
+      rm -f /tmp/lb_subs.json
+
+  - id: report
+    stdin: $analyze-subs.stdout
+    command: |
+      cat > /tmp/lb_subs_report.json
+      jq -r '
+        "📊 Subscription Audit Report\n" +
+        "============================\n\n" +
+        "💳 \(.count) active subscriptions\n" +
+        "   Monthly total: $\(.total_monthly)\n" +
+        "   Yearly total:  $\(.total_yearly)\n\n" +
+        if .unused_count > 0 then
+          "⚠️  UNUSED SUBSCRIPTIONS (\(.unused_count) found — $\(.unused_monthly_waste)/mo wasted):\n" +
+          (.unused | map(
+            "   🔴 \(.name): $\(.monthly_cost)/mo — last used \(.days_since_use) days ago"
+          ) | join("\n")) + "\n\n"
+        else
+          "✅ No unused subscriptions detected.\n\n"
+        end +
+        "📁 By Category:\n" +
+        (.by_category | map(
+          "   \(.category): \(.count) subs, $\(.monthly)/mo"
+        ) | join("\n")) +
+        "\n\n--- All Subscriptions ---\n" +
+        (.subscriptions | map(
+          (if .unused then "🔴" elif .status == "low-use" then "🟡" else "🟢" end) +
+          " \(.name): $\(.monthly_cost)/mo (\(.billing)) — \(.status)"
+        ) | join("\n"))
+      ' /tmp/lb_subs_report.json
+      rm -f /tmp/lb_subs_report.json

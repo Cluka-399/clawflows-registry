@@ -1,0 +1,87 @@
+# Lobster workflow: github-trending
+# Daily digest of trending GitHub repositories
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"language":"python","max_repos":"5"}'
+#
+# Requires: jq, curl
+
+name: github-trending
+description: Daily digest of trending GitHub repositories
+
+args:
+  language:
+    description: "Programming language to filter (empty for all)"
+    default: ""
+  since:
+    description: "Time range: daily, weekly, monthly"
+    default: "daily"
+  max_repos:
+    description: "Maximum repos to show"
+    default: "10"
+
+steps:
+  - id: fetch-trending
+    command: |
+      lang="${language}"
+      url="https://github.com/trending"
+      if [ -n "$lang" ]; then
+        url="https://github.com/trending/$lang"
+      fi
+      url="${url}?since=${since}"
+      curl -sf -L -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+        "$url" 2>/dev/null || echo ""
+
+  - id: parse-trending
+    stdin: $fetch-trending.stdout
+    command: |
+      tmphtml=$(mktemp)
+      cat > "$tmphtml"
+      max=${max_repos}
+
+      # Extract repos from article.Box-row elements
+      # Each article contains links; the owner/repo link (not sponsors/login/stargazers/forks) is what we want
+      cat "$tmphtml" | tr '\n' ' ' \
+        | grep -oP '<article class="Box-row">.*?</article>' \
+        | while IFS= read -r article; do
+            echo "$article" | grep -oP 'href="/[^/]+/[^/"]*"' \
+              | grep -v '/sponsors/' | grep -v '/login' | grep -v '/stargazers' \
+              | grep -v '/forks' | head -1 \
+              | sed 's/href="//;s/"$//'
+          done | head -n "$max" > /tmp/lb_trending_repos.txt
+
+      results='[]'
+      while IFS= read -r path; do
+        [ -z "$path" ] && continue
+        full=$(echo "$path" | sed 's|^/||')
+        url="https://github.com$path"
+        # Quick API call for description and stars
+        curl -sf "https://api.github.com/repos/$full" 2>/dev/null > /tmp/lb_repoinfo.json || echo '{}' > /tmp/lb_repoinfo.json
+        desc=$(jq -r '.description // ""' /tmp/lb_repoinfo.json | head -c 120)
+        stars=$(jq -r '.stargazers_count // 0' /tmp/lb_repoinfo.json)
+        rlang=$(jq -r '.language // ""' /tmp/lb_repoinfo.json)
+
+        echo "$results" | jq -c --arg n "$full" --arg u "$url" --arg d "$desc" \
+          --arg s "$stars" --arg l "$rlang" \
+          '. + [{name:$n, url:$u, description:$d, stars:($s|tonumber), language:$l}]' \
+          > /tmp/lb_tresults.json
+        results=$(cat /tmp/lb_tresults.json)
+      done < /tmp/lb_trending_repos.txt
+
+      echo "$results"
+      rm -f "$tmphtml" /tmp/lb_trending_repos.txt /tmp/lb_repoinfo.json /tmp/lb_tresults.json
+
+  - id: report
+    stdin: $parse-trending.stdout
+    command: |
+      cat > /tmp/lb_trending_final.json
+      count=$(jq 'length' /tmp/lb_trending_final.json)
+      if [ "$count" = "0" ]; then
+        echo "No trending repos found."
+      else
+        echo "⭐ GitHub Trending Today (${since})"
+        echo ""
+        jq -r 'to_entries[] | "\(.key+1). \(.value.name) (⭐ \(.value.stars))\n   \(.value.description)\n   \(.value.url)\n"' /tmp/lb_trending_final.json
+      fi
+      rm -f /tmp/lb_trending_final.json

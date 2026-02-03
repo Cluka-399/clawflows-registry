@@ -1,0 +1,86 @@
+# Lobster workflow: medication-reminder
+# Reads a medications JSON file and checks which medications are due now
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"medications_file":"/path/to/meds.json"}'
+#
+# The medications JSON file should look like:
+#   [
+#     {"name": "Vitamin D", "times": ["08:00", "20:00"], "dosage": "1000 IU"},
+#     {"name": "Omega-3", "times": ["12:00"], "dosage": "1 capsule"}
+#   ]
+#
+# Requires: jq
+
+name: medication-reminder
+description: Configurable medication reminders — checks which meds are due based on current time
+
+env:
+  PATH: "/home/node/bin:/usr/local/bin:/usr/bin:/bin"
+
+args:
+  medications_file:
+    description: "Path to medications JSON file"
+    default: "/data/clawd/clawflows-registry/automations/medication-reminder/lobster/sample-medications.json"
+  window_minutes:
+    description: "Time window in minutes — meds within this range of current time are shown"
+    default: "30"
+
+steps:
+  - id: check-due
+    command: |
+      MEDS_FILE="${medications_file}"
+      WINDOW="${window_minutes}"
+
+      # Create sample file if it doesn't exist
+      if [ ! -f "$MEDS_FILE" ]; then
+        cat > "$MEDS_FILE" <<'SAMPLE'
+      [
+        {"name": "Vitamin D", "times": ["08:00", "20:00"], "dosage": "1000 IU"},
+        {"name": "Omega-3", "times": ["12:00"], "dosage": "1 capsule"},
+        {"name": "Magnesium", "times": ["22:00"], "dosage": "400mg"}
+      ]
+      SAMPLE
+      fi
+
+      CURRENT_HOUR=$(date +%H)
+      CURRENT_MIN=$(date +%M)
+      CURRENT_TOTAL=$(( CURRENT_HOUR * 60 + CURRENT_MIN ))
+
+      TMPFILE=$(mktemp /tmp/meds-due.XXXXXX)
+      trap "rm -f $TMPFILE" EXIT
+
+      jq -r --argjson now "$CURRENT_TOTAL" --argjson win "$WINDOW" '
+        .[] | . as $med |
+        .times[] |
+        (split(":") | (.[0] | tonumber) * 60 + (.[1] | tonumber)) as $t |
+        select(($t - $now) | fabs < $win) |
+        "\($med.name)|\($med.dosage)|" + .
+      ' "$MEDS_FILE" > "$TMPFILE" 2>/dev/null
+
+      if [ ! -s "$TMPFILE" ]; then
+        echo "NO_MEDS_DUE"
+      else
+        cat "$TMPFILE"
+      fi
+
+  - id: format-reminder
+    stdin: $check-due.stdout
+    command: |
+      input=$(cat)
+      if [ "$input" = "NO_MEDS_DUE" ]; then
+        cat <<EOF
+      💊 Medication Check
+
+      No medications due right now. You're all caught up! ✅
+      EOF
+      else
+        echo "💊 Medication Reminder!"
+        echo ""
+        echo "$input" | while IFS='|' read -r name dosage time; do
+          echo "  • ${name} — ${dosage} (scheduled: ${time})"
+        done
+        echo ""
+        echo "Don't forget to take them! 🕐"
+      fi

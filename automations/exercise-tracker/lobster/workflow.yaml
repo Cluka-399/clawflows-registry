@@ -1,0 +1,138 @@
+# Lobster workflow: exercise-tracker
+# Logs exercises to a JSON file and shows a weekly summary
+#
+# Usage:
+#   Log a workout:
+#     lobster run --file workflow.yaml --args-json '{"action":"log","exercise":"running","duration_min":"30"}'
+#   Show weekly summary:
+#     lobster run --file workflow.yaml --args-json '{"action":"summary"}'
+#
+# Requires: jq
+
+name: exercise-tracker
+description: Log workouts to JSON and show weekly summary with streaks
+
+env:
+  PATH: "/home/node/bin:/usr/local/bin:/usr/bin:/bin"
+
+args:
+  action:
+    description: "Action to perform: 'log' or 'summary'"
+    default: "summary"
+  exercise:
+    description: "Type of exercise (for log action)"
+    default: "walking"
+  duration_min:
+    description: "Duration in minutes (for log action)"
+    default: "30"
+  log_file:
+    description: "Path to exercise log JSON file"
+    default: "/data/clawd/clawflows-registry/automations/exercise-tracker/lobster/exercise-log.json"
+
+steps:
+  - id: ensure-log
+    command: |
+      LOG="${log_file}"
+      if [ ! -f "$LOG" ] || [ ! -s "$LOG" ]; then
+        echo '[]' > "$LOG"
+      fi
+      # Verify it's valid JSON
+      if ! jq empty "$LOG" 2>/dev/null; then
+        echo '[]' > "$LOG"
+      fi
+      echo "ok"
+
+  - id: run-action
+    command: |
+      LOG="${log_file}"
+      ACTION="${action}"
+
+      if [ "$ACTION" = "log" ]; then
+        # Add new entry
+        TMPFILE=$(mktemp /tmp/exercise-entry.XXXXXX)
+        DATE=$(date +%Y-%m-%d)
+        TIME=$(date +%H:%M)
+
+        jq --arg ex "${exercise}" --arg dur "${duration_min}" --arg d "$DATE" --arg t "$TIME" \
+          '. + [{"exercise": $ex, "duration_min": ($dur | tonumber), "date": $d, "time": $t}]' \
+          "$LOG" > "$TMPFILE" && mv "$TMPFILE" "$LOG" || rm -f "$TMPFILE"
+
+        echo "LOGGED|${exercise}|${duration_min}|${DATE} ${TIME}"
+
+      elif [ "$ACTION" = "summary" ]; then
+        # Weekly summary: last 7 days
+        WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d 2>/dev/null || date -v-7d +%Y-%m-%d 2>/dev/null || echo "1970-01-01")
+
+        TMPFILE=$(mktemp /tmp/exercise-summary.XXXXXX)
+
+        jq --arg since "$WEEK_AGO" '
+          [.[] | select(.date >= $since)] |
+          {
+            total_workouts: length,
+            total_minutes: (map(.duration_min) | add // 0),
+            exercises: (group_by(.exercise) | map({
+              type: .[0].exercise,
+              count: length,
+              total_min: (map(.duration_min) | add)
+            })),
+            days_active: ([.[].date] | unique | length)
+          }
+        ' "$LOG" > "$TMPFILE"
+        cat "$TMPFILE"
+        rm -f "$TMPFILE"
+      else
+        echo "Unknown action: $ACTION. Use 'log' or 'summary'."
+      fi
+
+  - id: format-output
+    stdin: $run-action.stdout
+    command: |
+      TMPFILE=$(mktemp /tmp/exercise-fmt.XXXXXX)
+      trap "rm -f $TMPFILE" EXIT
+      cat > "$TMPFILE"
+
+      # Check if it's a log confirmation
+      if grep -q '^LOGGED|' "$TMPFILE"; then
+        exercise=$(cut -d'|' -f2 "$TMPFILE")
+        duration=$(cut -d'|' -f3 "$TMPFILE")
+        datetime=$(cut -d'|' -f4 "$TMPFILE")
+        cat <<EOF
+      🏋️ Exercise Logged!
+
+      • Activity: ${exercise}
+      • Duration: ${duration} minutes
+      • Time: ${datetime}
+
+      Keep it up! 💪
+      EOF
+      else
+        # It's a JSON summary
+        total=$(jq -r '.total_workouts' "$TMPFILE")
+        mins=$(jq -r '.total_minutes' "$TMPFILE")
+        days=$(jq -r '.days_active' "$TMPFILE")
+
+        if [ "$total" = "0" ]; then
+          cat <<EOF
+      📊 Weekly Exercise Summary
+
+      No workouts logged this week yet. Time to get moving! 🏃
+      EOF
+        else
+          echo "📊 Weekly Exercise Summary (Last 7 Days)"
+          echo ""
+          echo "  Total workouts: ${total}"
+          echo "  Total minutes: ${mins}"
+          echo "  Days active: ${days}/7"
+          echo ""
+          echo "  Breakdown:"
+          jq -r '.exercises[] | "    • \(.type): \(.count)x (\(.total_min) min)"' "$TMPFILE"
+          echo ""
+          if [ "$days" -ge 5 ] 2>/dev/null; then
+            echo "  🔥 Amazing streak! You're crushing it!"
+          elif [ "$days" -ge 3 ] 2>/dev/null; then
+            echo "  💪 Good consistency! Keep it going!"
+          else
+            echo "  🌱 Getting started — every workout counts!"
+          fi
+        fi
+      fi

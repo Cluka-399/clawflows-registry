@@ -1,0 +1,173 @@
+# Lobster workflow: domain-expiry-monitor
+# Check domain registration expiry dates using RDAP API
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"domains":"example.com,google.com","warning_days":"60","critical_days":"30"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - rdap.org (RDAP protocol, no auth needed)
+
+name: domain-expiry-monitor
+description: Monitor domain registration expiration dates and alert on upcoming expiries
+
+args:
+  domains:
+    description: "Comma-separated list of domains to monitor"
+    default: "clawhub.com,moltbook.com,clawflows.com"
+  warning_days:
+    description: "Days before expiry to show warning"
+    default: "60"
+  critical_days:
+    description: "Days before expiry for critical alert"
+    default: "30"
+
+steps:
+  - id: check-domains
+    command: |
+      results="[]"
+      for domain in $(echo "${domains}" | tr ',' ' '); do
+        tmpf=$(mktemp)
+        # Determine TLD-specific RDAP server
+        tld=$(echo "$domain" | rev | cut -d. -f1 | rev)
+        case "$tld" in
+          com|net) rdap_base="https://rdap.verisign.com/${tld}/v1" ;;
+          org) rdap_base="https://rdap.org" ;;
+          io) rdap_base="https://rdap.nic.io" ;;
+          dev) rdap_base="https://rdap.nic.google" ;;
+          *) rdap_base="https://rdap.org" ;;
+        esac
+        curl -sf -L --max-time 20 \
+          "${rdap_base}/domain/${domain}" \
+          -o "$tmpf" 2>/dev/null
+
+        if [ -s "$tmpf" ] && jq -e '.events' "$tmpf" >/dev/null 2>&1; then
+          entry=$(jq -c --arg d "$domain" '
+            (.events // []) as $events |
+            ($events[] | select(.eventAction == "expiration") | .eventDate) // "unknown" |
+            . as $expiry_raw |
+            (if $expiry_raw != "unknown" then
+              ($expiry_raw | split("T")[0])
+            else "unknown" end) as $expiry_date |
+            {domain: $d, expiry: $expiry_raw, expiry_date: $expiry_date}
+          ' "$tmpf" 2>/dev/null)
+
+          if [ -z "$entry" ]; then
+            entry="{\"domain\":\"${domain}\",\"expiry\":\"unknown\",\"expiry_date\":\"unknown\"}"
+          fi
+        else
+          entry="{\"domain\":\"${domain}\",\"expiry\":\"unknown\",\"expiry_date\":\"unknown\"}"
+        fi
+
+        results_tmp=$(mktemp)
+        entry_tmp=$(mktemp)
+        printf '%s' "$results" > "$results_tmp"
+        printf '%s' "$entry" > "$entry_tmp"
+        results=$(jq -c --slurpfile e "$entry_tmp" '. + [$e[0]]' "$results_tmp")
+        rm -f "$results_tmp" "$entry_tmp" "$tmpf"
+      done
+      echo "$results" | jq '.'
+
+  - id: analyze
+    command: |
+      domains_file=$(mktemp)
+      printf '%s' '$check-domains.stdout' > "$domains_file"
+      now_epoch=$(date +%s)
+
+      # Compute days_left in shell since jq can't parse dates
+      enriched="[]"
+      count=$(jq 'length' "$domains_file")
+      i=0
+      while [ "$i" -lt "$count" ]; do
+        entry_tmp=$(mktemp)
+        jq -c ".[$i]" "$domains_file" > "$entry_tmp"
+        expiry_raw=$(jq -r '.expiry' "$entry_tmp")
+        domain_name=$(jq -r '.domain' "$entry_tmp")
+
+        if [ "$expiry_raw" != "unknown" ] && [ "$expiry_raw" != "null" ]; then
+          expiry_epoch=$(date -d "$expiry_raw" +%s 2>/dev/null || echo "0")
+          if [ "$expiry_epoch" != "0" ]; then
+            days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+            expiry_date=$(date -d "$expiry_raw" +%Y-%m-%d 2>/dev/null)
+          else
+            days_left=-1
+            expiry_date="parse_error"
+          fi
+        else
+          days_left=-1
+          expiry_date="unknown"
+        fi
+
+        new_entry=$(jq -c --arg dl "$days_left" --arg ed "$expiry_date" \
+          '. + {days_left: ($dl | tonumber), expiry_date: $ed}' "$entry_tmp")
+        enriched_tmp=$(mktemp)
+        new_entry_tmp=$(mktemp)
+        printf '%s' "$enriched" > "$enriched_tmp"
+        printf '%s' "$new_entry" > "$new_entry_tmp"
+        enriched=$(jq -c --slurpfile e "$new_entry_tmp" '. + [$e[0]]' "$enriched_tmp")
+        rm -f "$entry_tmp" "$enriched_tmp" "$new_entry_tmp"
+        i=$((i + 1))
+      done
+
+      enriched_file=$(mktemp)
+      printf '%s' "$enriched" > "$enriched_file"
+      jq --arg warn "${warning_days}" --arg crit "${critical_days}" '
+        ($warn | tonumber) as $warn_d |
+        ($crit | tonumber) as $crit_d |
+        [.[] |
+          . + {
+            status: (
+              if .days_left < 0 then "unknown"
+              elif .days_left <= $crit_d then "critical"
+              elif .days_left <= $warn_d then "warning"
+              else "ok" end
+            )
+          }
+        ] as $results |
+        {
+          results: $results,
+          critical: [$results[] | select(.status == "critical")],
+          warning: [$results[] | select(.status == "warning")],
+          ok: [$results[] | select(.status == "ok")],
+          unknown: [$results[] | select(.status == "unknown")],
+          needs_alert: ([$results[] | select(.status == "critical" or .status == "warning")] | length > 0)
+        }
+      ' "$enriched_file"
+      rm -f "$domains_file" "$enriched_file"
+
+  - id: report
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_domain_report.json
+      jq -r '
+        (if (.critical | length) > 0 then
+          "🚨 DOMAIN EXPIRY ALERT — Action Required!\n"
+        elif .needs_alert then
+          "⚠️ Domain Expiry Warning\n"
+        else
+          "🌐 Domain Expiry Report — All Good\n"
+        end) +
+
+        (if (.critical | length) > 0 then
+          "\n🔴 RENEW NOW (< " + ("${critical_days}") + " days):\n" +
+          ([.critical[] | "  • " + .domain + ": " + (.days_left | tostring) + " days (" + .expiry_date + ")"] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.warning | length) > 0 then
+          "\n🟡 Coming up (< " + ("${warning_days}") + " days):\n" +
+          ([.warning[] | "  • " + .domain + ": " + (.days_left | tostring) + " days (" + .expiry_date + ")"] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.ok | length) > 0 then
+          "\n✅ Healthy:\n" +
+          ([.ok[] | "  • " + .domain + ": " + (.days_left | tostring) + " days remaining"] | join("\n")) + "\n"
+        else "" end) +
+
+        (if (.unknown | length) > 0 then
+          "\n❓ Could not check:\n" +
+          ([.unknown[] | "  • " + .domain + ": expiry date unavailable"] | join("\n")) + "\n"
+        else "" end)
+      ' /tmp/lb_domain_report.json
+      rm -f /tmp/lb_domain_report.json

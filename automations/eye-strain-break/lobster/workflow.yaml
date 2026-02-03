@@ -1,0 +1,32 @@
+# Lobster workflow: eye-strain-break
+# 20-20-20 rule reminder with a random eye exercise
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#
+# Requires: (no external deps)
+
+name: eye-strain-break
+description: 20-20-20 rule reminders with random eye exercises
+
+args:
+  exercises:
+    description: "Comma-separated list of eye exercises"
+    default: "look at something 20 feet away for 20 seconds,close your eyes and gently massage your eyelids,blink rapidly 20 times to re-moisten your eyes,look up-down-left-right slowly 5 times each,focus on a near object then a far object 10 times,cup your palms over closed eyes for 30 seconds (palming),trace a figure-8 with your eyes,look out a window and focus on the farthest point you can see"
+
+steps:
+  - id: pick-exercise
+    command: |
+      echo "${exercises}" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1
+
+  - id: format-reminder
+    stdin: $pick-exercise.stdout
+    command: |
+      exercise=$(cat)
+      cat <<EOF
+      👁️ Eye Strain Break! (20-20-20 Rule)
+
+      Your eyes need a rest. Try this: ${exercise}.
+
+      Screens strain your eyes — regular breaks keep them healthy! 🌿
+      EOF
