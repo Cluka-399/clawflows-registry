@@ -1,0 +1,80 @@
+# Lobster workflow: bill-due-reminder
+# Reads a JSON bills file and alerts on bills due within N days
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"bills_file":"/path/to/bills.json","lookahead_days":"7"}'
+#
+# Bills file format (JSON array):
+#   [{"name":"Rent","amount":1500,"due_day":1},{"name":"Internet","amount":50,"due_day":15}]
+#
+# Requires: jq, date (GNU coreutils)
+
+name: bill-due-reminder
+description: Track recurring bills and send reminders before due dates
+
+args:
+  bills_file:
+    description: "Path to JSON file with bills array [{name, amount, due_day}]"
+  lookahead_days:
+    description: "Number of days ahead to check for upcoming bills"
+    default: "7"
+
+steps:
+  - id: load-bills
+    command: |
+      if [ ! -f "${bills_file}" ]; then
+        echo '{"error":"Bills file not found: ${bills_file}"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${bills_file}"
+
+  - id: check-due
+    stdin: $load-bills.stdout
+    command: |
+      cat > /tmp/lb_bills.json
+      today_day=$(date +%-d)
+      today_month=$(date +%-m)
+      today_year=$(date +%Y)
+      # days in current month
+      days_in_month=$(date -d "$today_year-$today_month-01 +1 month -1 day" +%-d 2>/dev/null \
+        || date -d "$(date +%Y-%m-01) +1 month -1 day" +%-d)
+      lookahead=${lookahead_days}
+      jq -c --argjson today "$today_day" \
+             --argjson dim "$days_in_month" \
+             --argjson look "$lookahead" '
+        [.[] | . as $bill |
+          # Calculate days until due
+          (if .due_day >= $today then
+            .due_day - $today
+          else
+            # wraps to next month
+            ($dim - $today) + .due_day
+          end) as $days_until |
+          select($days_until <= $look and $days_until >= 0) |
+          . + {days_until: $days_until, urgent: ($days_until <= 2)}
+        ] | sort_by(.days_until)
+      ' /tmp/lb_bills.json
+      rm -f /tmp/lb_bills.json
+
+  - id: report
+    stdin: $check-due.stdout
+    command: |
+      cat > /tmp/lb_due.json
+      jq -r '
+        if length == 0 then
+          "✅ No bills due in the next ${lookahead_days} days."
+        else
+          "💰 \(length) bill(s) due in the next ${lookahead_days} days:\n" +
+          ([.[] |
+            (if .urgent then "🔴" else "🟡" end) +
+            " \(.name): $\(.amount) — " +
+            (if .days_until == 0 then "DUE TODAY!"
+             elif .days_until == 1 then "due tomorrow"
+             else "due in \(.days_until) days (day \(.due_day))"
+             end)
+          ] | join("\n")) +
+          "\n\nTotal: $" + ([.[].amount] | add | tostring)
+        end
+      ' /tmp/lb_due.json
+      rm -f /tmp/lb_due.json

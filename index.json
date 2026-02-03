@@ -165,7 +165,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/bill-due-reminder/"
@@ -181,7 +181,7 @@
         "capability: social-search"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/bitcoin-tracker/"
@@ -214,7 +214,7 @@
         "productivity",
         "pomodoro"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/break-reminder/"
@@ -231,7 +231,7 @@
       "tags": [
         "finance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/budget-tracker/"
@@ -268,7 +268,7 @@
         "ci-cd",
         "monitoring"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/cicd-status-monitor/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 5
+  "lobster_ready": 10
 }

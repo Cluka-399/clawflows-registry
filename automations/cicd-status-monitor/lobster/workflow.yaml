@@ -1,0 +1,121 @@
+# Lobster workflow: cicd-status-monitor
+# Monitors GitHub Actions workflow runs and alerts on NEW failures
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repos":"owner/repo1,owner/repo2"}'
+#   lobster run --file workflow.yaml --args-json '{"repos":"owner/repo","branch":"develop"}'
+#
+# For private repos, set GITHUB_TOKEN env var.
+# Requires: jq, curl
+
+name: cicd-status-monitor
+description: Monitor CI/CD pipeline status and alert on new failures
+
+args:
+  repos:
+    description: "Comma-separated GitHub repos (owner/repo)"
+  branch:
+    description: "Branch to monitor (default: all branches)"
+    default: ""
+  state_file:
+    default: "/tmp/clawflows-cicd-state.json"
+
+steps:
+  - id: fetch-runs
+    command: |
+      echo '[]' > /tmp/lb_cicd_out.json
+      auth_header=""
+      if [ -n "$GITHUB_TOKEN" ]; then
+        auth_header="Authorization: Bearer $GITHUB_TOKEN"
+      fi
+      branch_param=""
+      if [ -n "${branch}" ]; then
+        branch_param="&branch=${branch}"
+      fi
+      for repo in $(echo "${repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        url="https://api.github.com/repos/$repo/actions/runs?per_page=5${branch_param}"
+        if [ -n "$auth_header" ]; then
+          curl -sf -H "Accept: application/vnd.github+json" -H "$auth_header" "$url"
+        else
+          curl -sf -H "Accept: application/vnd.github+json" "$url"
+        fi \
+          | jq -c --arg r "$repo" \
+            '[(.workflow_runs // [])[] | {repo:$r, id:(.id|tostring), name:.name, branch:.head_branch, status:.status, conclusion:.conclusion, url:.html_url, created:.created_at, run_number:.run_number}]' \
+          > /tmp/lb_cicd_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_cicd_chunk.json
+        jq -sc '.[0]+.[1]' /tmp/lb_cicd_out.json /tmp/lb_cicd_chunk.json > /tmp/lb_cicd_merged.json
+        mv /tmp/lb_cicd_merged.json /tmp/lb_cicd_out.json
+      done
+      cat /tmp/lb_cicd_out.json
+      rm -f /tmp/lb_cicd_chunk.json
+
+  - id: find-new-failures
+    stdin: $fetch-runs.stdout
+    command: |
+      cat > /tmp/lb_cicd_runs.json
+      state=$(cat "${state_file}" 2>/dev/null || echo '{}')
+      jq -c --argjson state "$state" '
+        ($state.alerted // {}) as $alerted |
+        ($state.last_status // {}) as $prev_status |
+        group_by(.repo) | map({repo: .[0].repo, runs: (sort_by(.created) | reverse)}) |
+        map(
+          .repo as $repo | .runs as $runs |
+          ($runs | map(select(.status == "completed"))) as $completed |
+          ($completed | first) as $latest |
+          ($completed | map(select(.conclusion == "failure"))) as $failures |
+          ($failures | map(select($alerted["\($repo):\(.id)"] == null))) as $new_failures |
+          {repo: $repo, latest_status: ($latest.conclusion // "unknown"), latest_name: ($latest.name // "unknown"), latest_url: ($latest.url // ""), latest_branch: ($latest.branch // "unknown"), failure_count: ($failures|length), total_runs: ($runs|length), new_failures: $new_failures, new_failure_count: ($new_failures|length), recovered: ($prev_status[$repo] == "failure" and ($latest.conclusion == "success"))}
+        ) | . as $results |
+        {results: $results, new_state: {alerted: ([$alerted|to_entries[]|select(.value)] + [$results[].new_failures[]|{key:"\(.repo):\(.id)",value:true}] | from_entries | to_entries | .[-200:] | from_entries), last_status: ([$results[]|{key:.repo,value:.latest_status}]|from_entries)}, has_alerts: ([.[]|select(.new_failure_count > 0 or .recovered)]|length > 0)}
+      ' /tmp/lb_cicd_runs.json
+      rm -f /tmp/lb_cicd_runs.json
+
+  - id: save-state
+    stdin: $find-new-failures.stdout
+    command: |
+      cat > /tmp/lb_cicd_analysis.json
+      jq '.new_state' /tmp/lb_cicd_analysis.json > "${state_file}"
+      cat /tmp/lb_cicd_analysis.json
+      rm -f /tmp/lb_cicd_analysis.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        .results as $results |
+        if ($results | length) == 0 then
+          "No repos to check."
+        else
+          ([$results[] | select(.new_failure_count > 0)] |
+            if length > 0 then
+              "🔴 CI/CD Failures Detected!\n\n" +
+              (map(
+                "Repository: \(.repo)\n" +
+                "Branch: \(.latest_branch)\n" +
+                "Workflow: \(.latest_name)\n" +
+                "Failures: \(.failure_count)/\(.total_runs) recent runs\n" +
+                "URL: \(.latest_url)\n" +
+                (.new_failures | map("  ⚠️  Run #\(.run_number) — \(.name) (\(.branch))") | join("\n")) +
+                "\n"
+              ) | join("\n"))
+            else ""
+          end) +
+          ([$results[] | select(.recovered)] |
+            if length > 0 then
+              "\n🟢 Recovered:\n" +
+              (map("  ✅ \(.repo) — back to \(.latest_status)") | join("\n")) +
+              "\n"
+            else ""
+          end) +
+          "\n📊 Status Summary:\n" +
+          ($results | map(
+            (if .latest_status == "success" then "✅"
+             elif .latest_status == "failure" then "❌"
+             elif .latest_status == "in_progress" then "🔄"
+             else "❓" end) +
+            " \(.repo) — \(.latest_status)" +
+            (if .latest_name != "unknown" then " (\(.latest_name))" else "" end)
+          ) | join("\n"))
+        end
+      '

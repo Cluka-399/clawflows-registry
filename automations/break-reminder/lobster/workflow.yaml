@@ -1,0 +1,36 @@
+# Lobster workflow: break-reminder
+# Picks a random break activity and outputs a reminder message
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"activities":"stretch,walk,meditate","break_duration_minutes":"15"}'
+#
+# Requires: (no external deps)
+
+name: break-reminder
+description: Remind yourself to take regular breaks with a random activity suggestion
+
+args:
+  activities:
+    description: "Comma-separated list of break activities"
+    default: "stretch,walk,rest your eyes,get some fresh air,do some deep breathing"
+  break_duration_minutes:
+    description: "Suggested break length in minutes"
+    default: "10"
+
+steps:
+  - id: pick-activity
+    command: |
+      echo "${activities}" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1
+
+  - id: format-reminder
+    stdin: $pick-activity.stdout
+    command: |
+      activity=$(cat)
+      cat <<EOF
+      ⏰ Break Time!
+
+      You've been working for a while. Take ${break_duration_minutes} minutes to ${activity}.
+
+      Your mind and body will thank you! 🧘
+      EOF

@@ -1,0 +1,95 @@
+# Lobster workflow: budget-tracker
+# Reads a spending log and compares against monthly budgets.
+# Alerts when any category exceeds 80% of its budget.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"budget_file":"/path/to/budget.json","spending_file":"/path/to/spending.json"}'
+#
+# Requires: jq
+#
+# Budget file format:  {"categories": {"groceries": 500, "dining": 200, ...}}
+# Spending file format: [{"category": "groceries", "amount": 45.50, "description": "..."}, ...]
+
+name: budget-tracker
+description: Track spending against monthly budgets, alert when nearing limits
+
+args:
+  budget_file:
+    description: "Path to JSON budget file with category limits"
+  spending_file:
+    description: "Path to JSON spending log (array of transactions)"
+  threshold:
+    description: "Alert threshold as decimal (0.8 = 80%)"
+    default: "0.8"
+
+steps:
+  - id: load-budget
+    command: |
+      cat "${budget_file}" 2>/dev/null || { echo '{"error":"Budget file not found"}'; exit 1; }
+
+  - id: load-spending
+    command: |
+      cat "${spending_file}" 2>/dev/null || { echo '{"error":"Spending file not found"}'; exit 1; }
+
+  - id: aggregate-spending
+    stdin: $load-spending.stdout
+    command: |
+      jq -c 'group_by(.category) | map({key: .[0].category, value: (map(.amount) | add)}) | from_entries'
+
+  - id: compare-budgets
+    stdin: $aggregate-spending.stdout
+    command: |
+      cat > /tmp/lb_spending_agg.json
+      cat "${budget_file}" > /tmp/lb_budget.json
+      threshold="${threshold}"
+      jq -c --argjson spent "$(cat /tmp/lb_spending_agg.json)" --arg thresh "$threshold" '
+        ($thresh | tonumber) as $t |
+        .categories | to_entries | map(
+          .key as $cat | .value as $limit |
+          ($spent[$cat] // 0) as $used |
+          ($used / $limit) as $pct |
+          {
+            category: $cat,
+            budget: $limit,
+            spent: ($used * 100 | round / 100),
+            remaining: (($limit - $used) * 100 | round / 100),
+            percent: ($pct * 10000 | round / 100),
+            over_threshold: ($pct >= $t),
+            over_budget: ($pct >= 1.0)
+          }
+        ) | sort_by(-.percent) |
+        {
+          summary: .,
+          alerts: [.[] | select(.over_threshold)],
+          alert_count: ([.[] | select(.over_threshold)] | length),
+          over_budget_count: ([.[] | select(.over_budget)] | length),
+          total_budget: (map(.budget) | add),
+          total_spent: (map(.spent) | add)
+        }
+      ' /tmp/lb_budget.json
+      rm -f /tmp/lb_spending_agg.json /tmp/lb_budget.json
+
+  - id: report
+    stdin: $compare-budgets.stdout
+    command: |
+      jq -r '
+        "💰 Budget Tracker Report\n" +
+        "========================\n\n" +
+        "Total: $\(.total_spent) / $\(.total_budget) (\(.total_spent / .total_budget * 100 | round)%)\n\n" +
+        if .alert_count > 0 then
+          "⚠️  \(.alert_count) category alert(s)" +
+          (if .over_budget_count > 0 then " (\(.over_budget_count) OVER budget!)" else "" end) +
+          "\n\n" +
+          (.alerts | map(
+            (if .over_budget then "🔴" else "🟡" end) +
+            " \(.category): $\(.spent) / $\(.budget) (\(.percent)%)" +
+            (if .over_budget then " — OVER by $\(.spent - .budget)" else " — $\(.remaining) left" end)
+          ) | join("\n")) + "\n"
+        else
+          "✅ All categories within budget.\n"
+        end +
+        "\n--- All Categories ---\n" +
+        (.summary | map(
+          "  \(.category): $\(.spent) / $\(.budget) (\(.percent)%)"
+        ) | join("\n"))
+      '

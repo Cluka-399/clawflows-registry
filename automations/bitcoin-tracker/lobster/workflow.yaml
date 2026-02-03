@@ -1,0 +1,157 @@
+# Lobster workflow: bitcoin-tracker
+# Checks Bitcoin price + Polymarket crypto prediction markets, alerts on big moves
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"alert_threshold":"3"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - blockchain.info/ticker (BTC price, no auth needed)
+#   - gamma-api.polymarket.com/events (crypto prediction markets, no auth needed)
+
+name: bitcoin-tracker
+description: Track Bitcoin price and crypto prediction markets, alert on significant moves
+
+args:
+  alert_threshold:
+    description: "Alert if price moves more than this percentage since last check"
+    default: "5"
+  state_file:
+    description: "Path to state file for tracking last known price"
+    default: "/tmp/clawflows-btc-tracker-state.json"
+
+steps:
+  - id: fetch-price
+    command: |
+      tmpf=$(mktemp)
+      curl -sf --max-time 15 "https://blockchain.info/ticker" -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e '.USD' "$tmpf" >/dev/null 2>&1; then
+        jq '{usd: .USD.last, usd_24h_high: .USD.last, symbol: .USD.symbol}' "$tmpf"
+      else
+        echo '{"usd":0,"symbol":"$"}'
+      fi
+      rm -f "$tmpf"
+
+  - id: fetch-markets
+    command: |
+      tmpf=$(mktemp)
+      curl -sf --max-time 15 \
+        "https://gamma-api.polymarket.com/events?limit=20&active=true&closed=false&tag=Crypto" \
+        -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e 'type == "array"' "$tmpf" >/dev/null 2>&1; then
+        jq -c '[.[] | {
+          title: .title,
+          slug: .slug,
+          markets: [(.markets // [])[] | {
+            question: .question,
+            yes: ((.outcomePrices // "[]") | if type == "string" then (fromjson // [0]) else . end | .[0] // 0 | tonumber),
+            volume: (.volumeNum // 0)
+          }]
+        } | select(.markets | length > 0)
+          | select(
+              (.title | ascii_downcase | test("bitcoin|\\bbtc\\b|crypto|ethereum|\\beth\\b|solana|defi|\\bcoin|nft|blockchain|binance|coinbase|microstrategy|kraken|stablecoin|altcoin|halving|memecoin"))
+            )]' "$tmpf"
+      else
+        echo '[]'
+      fi
+      rm -f "$tmpf"
+
+  - id: load-state
+    command: |
+      cat "${state_file}" 2>/dev/null || echo '{"last_price":0,"last_check":""}'
+
+  - id: analyze
+    command: |
+      price_file=$(mktemp)
+      markets_file=$(mktemp)
+      state_file_tmp=$(mktemp)
+      printf '%s' '$fetch-price.stdout' > "$price_file"
+      printf '%s' '$fetch-markets.stdout' > "$markets_file"
+      printf '%s' '$load-state.stdout' > "$state_file_tmp"
+
+      jq -n \
+        --slurpfile price "$price_file" \
+        --slurpfile markets "$markets_file" \
+        --slurpfile state "$state_file_tmp" \
+        --arg threshold "${alert_threshold}" \
+      '
+        ($price[0] // {usd:0}) as $btc |
+        ($state[0] // {last_price:0}) as $prev |
+        ($btc.usd // 0) as $current |
+        ($prev.last_price // 0) as $last |
+        (if $last > 0 then (($current - $last) / $last * 100) else 0 end) as $change_pct |
+        ($threshold | tonumber) as $thresh |
+        (if ($change_pct > $thresh) or ($change_pct < (0 - $thresh)) then true else false end) as $significant |
+        (if $change_pct >= 0 then "up" else "down" end) as $direction |
+        ($markets[0] // []) as $mkts |
+        {
+          current_price: $current,
+          last_price: $last,
+          change_pct: ($change_pct * 100 | round / 100),
+          significant: $significant,
+          direction: $direction,
+          threshold: $thresh,
+          markets: $mkts
+        }
+      '
+      rm -f "$price_file" "$markets_file" "$state_file_tmp"
+
+  - id: save-state
+    command: |
+      analysis_file=$(mktemp)
+      printf '%s' '$analyze.stdout' > "$analysis_file"
+      price=$(jq -r '.current_price' "$analysis_file")
+      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      jq -n --arg p "$price" --arg t "$now" \
+        '{last_price: ($p | tonumber), last_check: $t}' > "${state_file}"
+      cat "$analysis_file"
+      rm -f "$analysis_file"
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      cat > /tmp/lb_btc_report.json
+      jq -r '
+        (if .significant then
+          "🚨 BITCOIN ALERT — Significant Move!\n"
+        else
+          "📊 Bitcoin Tracker Update\n"
+        end) +
+
+        "\n💰 BTC Price: $" + (.current_price | tostring) +
+
+        (if .last_price > 0 then
+          "\n🔄 Change: " + (.change_pct | tostring) + "% " +
+          (if .direction == "up" then "📈" else "📉" end) +
+          "\n   $" + (.last_price | tostring) + " → $" + (.current_price | tostring)
+        else
+          "\n🆕 First run — tracking started"
+        end) +
+
+        "\n⚙️  Alert threshold: ±" + (.threshold | tostring) + "%" +
+
+        "\n\n🔮 Crypto Prediction Markets (Polymarket):" +
+        if (.markets | length) > 0 then
+          "\n" + ([.markets[:8][] |
+            "\n📌 " + .title +
+            ([.markets[:3][] |
+              "\n  • " + .question +
+              "\n    Yes: " + ((.yes * 100 * 100 | round / 100) | tostring) + "%" +
+              (if .volume > 0 then
+                " | Vol: $" + (if .volume > 1000000 then
+                  ((.volume / 1000000 * 10 | round / 10) | tostring) + "M"
+                elif .volume > 1000 then
+                  ((.volume / 1000 | round) | tostring) + "k"
+                else
+                  (.volume | round | tostring)
+                end)
+              else "" end)
+            ] | join(""))
+          ] | join("\n"))
+        else
+          "\n  No active crypto markets found."
+        end
+      ' /tmp/lb_btc_report.json
+      rm -f /tmp/lb_btc_report.json
