@@ -1,0 +1,216 @@
+# Lobster workflow: crypto-portfolio
+# Track crypto portfolio value, calculate P&L, alert on significant moves
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"portfolio_file":"/tmp/my-portfolio.json","alert_threshold":"10"}'
+#
+# Portfolio file format (JSON array):
+#   [{"coin":"bitcoin","amount":0.5,"buy_price":60000},{"coin":"ethereum","amount":2,"buy_price":3000}]
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - api.coingecko.com (multi-coin prices, no auth needed)
+
+name: crypto-portfolio
+description: Track crypto portfolio value and P&L, alert on significant moves
+
+args:
+  portfolio_file:
+    description: "Path to JSON file with holdings [{coin, amount, buy_price}]"
+    default: "/tmp/crypto-portfolio-holdings.json"
+  alert_threshold:
+    description: "Alert if total portfolio value changes more than this percent since last check"
+    default: "10"
+  currency:
+    description: "Fiat currency for prices (usd, eur, gbp, etc.)"
+    default: "usd"
+  state_file:
+    description: "Path to state file for tracking last known portfolio value"
+    default: "/tmp/clawflows-crypto-portfolio-state.json"
+
+steps:
+  - id: load-portfolio
+    command: |
+      if [ ! -f "${portfolio_file}" ]; then
+        echo '{"error":"Portfolio file not found: ${portfolio_file}"}' >&2
+        echo '[]'
+        exit 0
+      fi
+      cat "${portfolio_file}"
+
+  - id: extract-coins
+    command: |
+      pf=$(mktemp)
+      printf '%s' '$load-portfolio.stdout' > "$pf"
+      # Extract unique coin IDs as comma-separated string
+      coins=$(jq -r '[.[].coin] | unique | join(",")' "$pf" 2>/dev/null)
+      if [ -z "$coins" ] || [ "$coins" = "null" ]; then
+        echo '{"coins":"","count":0}'
+      else
+        count=$(jq '[.[].coin] | unique | length' "$pf")
+        jq -n --arg c "$coins" --arg n "$count" '{coins: $c, count: ($n | tonumber)}'
+      fi
+      rm -f "$pf"
+
+  - id: fetch-prices
+    command: |
+      info=$(mktemp)
+      printf '%s' '$extract-coins.stdout' > "$info"
+      coins=$(jq -r '.coins' "$info")
+      rm -f "$info"
+
+      if [ -z "$coins" ] || [ "$coins" = "" ]; then
+        echo '{}'
+        exit 0
+      fi
+
+      tmpf=$(mktemp)
+      curl -sf --max-time 15 \
+        "https://api.coingecko.com/api/v3/simple/price?ids=${coins}&vs_currencies=${currency}&include_24hr_change=true" \
+        -o "$tmpf" 2>/dev/null
+
+      if [ -s "$tmpf" ] && jq -e 'type == "object"' "$tmpf" >/dev/null 2>&1; then
+        cat "$tmpf"
+      else
+        echo '{}'
+      fi
+      rm -f "$tmpf"
+
+  - id: load-state
+    command: |
+      cat "${state_file}" 2>/dev/null || echo '{"total_value":0,"last_check":"","positions":{}}'
+
+  - id: calculate
+    command: |
+      pf=$(mktemp)
+      prices_f=$(mktemp)
+      state_f=$(mktemp)
+      printf '%s' '$load-portfolio.stdout' > "$pf"
+      printf '%s' '$fetch-prices.stdout' > "$prices_f"
+      printf '%s' '$load-state.stdout' > "$state_f"
+
+      jq -n \
+        --slurpfile holdings "$pf" \
+        --slurpfile prices "$prices_f" \
+        --slurpfile state "$state_f" \
+        --arg currency "${currency}" \
+        --arg threshold "${alert_threshold}" \
+      '
+        ($holdings[0] // []) as $h |
+        ($prices[0] // {}) as $p |
+        ($state[0] // {total_value:0}) as $prev |
+        ($threshold | tonumber) as $thresh |
+
+        # Calculate per-holding P&L
+        [
+          $h[] |
+          . as $holding |
+          ($p[$holding.coin][$currency] // 0) as $current_price |
+          ($p[$holding.coin][($currency + "_24h_change")] // 0) as $change_24h |
+          ($current_price * $holding.amount) as $current_value |
+          ($holding.buy_price * $holding.amount) as $cost_basis |
+          ($current_value - $cost_basis) as $pnl |
+          (if $cost_basis > 0 then ($pnl / $cost_basis * 100) else 0 end) as $pnl_pct |
+          {
+            coin: ($holding.coin | ascii_upcase),
+            coin_id: $holding.coin,
+            amount: $holding.amount,
+            buy_price: $holding.buy_price,
+            current_price: $current_price,
+            cost_basis: ($cost_basis * 100 | round / 100),
+            current_value: ($current_value * 100 | round / 100),
+            pnl: ($pnl * 100 | round / 100),
+            pnl_pct: ($pnl_pct * 100 | round / 100),
+            change_24h: ($change_24h * 100 | round / 100)
+          }
+        ] as $positions |
+
+        # Totals
+        ($positions | map(.current_value) | add // 0) as $total_value |
+        ($positions | map(.cost_basis) | add // 0) as $total_cost |
+        ($total_value - $total_cost) as $total_pnl |
+        (if $total_cost > 0 then ($total_pnl / $total_cost * 100) else 0 end) as $total_pnl_pct |
+
+        # Change since last check
+        ($prev.total_value // 0) as $prev_value |
+        (if $prev_value > 0 then (($total_value - $prev_value) / $prev_value * 100) else 0 end) as $change_pct |
+        (if ($change_pct > $thresh) or ($change_pct < (0 - $thresh)) then true else false end) as $significant |
+
+        {
+          positions: $positions,
+          total_value: ($total_value * 100 | round / 100),
+          total_cost: ($total_cost * 100 | round / 100),
+          total_pnl: ($total_pnl * 100 | round / 100),
+          total_pnl_pct: ($total_pnl_pct * 100 | round / 100),
+          prev_value: ($prev_value * 100 | round / 100),
+          change_pct: ($change_pct * 100 | round / 100),
+          significant: $significant,
+          threshold: $thresh,
+          first_run: ($prev_value == 0)
+        }
+      '
+      rm -f "$pf" "$prices_f" "$state_f"
+
+  - id: save-state
+    command: |
+      calc_f=$(mktemp)
+      printf '%s' '$calculate.stdout' > "$calc_f"
+      total=$(jq -r '.total_value' "$calc_f")
+      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+      # Save per-position prices for next run comparison
+      positions_json=$(jq -c '[.positions[] | {(.coin_id): .current_price}] | add // {}' "$calc_f")
+      jq -n --arg t "$total" --arg ts "$now" --arg pos "$positions_json" \
+        '{total_value: ($t | tonumber), last_check: $ts, positions: ($pos | fromjson)}' \
+        > "${state_file}"
+
+      # Pass through calculation results
+      cat "$calc_f"
+      rm -f "$calc_f"
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      cat > /tmp/lb_portfolio_report.json
+      jq -r '
+        (if .significant then
+          "🚨 PORTFOLIO ALERT — Significant Move!\n"
+        elif .first_run then
+          "🆕 Portfolio Tracking Started\n"
+        else
+          "💰 Crypto Portfolio Update\n"
+        end) +
+
+        "\n📊 Portfolio Summary" +
+        "\n   Total Value:  $" + (.total_value | tostring) +
+        "\n   Total Cost:   $" + (.total_cost | tostring) +
+        "\n   Total P&L:    " + (if .total_pnl >= 0 then "+" else "" end) + "$" + (.total_pnl | tostring) +
+          " (" + (if .total_pnl_pct >= 0 then "+" else "" end) + (.total_pnl_pct | tostring) + "%)" +
+          (if .total_pnl >= 0 then " 📈" else " 📉" end) +
+
+        (if .first_run then
+          "\n\n🆕 First run — tracking started"
+        else
+          "\n\n🔄 Since Last Check: " +
+          (if .change_pct >= 0 then "+" else "" end) + (.change_pct | tostring) + "%" +
+          (if .change_pct >= 0 then " 📈" else " 📉" end) +
+          "\n   Previous: $" + (.prev_value | tostring) + " → Now: $" + (.total_value | tostring)
+        end) +
+
+        "\n   Alert threshold: ±" + (.threshold | tostring) + "%" +
+
+        "\n\n📋 Holdings:" +
+        ([.positions[] |
+          "\n\n  " + .coin + " — " + (.amount | tostring) + " coins" +
+          "\n    Price:    $" + (.current_price | tostring) +
+            " (24h: " + (if .change_24h >= 0 then "+" else "" end) + (.change_24h | tostring) + "%)" +
+          "\n    Value:    $" + (.current_value | tostring) +
+          "\n    Cost:     $" + (.cost_basis | tostring) +
+          "\n    P&L:      " + (if .pnl >= 0 then "+" else "" end) + "$" + (.pnl | tostring) +
+            " (" + (if .pnl_pct >= 0 then "+" else "" end) + (.pnl_pct | tostring) + "%)" +
+            (if .pnl >= 0 then " ✅" else " ❌" end)
+        ] | join(""))
+      ' /tmp/lb_portfolio_report.json
+      rm -f /tmp/lb_portfolio_report.json

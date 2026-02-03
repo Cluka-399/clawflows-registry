@@ -81,7 +81,7 @@
         "reviews",
         "mobile"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/app-store-reviews/"
@@ -303,7 +303,7 @@
       "tags": [
         "developer"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/code-review-reminder/"
@@ -455,7 +455,7 @@
         "finance",
         "crypto"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/crypto-dca-reminder/"
@@ -474,7 +474,7 @@
         "finance",
         "portfolio"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/crypto-portfolio/"
@@ -490,7 +490,7 @@
         "motivation",
         "daily"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/daily-affirmation/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 10
+  "lobster_ready": 15
 }

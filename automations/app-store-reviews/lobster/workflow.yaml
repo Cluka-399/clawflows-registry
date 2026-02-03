@@ -1,0 +1,101 @@
+# Lobster workflow: app-store-reviews
+# Monitors Apple App Store reviews for your app (via iTunes RSS feed)
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"app_store_id":"389801252"}'
+#   lobster run --file workflow.yaml --args-json '{"app_store_id":"389801252","country":"gb","alert_on_low_rating":"2"}'
+#
+# Requires: jq, curl
+# Note: Google Play scraping omitted — no reliable public API/feed.
+#       Use App Store ID only. Find it in the App Store URL:
+#       https://apps.apple.com/app/instagram/id389801252 → 389801252
+
+name: app-store-reviews
+description: Monitor Apple App Store reviews and alert on new/low-rating reviews
+
+args:
+  app_store_id:
+    description: "Apple App Store app ID (numeric, from the App Store URL)"
+  country:
+    description: "Country code for App Store reviews"
+    default: "us"
+  alert_on_low_rating:
+    description: "Alert on reviews with rating <= this value (1-5)"
+    default: "3"
+  state_file:
+    description: "Path to state file tracking seen review IDs"
+    default: "/tmp/clawflows-app-reviews-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: fetch-reviews
+    command: |
+      url="https://itunes.apple.com/${country}/rss/customerreviews/id=${app_store_id}/sortBy=mostRecent/json"
+      tmpf=$(mktemp)
+      curl -sf "$url" > "$tmpf" 2>/dev/null
+      if [ ! -s "$tmpf" ]; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+      jq -c '[.feed.entry // [] | .[] | {
+        id: .id.label,
+        rating: (.["im:rating"].label // "0" | tonumber),
+        title: (.title.label // ""),
+        content: ((.content.label // "")[:200]),
+        author: (.author.name.label // "unknown"),
+        version: (.["im:version"].label // ""),
+        updated: (.updated.label // "")
+      }]' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  - id: find-new
+    stdin: $fetch-reviews.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat > "$tmpf"
+      seen=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      threshold=${alert_on_low_rating}
+      jq -c --argjson seen "$seen" --argjson threshold "$threshold" '
+        ($seen | if type=="array" then . else [] end) as $seen_list |
+        ($seen_list | map({(.):1}) | add // {}) as $idx |
+        [.[] | select($idx[.id] == null)] as $new |
+        [.[] | select($idx[.id] == null) | select(.rating <= $threshold)] as $low |
+        {
+          new: $new,
+          low: $low,
+          seen: ([$seen_list[], ($new[] | .id)] | unique | .[-500:]),
+          new_count: ($new | length),
+          low_count: ($low | length)
+        }
+      ' "$tmpf"
+      rm -f "$tmpf"
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat > "$tmpf"
+      jq '.seen' "$tmpf" > "${state_file}"
+      cat "$tmpf"
+      rm -f "$tmpf"
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      threshold="${alert_on_low_rating}"
+      jq -r --arg thr "$threshold" '
+        if .new_count == 0 then
+          "No new reviews."
+        else
+          "📱 \(.new_count) new App Store review(s)\n" +
+          if .low_count > 0 then
+            "⚠️ \(.low_count) low-rating review(s) (≤\($thr)⭐):\n\n" +
+            (.low | map("  \(.rating)⭐ — \(.title)\n  \"\(.content)\"\n  — \(.author) (v\(.version))") | join("\n\n")) +
+            "\n\n---\nAll new reviews:\n\n"
+          else "" end +
+          (.new | map("  \(.rating)⭐ — \(.title)\n  \"\(.content)\"\n  — \(.author) (v\(.version))") | join("\n\n"))
+        end
+      '

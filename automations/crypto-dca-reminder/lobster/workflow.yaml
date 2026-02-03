@@ -1,0 +1,141 @@
+# Lobster workflow: crypto-dca-reminder
+# Dollar-cost averaging reminders with current prices
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"coins":"bitcoin,ethereum","dca_amount":"200","currency":"EUR"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - api.coinbase.com/v2/exchange-rates (multi-coin, no auth needed)
+#   - Fallback: blockchain.info/ticker (BTC only, USD)
+
+name: crypto-dca-reminder
+description: Dollar-cost averaging reminders on your schedule with current prices
+
+args:
+  coins:
+    description: "Comma-separated coin tickers: BTC, ETH, SOL, ADA, DOGE, DOT, LINK, LTC, XRP, etc."
+    default: "BTC"
+  dca_amount:
+    description: "Amount to invest per DCA buy in your chosen currency"
+    default: "100"
+  currency:
+    description: "Fiat currency code (USD, EUR, GBP, ILS, etc.)"
+    default: "USD"
+
+steps:
+  - id: fetch-prices
+    command: |
+      coins="${coins}"
+      currency=$(echo "${currency}" | tr '[:lower:]' '[:upper:]')
+      accum=$(mktemp)
+      echo "" > "$accum"
+
+      for ticker in $(echo "$coins" | tr ',' ' '); do
+        ticker=$(echo "$ticker" | tr '[:lower:]' '[:upper:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [ -z "$ticker" ] && continue
+
+        tmpf=$(mktemp)
+        price=""
+
+        # Primary: Coinbase exchange rates
+        curl -sf --max-time 12 \
+          "https://api.coinbase.com/v2/exchange-rates?currency=${ticker}" \
+          -o "$tmpf" 2>/dev/null
+
+        if [ -s "$tmpf" ]; then
+          price=$(jq -r --arg cur "$currency" '.data.rates[$cur] // empty' "$tmpf" 2>/dev/null)
+        fi
+
+        # Fallback for BTC: blockchain.info
+        if [ -z "$price" ] && [ "$ticker" = "BTC" ]; then
+          curl -sf --max-time 12 "https://blockchain.info/ticker" -o "$tmpf" 2>/dev/null
+          if [ -s "$tmpf" ]; then
+            price=$(jq -r --arg cur "$currency" '.[$cur].last // .USD.last // empty' "$tmpf" 2>/dev/null)
+          fi
+        fi
+
+        rm -f "$tmpf"
+
+        if [ -n "$price" ]; then
+          echo "${ticker} ${price}" >> "$accum"
+        fi
+      done
+
+      # Build JSON from accumulated results
+      jq -Rn '[inputs | select(length > 0) | split(" ") | {(.[0]): (.[1] | tonumber)}] | add // {}' "$accum"
+      rm -f "$accum"
+
+  - id: calculate-dca
+    stdin: $fetch-prices.stdout
+    command: |
+      cat > /tmp/lb_dca_prices.json
+      amount="${dca_amount}"
+      currency=$(echo "${currency}" | tr '[:lower:]' '[:upper:]')
+
+      jq -r \
+        --arg amount "$amount" \
+        --arg currency "$currency" \
+      '
+        ($amount | tonumber) as $amt |
+
+        # Currency symbols
+        ({"USD":"$","EUR":"€","GBP":"£","JPY":"¥","CAD":"CA$","AUD":"A$","CHF":"CHF ","ILS":"₪","BRL":"R$","INR":"₹","KRW":"₩","SEK":"kr","NOK":"kr","DKK":"kr","PLN":"zł","CZK":"Kč","HUF":"Ft","TRY":"₺","ZAR":"R","MXN":"$","SGD":"S$","HKD":"HK$","NZD":"NZ$","THB":"฿"} | .[$currency] // ($currency + " ")) as $sym |
+
+        # Coin display names
+        ({"BTC":"Bitcoin","ETH":"Ethereum","SOL":"Solana","ADA":"Cardano","DOGE":"Dogecoin","DOT":"Polkadot","LINK":"Chainlink","AVAX":"Avalanche","MATIC":"Polygon","LTC":"Litecoin","XRP":"XRP","BNB":"BNB","SHIB":"Shiba Inu","UNI":"Uniswap","ATOM":"Cosmos","NEAR":"NEAR","APT":"Aptos","SUI":"Sui","ARB":"Arbitrum","OP":"Optimism"} | .[$currency] // null) as $_ignore |
+
+        ({"BTC":"Bitcoin","ETH":"Ethereum","SOL":"Solana","ADA":"Cardano","DOGE":"Dogecoin","DOT":"Polkadot","LINK":"Chainlink","AVAX":"Avalanche","MATIC":"Polygon","LTC":"Litecoin","XRP":"XRP","BNB":"BNB","SHIB":"Shiba Inu","UNI":"Uniswap","ATOM":"Cosmos","NEAR":"NEAR","APT":"Aptos","SUI":"Sui","ARB":"Arbitrum","OP":"Optimism"}) as $names |
+
+        [
+          to_entries[] |
+          .key as $ticker |
+          .value as $price |
+          ($price | tonumber) as $p |
+          ($names[$ticker] // $ticker) as $name |
+
+          if $p > 0 then
+            ($amt / $p) as $raw_units |
+            # Smart rounding: more decimals for smaller fractions
+            (if $raw_units >= 100 then ($raw_units * 100 | round / 100)
+             elif $raw_units >= 1 then ($raw_units * 10000 | round / 10000)
+             elif $raw_units >= 0.01 then ($raw_units * 1000000 | round / 1000000)
+             else ($raw_units * 100000000 | round / 100000000)
+             end) as $units |
+            # Format price with commas via string manipulation
+            {ticker: $ticker, name: $name, price: $p, units: $units, symbol: $sym, available: true}
+          else
+            {ticker: $ticker, name: $name, price: 0, units: 0, symbol: $sym, available: false}
+          end
+        ] |
+        {results: ., currency: $currency, symbol: (.[0].symbol // "$"), dca_amount: $amt}
+      ' /tmp/lb_dca_prices.json
+
+      rm -f /tmp/lb_dca_prices.json
+
+  - id: report
+    stdin: $calculate-dca.stdout
+    command: |
+      cat > /tmp/lb_dca_report.json
+      jq -r '
+        .symbol as $sym |
+        .dca_amount as $amt |
+
+        "💰 Time to DCA!\n" +
+        "━━━━━━━━━━━━━━━━━━━━\n" +
+        ([.results[] |
+          if .available then
+            "🪙 " + .name + " (" + .ticker + ")\n" +
+            "   " + $sym + ($amt | tostring) + " buys " +
+            (.units | tostring) + " " + .ticker +
+            " at " + $sym + (.price | tostring) + "\n"
+          else
+            "⚠️  " + .ticker + " — price unavailable\n"
+          end
+        ] | join("")) +
+        "━━━━━━━━━━━━━━━━━━━━\n" +
+        "📅 Happy DCA day!"
+      ' /tmp/lb_dca_report.json
+      rm -f /tmp/lb_dca_report.json

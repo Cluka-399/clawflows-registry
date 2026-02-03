@@ -1,0 +1,132 @@
+# Lobster workflow: code-review-reminder
+# Finds open PRs with pending/stale reviews across GitHub repos
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repos":"owner/repo1,owner/repo2"}'
+#   lobster run --file workflow.yaml --args-json '{"repos":"jqlang/jq","stale_hours":"48"}'
+#
+# Requires: jq, curl
+
+name: code-review-reminder
+description: Remind about pending code reviews older than a configurable threshold
+
+args:
+  repos:
+    description: "Comma-separated GitHub repos (owner/repo)"
+  stale_hours:
+    description: "Flag PRs older than this many hours (default 24)"
+    default: "24"
+
+steps:
+  - id: fetch-prs
+    command: |
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+      for repo in $(echo "${repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        curl -sf -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/$repo/pulls?state=open&per_page=30" \
+          | jq -c --arg r "$repo" '
+            [.[] | {
+              repo: $r,
+              number: .number,
+              title: .title,
+              author: .user.login,
+              url: .html_url,
+              created_at: .created_at,
+              updated_at: .updated_at,
+              draft: .draft,
+              requested_reviewers: [.requested_reviewers[]?.login],
+              review_comments: .review_comments
+            }]
+          ' > /tmp/lb_pr_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_pr_chunk.json
+        jq -sc '.[0]+.[1]' "$tmpf" /tmp/lb_pr_chunk.json > /tmp/lb_pr_merged.json
+        mv /tmp/lb_pr_merged.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_pr_chunk.json
+
+  - id: check-reviews
+    stdin: $fetch-prs.stdout
+    command: |
+      cat > /tmp/lb_prs.json
+      echo '[]' > /tmp/lb_review_results.json
+      count=$(jq length /tmp/lb_prs.json)
+      i=0
+      while [ "$i" -lt "$count" ]; do
+        pr=$(jq -c ".[$i]" /tmp/lb_prs.json)
+        repo=$(echo "$pr" | jq -r '.repo')
+        number=$(echo "$pr" | jq -r '.number')
+        # Fetch reviews for this PR
+        reviews=$(curl -sf -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/$repo/pulls/$number/reviews" 2>/dev/null || echo '[]')
+        # Determine review state: approved, changes_requested, or pending
+        state=$(echo "$reviews" | jq -r '
+          [.[] | select(.state != "COMMENTED" and .state != "DISMISSED")] |
+          if length == 0 then "PENDING"
+          elif any(.state == "CHANGES_REQUESTED") then "CHANGES_REQUESTED"
+          elif all(.state == "APPROVED") then "APPROVED"
+          else "PENDING"
+          end
+        ')
+        reviewers=$(echo "$reviews" | jq -c '[.[] | .user.login] | unique')
+        echo "$pr" | jq -c --arg state "$state" --argjson reviewers "$reviewers" \
+          '. + {review_state: $state, reviewed_by: $reviewers}' >> /tmp/lb_pr_enriched.json
+        i=$((i+1))
+      done
+      # Combine into array
+      if [ -f /tmp/lb_pr_enriched.json ]; then
+        jq -sc '.' /tmp/lb_pr_enriched.json
+      else
+        echo '[]'
+      fi
+      rm -f /tmp/lb_prs.json /tmp/lb_pr_enriched.json
+
+  - id: filter-stale
+    stdin: $check-reviews.stdout
+    command: |
+      cat > /tmp/lb_reviewed.json
+      now=$(date +%s)
+      stale_seconds=$(( ${stale_hours} * 3600 ))
+      jq -c --argjson now "$now" --argjson stale "$stale_seconds" '
+        [.[] |
+          select(.draft != true) |
+          select(.review_state != "APPROVED") |
+          (.created_at | sub("Z$";"") | sub("T";" ") ) as $ts |
+          # Parse ISO date to epoch using jq
+          . + {
+            age_hours: (($now - (.created_at | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)) / 3600 | floor),
+            is_stale: (($now - (.created_at | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime)) > $stale)
+          }
+        ] | sort_by(-.age_hours)
+      ' /tmp/lb_reviewed.json
+      rm -f /tmp/lb_reviewed.json
+
+  - id: report
+    stdin: $filter-stale.stdout
+    command: |
+      cat > /tmp/lb_stale.json
+      total=$(jq 'length' /tmp/lb_stale.json)
+      stale=$(jq '[.[] | select(.is_stale)] | length' /tmp/lb_stale.json)
+      jq -r --argjson threshold "${stale_hours}" '
+        if length == 0 then
+          "✅ No open PRs awaiting review."
+        else
+          "🔍 Code Review Status\n━━━━━━━━━━━━━━━━━━━━\n" +
+          "Total awaiting review: \(length) | Stale (>\($threshold)h): \([.[] | select(.is_stale)] | length)\n" +
+          ([.[] | select(.is_stale)] |
+            if length > 0 then
+              "\n⏰ STALE (needs attention):\n" +
+              (map("  • #\(.number) \(.title)\n    \(.repo) by @\(.author) — \(.age_hours)h old\n    State: \(.review_state) | Reviewers: \(.requested_reviewers | join(", ") // "none assigned")\n    \(.url)") | join("\n"))
+            else "" end
+          ) +
+          ([.[] | select(.is_stale | not)] |
+            if length > 0 then
+              "\n\n📋 Recent (within threshold):\n" +
+              (map("  • #\(.number) \(.title)\n    \(.repo) by @\(.author) — \(.age_hours)h old") | join("\n"))
+            else "" end
+          )
+        end
+      ' /tmp/lb_stale.json
+      rm -f /tmp/lb_stale.json

@@ -1,0 +1,62 @@
+# Lobster workflow: daily-affirmation
+# Picks a random positive affirmation and outputs a morning message
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"custom_affirmations":"I am unstoppable|Today is my day"}'
+#
+# Requires: (no external deps)
+
+name: daily-affirmation
+description: Start your day with a positive affirmation
+
+args:
+  custom_affirmations:
+    description: "Your own affirmations (pipe-separated, optional)"
+    default: ""
+
+steps:
+  - id: pick-affirmation
+    command: |
+      affirmations="I am capable of achieving my goals
+      Today I choose to be positive and kind
+      I am worthy of success and happiness
+      I embrace challenges as opportunities to grow
+      I am in control of my thoughts and emotions
+      I have the power to create positive change
+      I am grateful for this new day
+      I trust in my abilities and decisions
+      I radiate confidence and positivity
+      I am becoming the best version of myself
+      I attract abundance and opportunities
+      I choose progress over perfection
+      I am resilient and can overcome any obstacle
+      My potential is limitless
+      I deserve peace, joy, and success
+      Every day is a fresh start
+      I bring value to those around me
+      I am stronger than my challenges
+      I welcome today with open arms
+      I am enough, exactly as I am"
+
+      custom="${custom_affirmations}"
+      if [ -n "$custom" ]; then
+        extra=$(echo "$custom" | tr '|' '\n')
+        affirmations="$affirmations
+      $extra"
+      fi
+
+      echo "$affirmations" | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1
+
+  - id: format-message
+    stdin: $pick-affirmation.stdout
+    command: |
+      affirmation=$(cat)
+      today=$(date '+%A, %B %d, %Y')
+      cat <<EOF
+      🌅 Good Morning! — ${today}
+
+      ✨ ${affirmation} ✨
+
+      Have a wonderful day!
+      EOF
