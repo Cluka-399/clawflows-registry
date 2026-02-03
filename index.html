@@ -832,11 +832,15 @@
       <div class="container">
         <img src="./hero.png" alt="ClawFlows mascot" class="hero-mascot">
         <h1>Claw<span>Flows</span></h1>
-        <p class="hero-tagline">Multi-skill automations for AI agents. Powered by <a href="https://github.com/openclaw/lobster" style="color: var(--accent); text-decoration: none; font-weight: 600;">Lobster</a> — the workflow engine that runs deterministic pipelines with zero LLM tokens.</p>
-        <p class="hero-count" id="hero-count" style="color: var(--accent); font-weight: 600; font-size: 1.2rem; margin-bottom: 1rem;">🚀 109+ automations and growing!</p>
+        <p class="hero-tagline">The automation registry for <a href="https://github.com/openclaw/openclaw" style="color: var(--text-primary); text-decoration: none; font-weight: 600;">OpenClaw</a> agents.</p>
+        <p class="hero-count" id="hero-count" style="color: var(--accent); font-weight: 600; font-size: 1.2rem; margin-bottom: 0.5rem;">🚀 109+ automations and growing!</p>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Powered by <a href="https://github.com/openclaw/lobster" style="color: var(--accent); text-decoration: none; font-weight: 600;">🦞 Lobster</a> — deterministic workflow pipelines, zero LLM tokens.
+        </p>
         
         <div class="hero-cta">
           <a href="#automations" class="btn btn-primary">Browse Automations</a>
+          <a href="https://github.com/openclaw/lobster" class="btn btn-secondary">⭐ Lobster Engine</a>
           <a href="#contribute" class="btn btn-secondary">Add Your Own</a>
         </div>
         
@@ -850,8 +854,20 @@
     <section id="automations">
       <div class="container">
         <div class="section-header">
-          <h2>🚀 Automations</h2>
-          <a href="./automations/" class="view-all">View all <span id="automation-count">(109)</span> →</a>
+          <h2>🚀 All Automations <span id="automation-count" class="badge">109</span></h2>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="search-box" placeholder="Search automations..." style="
+            flex: 1; min-width: 200px; padding: 0.75rem 1rem; border-radius: 8px;
+            background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
+            font-family: inherit; font-size: 0.95rem; outline: none;
+          " oninput="filterAutomations()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+          <button id="filter-lobster" onclick="toggleLobsterFilter()" style="
+            padding: 0.65rem 1rem; border-radius: 8px; background: var(--bg-card);
+            border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;
+            font-family: inherit; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
+          ">🦞 Lobster Ready</button>
         </div>
         
         <div id="automations-grid" class="automations-grid">
@@ -1061,25 +1077,13 @@
           return;
         }
         
-        container.innerHTML = automations.map(a => `
-          <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}'})">
-            <div class="automation-meta">
-              <span>v${a.version || '1.0.0'}</span>
-              <span>by ${escapeHtml(a.author || 'anonymous')}</span>
-            </div>
-            <h3>${escapeHtml(a.name)}</h3>
-            <p>${escapeHtml(a.description || '')}</p>
-            <div class="tags">
-              ${a.lobster_ready ? '<span class="tag lobster">🦞 Lobster Ready</span>' : ''}
-              ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
-            </div>
-          </a>
-        `).join('');
+        allAutomations = automations;
+        renderAutomations(automations);
         
         // Update counts dynamically
         const count = automations.length;
         const lobsterCount = automations.filter(a => a.lobster_ready).length;
-        document.getElementById('automation-count').textContent = `(${count})`;
+        document.getElementById('automation-count').textContent = count;
         document.getElementById('hero-count').textContent = `🚀 ${count}+ automations (${lobsterCount} Lobster-ready) and growing!`;
         
         mixpanel.track('page_loaded', { automation_count: count });
@@ -1088,6 +1092,54 @@
         container.innerHTML = '<p class="loading">Could not load automations. <a href="https://github.com/Cluka-399/clawflows-registry/tree/main/automations">View on GitHub</a></p>';
         console.error(err);
       }
+    }
+    
+    let allAutomations = [];
+    let lobsterFilterOn = false;
+    
+    function filterAutomations() {
+      const query = (document.getElementById('search-box').value || '').toLowerCase();
+      const filtered = allAutomations.filter(a => {
+        const matchesSearch = !query || 
+          (a.name || '').toLowerCase().includes(query) || 
+          (a.description || '').toLowerCase().includes(query) ||
+          (a.tags || []).some(t => t.toLowerCase().includes(query));
+        const matchesLobster = !lobsterFilterOn || a.lobster_ready;
+        return matchesSearch && matchesLobster;
+      });
+      renderAutomations(filtered);
+      document.getElementById('automation-count').textContent = filtered.length;
+    }
+    
+    function toggleLobsterFilter() {
+      lobsterFilterOn = !lobsterFilterOn;
+      const btn = document.getElementById('filter-lobster');
+      btn.style.borderColor = lobsterFilterOn ? 'var(--accent)' : 'var(--border)';
+      btn.style.color = lobsterFilterOn ? 'var(--accent)' : 'var(--text-secondary)';
+      btn.style.background = lobsterFilterOn ? 'rgba(255,107,107,0.1)' : 'var(--bg-card)';
+      filterAutomations();
+    }
+    
+    function renderAutomations(automations) {
+      const container = document.getElementById('automations-grid');
+      if (!automations.length) {
+        container.innerHTML = '<p class="loading">No automations match your search.</p>';
+        return;
+      }
+      container.innerHTML = automations.map(a => `
+        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}'})">
+          <div class="automation-meta">
+            <span>v${a.version || '1.0.0'}</span>
+            <span>by ${escapeHtml(a.author || 'anonymous')}</span>
+          </div>
+          <h3>${escapeHtml(a.name)}</h3>
+          <p>${escapeHtml(a.description || '')}</p>
+          <div class="tags">
+            ${a.lobster_ready ? '<span class="tag lobster">🦞 Lobster Ready</span>' : ''}
+            ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
+          </div>
+        </a>
+      `).join('');
     }
     
     loadAutomations();
