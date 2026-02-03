@@ -1,0 +1,71 @@
+# Lobster workflow: focus-time-report
+# Track and report on deep work vs fragmented time from calendar data
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"min_focus_block":"60","target_focus_hours":"20","calendar_cmd":"gcalcli agenda \"7 days ago\" today --nocolor"}'
+#
+# Requires: jq
+#
+# NOTE: The original automation uses calendar + LLM analysis.
+# This Lobster version:
+#   1. Collects calendar data via configurable command
+#   2. Computes focus vs meeting time breakdown with shell/jq
+#   3. Outputs structured report
+#   (LLM insights step commented out — consumer agent can analyze the JSON output)
+
+name: focus-time-report
+description: Track and report on your deep work vs fragmented time
+
+args:
+  min_focus_block:
+    description: "Minimum minutes for a block to count as focus time"
+    default: "60"
+  target_focus_hours:
+    description: "Weekly target for focus time in hours"
+    default: "20"
+  calendar_json_cmd:
+    description: "Command that outputs a JSON array of events [{start,end,summary}]"
+    default: "echo '[{\"start\":\"2026-02-03T09:00:00\",\"end\":\"2026-02-03T09:30:00\",\"summary\":\"Standup\"},{\"start\":\"2026-02-03T10:00:00\",\"end\":\"2026-02-03T11:00:00\",\"summary\":\"Planning\"},{\"start\":\"2026-02-03T13:00:00\",\"end\":\"2026-02-03T13:30:00\",\"summary\":\"1:1\"},{\"start\":\"2026-02-03T15:00:00\",\"end\":\"2026-02-03T16:00:00\",\"summary\":\"Review\"},{\"start\":\"2026-02-04T09:00:00\",\"end\":\"2026-02-04T10:00:00\",\"summary\":\"Team sync\"},{\"start\":\"2026-02-04T14:00:00\",\"end\":\"2026-02-04T15:00:00\",\"summary\":\"Design review\"}]'"
+
+steps:
+  - id: fetch-events
+    command: |
+      ${calendar_json_cmd} 2>/dev/null || echo '[]'
+
+  - id: analyze-time
+    stdin: $fetch-events.stdout
+    command: |
+      cat > /tmp/lb_ft_events.json
+      MIN_FOCUS=${min_focus_block}
+      TARGET=${target_focus_hours}
+
+      jq -r --argjson min_focus "$MIN_FOCUS" --argjson target "$TARGET" '
+        # Sort events by start time
+        sort_by(.start) as $events |
+
+        # Calculate meeting minutes
+        ($events | map(
+          ( (.end | split("T")[1] | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber) ) -
+            (.start | split("T")[1] | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber) )
+          )
+        ) | add // 0) as $meeting_mins |
+
+        # Find gaps between consecutive events (focus blocks)
+        [range($events|length - 1) as $i |
+          ( ($events[$i+1].start | split("T")[1] | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber)) -
+            ($events[$i].end     | split("T")[1] | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber))
+          )
+        ] | map(select(. >= $min_focus)) |
+
+        (add // 0) as $focus_mins |
+        length as $focus_blocks |
+
+        ($focus_mins / 60 * 10 | round / 10) as $focus_h |
+        ($meeting_mins / 60 * 10 | round / 10) as $meeting_h |
+        (if $focus_h >= $target then "✅" else "❌" end) as $status |
+
+        "⏱️ **Weekly Focus Report**\n\n📊 Time Breakdown:\n• Focus time: **\($focus_h)h** \($status) (target: \($target)h)\n• Meeting time: **\($meeting_h)h**\n• Focus blocks (≥\($min_focus)min): **\($focus_blocks)**\n\n# LLM INSIGHTS STEP (not included)\n# To get AI-generated insights, pass this data to an LLM:\n# Focus: \($focus_h)h, Meetings: \($meeting_h)h, Blocks: \($focus_blocks), Target: \($target)h"
+      ' /tmp/lb_ft_events.json
+
+      rm -f /tmp/lb_ft_events.json

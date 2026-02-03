@@ -30,35 +30,37 @@ steps:
       tmpin=$(mktemp)
       cat > "$tmpin"
 
-      # Convert XML to JSON using jq (slurp raw input and parse)
-      # First extract entry blocks (may span multiple lines)
-      results='[]'
-      
-      # Use awk to extract entry blocks, then process each
-      awk '/<entry>/{flag=1; block=""} flag{block=block $0 ORS} /<\/entry>/{flag=0; print block}' "$tmpin" 2>/dev/null | head -n "$max" | while IFS= read -r entry; do
+      # Use awk to extract entry blocks, then parse each
+      tmpout=$(mktemp)
+      awk '/<entry>/{flag=1; block=""} flag{block=block $0 ORS} /<\/entry>/{flag=0; print block}' "$tmpin" | head -n "$max" | while IFS= read -r entry; do
         [ -z "$entry" ] && continue
         # Extract title
         title=$(echo "$entry" | sed -n 's/.*<title>\([^<]*\)<\/title>.*/\1/p' | head -1)
         # Extract link href
-        link=$(echo "$entry" | sed -n 's/.*<link[^>]*href="\([^"]*\)".*rel="alternate".*/\1/p' | head -1)
-        [ -z "$link" ] && link=$(echo "$entry" | sed -n 's/.*<link[^>]*rel="alternate"[^>]*href="\([^"]*\)".*/\1/p' | head -1)
+        link=$(echo "$entry" | sed -n 's/.*<link[^>]*rel="alternate"[^>]*href="\([^"]*\)".*/\1/p' | head -1)
+        [ -z "$link" ] && link=$(echo "$entry" | sed -n 's/.*<link[^>]*href="\([^"]*\)"[^>]*rel="alternate".*/\1/p' | head -1)
         [ -z "$link" ] && link=$(echo "$entry" | sed -n 's/.*<link[^>]*href="\([^"]*\)".*/\1/p' | head -1)
         # Extract content/description from CDATA or HTML encoded
-        desc=$(echo "$entry" | sed -n 's/.*<content[^>]*>.*&lt;p&gt;\([^&]*\)&lt;\/p&gt;.*/\1/p' | head -1)
-        [ -z "$desc" ] && desc=$(echo "$entry" | sed -n 's/.*&lt;p&gt;\([^&]*\)&lt;\/p&gt;.*/\1/p' | head -1)
-        
-        # Clean up newlines and extra spaces
-        title=$(echo "$title" | tr -d '\n' | xargs 2>/dev/null || echo "$title")
-        desc=$(echo "$desc" | tr -d '\n' | xargs 2>/dev/null || echo "$desc")
+        desc=$(echo "$entry" | sed -n 's/.*&lt;p&gt;\([^&]*\)&lt;\/p&gt;.*/\1/p' | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
         
         # Output as JSON if we have both name and link
         if [ -n "$title" ] && [ -n "$link" ]; then
-          echo "{\"name\":\"$title\",\"url\":\"$link\",\"tagline\":\"$desc\"}"
+          # Escape special chars for JSON
+          title_escaped=$(echo "$title" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          desc_escaped=$(echo "$desc" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          echo "{\"name\":\"$title_escaped\",\"url\":\"$link\",\"tagline\":\"$desc_escaped\"}"
         fi
-      done | jq -s '.' > /tmp/lb_parsed_feed.json 2>/dev/null || echo '[]' > /tmp/lb_parsed_feed.json
+      done > "$tmpout"
 
-      cat /tmp/lb_parsed_feed.json
-      rm -f "$tmpin" /tmp/lb_parsed_feed.json
+      # Convert lines to JSON array
+      if [ -s "$tmpout" ]; then
+        jq -R '.' "$tmpout" 2>/dev/null | jq -s '.' > /tmp/lb_parsed_feed.json
+        cat /tmp/lb_parsed_feed.json
+      else
+        echo '[]'
+      fi
+      
+      rm -f "$tmpin" "$tmpout" /tmp/lb_parsed_feed.json
 
   - id: report
     stdin: $parse-products.stdout

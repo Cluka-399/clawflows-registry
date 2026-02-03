@@ -1,0 +1,125 @@
+# Lobster workflow: time-block-optimizer
+# Analyzes calendar events and finds optimal meeting-free focus blocks
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"events_file":"/path/to/events.json"}'
+#   lobster run --file workflow.yaml --args-json '{"calendar_cmd":"gcalcli agenda --nocolor today tomorrow","work_start":"09:00","work_end":"18:00"}'
+#
+# events.json: [{"start":"09:00","end":"10:00","title":"Standup"},{"start":"14:00","end":"15:30","title":"Design Review"}]
+#
+# Requires: jq
+
+name: time-block-optimizer
+description: Analyze calendar patterns and suggest optimal meeting-free blocks
+
+args:
+  events_file:
+    description: "Path to events JSON (alternative to calendar_cmd)"
+    default: "/tmp/clawflows-events.json"
+  calendar_cmd:
+    description: "Shell command to fetch today's calendar events"
+    default: ""
+  work_start:
+    description: "Work day start time (HH:MM)"
+    default: "09:00"
+  work_end:
+    description: "Work day end time (HH:MM)"
+    default: "18:00"
+  min_block_min:
+    description: "Minimum useful focus block in minutes"
+    default: "30"
+
+steps:
+  - id: load-events
+    command: |
+      if [ -n "${calendar_cmd}" ]; then
+        eval "${calendar_cmd}" 2>/dev/null > /tmp/lb_cal_raw.txt || true
+        if [ -s /tmp/lb_cal_raw.txt ]; then
+          cat /tmp/lb_cal_raw.txt
+        fi
+        rm -f /tmp/lb_cal_raw.txt
+      fi
+      if [ ! -f "${events_file}" ]; then
+        printf '[{"start":"09:00","end":"09:30","title":"Daily Standup"},{"start":"10:00","end":"11:00","title":"Sprint Planning"},{"start":"11:30","end":"12:00","title":"1:1 with Manager"},{"start":"13:00","end":"13:30","title":"Lunch & Learn"},{"start":"15:00","end":"16:00","title":"Design Review"},{"start":"16:30","end":"17:00","title":"Quick Sync"}]' > "${events_file}"
+        echo "Created sample events at ${events_file}"
+      else
+        echo "Using events from ${events_file}"
+      fi
+
+  - id: compute-blocks
+    command: |
+      # Convert events to minute-based intervals, find gaps
+      jq -c --arg ws "${work_start}" --arg we "${work_end}" --argjson mb ${min_block_min} '
+        def to_min: split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber);
+        def fmt(m): "\(m / 60 | floor):\(m % 60 | tostring | if length < 2 then "0"+. else . end)";
+
+        ($ws | to_min) as $wstart |
+        ($we | to_min) as $wend |
+
+        # Sort and convert to intervals
+        [.[] | {s: (.start|to_min), e: (.end|to_min), title}] | sort_by(.s) |
+
+        # Merge overlapping meetings into busy blocks
+        reduce .[] as $evt (
+          [];
+          if length == 0 then [$evt]
+          elif .[-1].e >= $evt.s then .[-1].e = ([.[-1].e, $evt.e] | max)
+          else . + [$evt]
+          end
+        ) | . as $busy |
+
+        # Build boundaries: work_start, (busy_end, busy_start)..., work_end
+        ([$wstart] + [$busy[] | .s, .e] + [$wend]) |
+
+        # Pair up: free blocks are (busy_end → next_busy_start)
+        # Indices: 0=wstart, then pairs of (busy_start, busy_end), then wend
+        # Free slots: wstart→first_busy_start, busy1_end→busy2_start, ..., last_busy_end→wend
+        . as $pts |
+        [range(0; ($busy|length)+1) |
+          (if . == 0 then $wstart else $busy[.-1].e end) as $from |
+          (if . == ($busy|length) then $wend else $busy[.].s end) as $to |
+          select(($to - $from) >= $mb) |
+          {start: fmt($from), end: fmt($to), duration_min: ($to - $from)}
+        ] | . as $blocks |
+
+        # Stats from original (unsorted) events
+        ([$busy[] | .e - .s] | add // 0) as $mtg_min |
+        {
+          total_events: ($busy | length),
+          meeting_hours: ($mtg_min / 60 * 10 | round / 10),
+          work_hours: (($wend - $wstart) / 60),
+          free_hours: (($wend - $wstart - $mtg_min) / 60 * 10 | round / 10),
+          meeting_pct: (if ($wend - $wstart) > 0 then ($mtg_min * 100 / ($wend - $wstart) | round) else 0 end),
+          focus_blocks: $blocks,
+          best_block: ($blocks | sort_by(-.duration_min) | first // null)
+        }
+      ' "${events_file}" > /tmp/lb_blocks.json
+      # Re-add event titles for display
+      jq -c '.' "${events_file}" > /tmp/lb_evts_raw.json
+      jq -c --slurpfile evts /tmp/lb_evts_raw.json '. + {events: $evts[0]}' /tmp/lb_blocks.json
+      rm -f /tmp/lb_evts_raw.json
+
+  - id: report
+    stdin: $compute-blocks.stdout
+    command: |
+      cat > /tmp/lb_rpt.json
+      jq -r '
+        "⏰ Time Block Analysis\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+        "📊 Overview\n" +
+        "  Meetings: \(.total_events) blocks (\(.meeting_hours)h / \(.work_hours)h = \(.meeting_pct)%)\n" +
+        "  Free time: \(.free_hours)h\n\n" +
+        "📅 Events:\n" +
+        (.events | map("  \(.start)-\(.end) \(.title)") | join("\n")) +
+        "\n\n🟢 Focus Blocks (≥${min_block_min}min):\n" +
+        if (.focus_blocks | length) == 0 then "  ⚠️ No focus blocks available!"
+        else (.focus_blocks | map("  \(.start)-\(.end) (\(.duration_min)min)") | join("\n")) end +
+        (if .best_block then "\n\n⭐ Best block: \(.best_block.start)-\(.best_block.end) (\(.best_block.duration_min)min)" else "" end) +
+        "\n\n# LLM STEP (not automated):\n" +
+        "# Feed this analysis to LLM for:\n" +
+        "# - Suggest which tasks to slot into each focus block\n" +
+        "# - Identify meetings that could be async\n" +
+        "# - Recommend schedule adjustments for better flow\n" +
+        "# - Compare to ideal deep-work ratio (maker schedule)"
+      ' /tmp/lb_rpt.json
+      rm -f /tmp/lb_rpt.json /tmp/lb_blocks.json

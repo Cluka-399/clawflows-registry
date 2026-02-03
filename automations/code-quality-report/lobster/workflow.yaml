@@ -1,0 +1,108 @@
+# Lobster workflow: code-quality-report
+# Run linters and counters on a codebase, report metrics
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"project_path":"/data/clawd","language":"typescript"}'
+#
+# Requires: find, wc, jq, eslint (for ts/js) or pylint (for python)
+
+name: code-quality-report
+description: Weekly code quality report with linting and complexity metrics
+
+args:
+  project_path:
+    description: "Path to project root"
+    default: "."
+  language:
+    description: "javascript, typescript, or python"
+    default: "typescript"
+
+steps:
+  - id: count-files
+    command: |
+      cd "${project_path}" 2>/dev/null || cd .
+      case "${language}" in
+        javascript) find . -name "*.js" -not -path "*/node_modules/*" -not -path "*/.*" 2>/dev/null | wc -l | tr -d ' ' ;;
+        typescript) find . -name "*.ts" -not -path "*/node_modules/*" -not -path "*/.*" 2>/dev/null | wc -l | tr -d ' ' ;;
+        python) find . -name "*.py" -not -path "*/.venv/*" -not -path "*/__pycache__/*" 2>/dev/null | wc -l | tr -d ' ' ;;
+        *) echo "0" ;;
+      esac
+
+  - id: count-lines
+    command: |
+      cd "${project_path}" 2>/dev/null || cd .
+      case "${language}" in
+        javascript) find . -name "*.js" -not -path "*/node_modules/*" -not -path "*/.*" -exec cat {} + 2>/dev/null | wc -l | tr -d ' ' ;;
+        typescript) find . -name "*.ts" -not -path "*/node_modules/*" -not -path "*/.*" -exec cat {} + 2>/dev/null | wc -l | tr -d ' ' ;;
+        python) find . -name "*.py" -not -path "*/.venv/*" -not -path "*/__pycache__/*" -exec cat {} + 2>/dev/null | wc -l | tr -d ' ' ;;
+        *) echo "0" ;;
+      esac
+
+  - id: run-linter
+    command: |
+      cd "${project_path}" 2>/dev/null || cd .
+      tmpf=$(mktemp)
+      case "${language}" in
+        javascript|typescript)
+          if command -v npx >/dev/null 2>&1; then
+            npx eslint . --format json 2>/dev/null > "$tmpf" || echo '[]' > "$tmpf"
+          else
+            echo '[]' > "$tmpf"
+          fi
+          ;;
+        python)
+          if command -v pylint >/dev/null 2>&1; then
+            pylint **/*.py --output-format=json 2>/dev/null > "$tmpf" || echo '[]' > "$tmpf"
+          else
+            echo '[]' > "$tmpf"
+          fi
+          ;;
+        *) echo '[]' > "$tmpf" ;;
+      esac
+      # Validate JSON
+      /home/node/bin/jq 'if type=="array" then . else [] end' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  - id: final-analysis
+    command: |
+      files="${files}"
+      lines="${lines}"
+      cat > /tmp/lb_lint.json
+      errors=$(/home/node/bin/jq '[.[] | .errorCount // 0] | add // 0' /tmp/lb_lint.json 2>/dev/null || echo "0")
+      warnings=$(/home/node/bin/jq '[.[] | .warningCount // 0] | add // 0' /tmp/lb_lint.json 2>/dev/null || echo "0")
+      
+      if [ "$errors" -eq 0 ] && [ "$warnings" -lt 10 ]; then grade="A"
+      elif [ "$errors" -lt 5 ] && [ "$warnings" -lt 25 ]; then grade="B"
+      elif [ "$errors" -lt 15 ]; then grade="C"
+      else grade="D"
+      fi
+      
+      jq -n \
+        --arg files "${files}" \
+        --arg lines "${lines}" \
+        --argjson errors "$errors" \
+        --argjson warnings "$warnings" \
+        --arg grade "$grade" \
+        '{files: $files|tonumber, lines: $lines|tonumber, errors: $errors, warnings: $warnings, grade: $grade}'
+      rm -f /tmp/lb_lint.json
+    stdin: $run-linter.stdout
+    env:
+      files: $count-files.stdout
+      lines: $count-lines.stdout
+
+  - id: report
+    stdin: $final-analysis.stdout
+    command: |
+      /home/node/bin/jq -r '
+        "📊 Code Quality Report",
+        "",
+        "Project: '${project_path}'",
+        "Language: '${language}'",
+        "",
+        "📁 Files: \(.files)",
+        "📄 Lines: \(.lines)",
+        "❌ Errors: \(.errors)",
+        "⚠️ Warnings: \(.warnings)",
+        "",
+        "Grade: \(.grade)"
+      '

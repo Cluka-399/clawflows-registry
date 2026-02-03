@@ -1,0 +1,114 @@
+# Lobster workflow: task-prioritizer
+# Sorts tasks using Eisenhower matrix based on deadlines and importance
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"tasks_file":"/path/to/tasks.json"}'
+#
+# tasks.json format:
+#   [{"title":"Ship feature X","deadline":"2026-02-05","importance":5,"effort_hours":4,"tags":["dev"]},
+#    {"title":"Reply to emails","deadline":"2026-02-03","importance":2,"effort_hours":0.5,"tags":["admin"]}]
+#
+# importance: 1-5 scale (5=critical)
+# effort_hours: estimated time to complete
+#
+# Requires: jq
+
+name: task-prioritizer
+description: Daily task sorting using Eisenhower matrix based on deadlines and importance
+
+args:
+  tasks_file:
+    description: "Path to tasks JSON file"
+    default: "/tmp/clawflows-tasks.json"
+  urgent_days:
+    description: "Tasks due within N days are considered urgent"
+    default: "2"
+
+steps:
+  - id: ensure-tasks
+    command: |
+      if [ ! -f "${tasks_file}" ]; then
+        cat > "${tasks_file}" << 'EOF'
+      [
+        {"title":"Ship login feature","deadline":"2026-02-04","importance":5,"effort_hours":6,"tags":["dev","sprint"]},
+        {"title":"Reply to partner email","deadline":"2026-02-03","importance":4,"effort_hours":0.5,"tags":["comms"]},
+        {"title":"Update documentation","deadline":"2026-02-10","importance":3,"effort_hours":3,"tags":["docs"]},
+        {"title":"Review PR #142","deadline":"2026-02-04","importance":4,"effort_hours":1,"tags":["dev","review"]},
+        {"title":"Plan team offsite","deadline":"2026-02-14","importance":2,"effort_hours":2,"tags":["admin"]},
+        {"title":"Fix CI pipeline","deadline":"2026-02-03","importance":5,"effort_hours":2,"tags":["dev","infra"]},
+        {"title":"Read industry report","deadline":"2026-02-20","importance":1,"effort_hours":1,"tags":["learning"]},
+        {"title":"Prepare demo for client","deadline":"2026-02-05","importance":5,"effort_hours":3,"tags":["client","sprint"]},
+        {"title":"Clean up Jira backlog","deadline":"2026-02-15","importance":2,"effort_hours":1.5,"tags":["admin"]},
+        {"title":"Write blog post","deadline":"2026-02-12","importance":2,"effort_hours":3,"tags":["content"]}
+      ]
+      EOF
+        echo "Created sample tasks at ${tasks_file}"
+      else
+        echo "Using existing tasks at ${tasks_file}"
+      fi
+
+  - id: classify-tasks
+    command: |
+      today=$(date +%Y-%m-%d 2>/dev/null || echo "2026-02-03")
+      jq -c --arg today "$today" --argjson ud ${urgent_days} '
+        def days_until($d; $t):
+          # Simple date diff: parse YYYY-MM-DD to a comparable number
+          ($d | split("-") | map(tonumber) | .[0]*10000 + .[1]*100 + .[2]) as $dn |
+          ($t | split("-") | map(tonumber) | .[0]*10000 + .[1]*100 + .[2]) as $tn |
+          # Approximate: good enough for ≤30 day windows
+          (($dn - $tn) | . / 1 ) ;
+
+        map(
+          days_until(.deadline; $today) as $days_left |
+          (if $days_left <= $ud then true else false end) as $urgent |
+          (if .importance >= 4 then true else false end) as $important |
+          (if $urgent and $important then "do_first"
+           elif $important and ($urgent|not) then "schedule"
+           elif $urgent and ($important|not) then "delegate"
+           else "eliminate_or_defer" end) as $quadrant |
+          . + {
+            days_left: $days_left,
+            urgent: $urgent,
+            important: $important,
+            quadrant: $quadrant,
+            priority_score: (.importance * 20 + (if $urgent then 30 else 0 end) + (if $days_left <= 0 then 50 elif $days_left <= 1 then 30 elif $days_left <= $ud then 15 else 0 end))
+          }
+        ) | sort_by(-.priority_score)
+      ' "${tasks_file}" > /tmp/lb_classified.json
+      cat /tmp/lb_classified.json
+
+  - id: report
+    stdin: $classify-tasks.stdout
+    command: |
+      cat > /tmp/lb_tasks_in.json
+      jq -r '
+        def quadrant_emoji: if . == "do_first" then "🔴" elif . == "schedule" then "🟡" elif . == "delegate" then "🟠" else "⚪" end;
+        def quadrant_label: if . == "do_first" then "DO FIRST" elif . == "schedule" then "SCHEDULE" elif . == "delegate" then "DELEGATE" else "DEFER/DROP" end;
+
+        group_by(.quadrant) |
+        map({quadrant: .[0].quadrant, tasks: .}) |
+        sort_by(.quadrant | if . == "do_first" then 0 elif . == "schedule" then 1 elif . == "delegate" then 2 else 3 end) |
+
+        "📋 Task Prioritizer — Eisenhower Matrix\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "Urgent threshold: tasks due within ${urgent_days} days\n\n" +
+        (map(
+          (.quadrant | quadrant_emoji) + " " + (.quadrant | quadrant_label) + " (\(.tasks | length) tasks)\n" +
+          (.tasks | map(
+            "  [\(.priority_score)] \(.title)\n" +
+            "      Due: \(.deadline) (\(.days_left)d) | Effort: \(.effort_hours)h | Importance: \(.importance)/5"
+          ) | join("\n")) + "\n"
+        ) | join("\n")) +
+        "\n\n📊 Summary:\n" +
+        ([.[].tasks[]] | length | "  Total: \(.) tasks\n") +
+        ([.[].tasks[].effort_hours] | add | "  Total effort: \(.)h\n") +
+        ([.[].tasks[] | select(.days_left < 0)] | length | "  Overdue: \(.)\n") +
+        ([.[].tasks[] | select(.days_left == 0)] | length | "  Due today: \(.)\n\n") +
+        "# LLM STEP (not automated):\n" +
+        "# Feed classified tasks to LLM for:\n" +
+        "# - Suggest optimal ordering within each quadrant\n" +
+        "# - Identify task dependencies and batching opportunities\n" +
+        "# - Recommend what to delegate and to whom\n" +
+        "# - Time-box suggestions for the day"
+      ' /tmp/lb_tasks_in.json
+      rm -f /tmp/lb_tasks_in.json /tmp/lb_classified.json

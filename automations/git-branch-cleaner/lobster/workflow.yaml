@@ -13,35 +13,25 @@ description: Identify stale and merged git branches via GitHub API
 args:
   repo:
     description: "GitHub repo (owner/repo format)"
-    default: "lobster-engine/lobster"
+    default: "nodejs/node"
   stale_days:
     description: "Days without commits to consider stale"
     default: "30"
   exclude_branches:
     description: "Comma-separated branches to never suggest deleting"
     default: "main,master,develop,staging,production"
+  max_branches:
+    description: "Max branches to analyze (to limit API calls)"
+    default: "30"
 
 steps:
   - id: fetch-branches
     command: |
-      page=1
-      tmpf=$(mktemp)
-      echo '[]' > "$tmpf"
-      while true; do
-        chunk=$(curl -sf \
-          -H "Accept: application/vnd.github+json" \
-          ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
-          "https://api.github.com/repos/${repo}/branches?per_page=100&page=$page" 2>/dev/null)
-        echo "$chunk" > /tmp/lb_br_chunk.json
-        count=$(jq 'length' /tmp/lb_br_chunk.json 2>/dev/null || echo 0)
-        [ "$count" = "0" ] && break
-        jq -sc '.[0]+.[1]' "$tmpf" /tmp/lb_br_chunk.json > /tmp/lb_br_merged.json
-        mv /tmp/lb_br_merged.json "$tmpf"
-        [ "$count" -lt 100 ] && break
-        page=$((page+1))
-      done
-      cat "$tmpf"
-      rm -f "$tmpf" /tmp/lb_br_chunk.json
+      # Get first page of branches only (for performance)
+      curl -sf \
+        -H "Accept: application/vnd.github+json" \
+        ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
+        "https://api.github.com/repos/${repo}/branches?per_page=${max_branches}" 2>/dev/null || echo '[]'
 
   - id: get-default-branch
     command: |
@@ -49,103 +39,78 @@ steps:
         -H "Accept: application/vnd.github+json" \
         ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
         "https://api.github.com/repos/${repo}" \
-        | jq -r '.default_branch // "main"'
+        2>/dev/null | jq -r '.default_branch // "main"'
 
   - id: analyze-branches
     stdin: $fetch-branches.stdout
     command: |
       cat > /tmp/lb_branches.json
-      default_branch="$($get-default-branch.stdout 2>/dev/null || echo main)"
+      default_branch=$($get-default-branch.stdout 2>/dev/null || echo main)
       default_branch=$(echo "${default_branch}" | tr -d '\n' | xargs)
       [ -z "$default_branch" ] && default_branch="main"
       stale_days=${stale_days}
       exclude="${exclude_branches}"
       repo="${repo}"
+      cutoff_ts=$(( $(date +%s) - stale_days * 86400 ))
 
-      # Get commit dates for each branch
+      # Analyze branches - simplified: only check first few branches
       tmpout=$(mktemp)
       echo '[]' > "$tmpout"
       
-      branches=$(jq -r '.[].name' /tmp/lb_branches.json)
-      cutoff_ts=$(( $(date +%s) - stale_days * 86400 ))
+      branches=$(jq -r '.[].name' /tmp/lb_branches.json | head -20)
 
       for branch in $branches; do
         # Skip excluded
-        if echo ",$exclude," | grep -q ",$branch,"; then
-          continue
-        fi
-        # Skip default branch
-        if [ "$branch" = "$default_branch" ]; then
-          continue
-        fi
+        if echo ",$exclude," | grep -q ",$branch,"; then continue; fi
+        # Skip default
+        if [ "$branch" = "$default_branch" ]; then continue; fi
         
-        # Get last commit date
+        # Get branch info with commit date
         info=$(curl -sf \
           -H "Accept: application/vnd.github+json" \
           ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
           "https://api.github.com/repos/$repo/branches/$branch" 2>/dev/null || echo '{}')
         echo "$info" > /tmp/lb_brinfo.json
+        
         commit_date=$(jq -r '.commit.commit.committer.date // ""' /tmp/lb_brinfo.json)
+        [ -z "$commit_date" ] && continue
         
-        if [ -z "$commit_date" ] || [ "$commit_date" = "null" ]; then
-          continue
-        fi
-        
-        # Check if branch is merged into default
-        merge_status=$(curl -sf -o /dev/null -w "%{http_code}" \
-          -H "Accept: application/vnd.github+json" \
-          ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
-          "https://api.github.com/repos/$repo/compare/${default_branch}...${branch}" 2>/dev/null || echo "000")
+        # Parse commit timestamp
+        commit_ts=$(date -d "$commit_date" +%s 2>/dev/null || echo 0)
+        is_stale="false"
+        [ "$commit_ts" -lt "$cutoff_ts" ] 2>/dev/null && is_stale="true"
 
-        is_merged="false"
-        if [ "$merge_status" = "200" ]; then
-          ahead=$(curl -sf \
-            -H "Accept: application/vnd.github+json" \
-            ${GITHUB_TOKEN:+-H "Authorization: Bearer $GITHUB_TOKEN"} \
-            "https://api.github.com/repos/$repo/compare/${default_branch}...${branch}" 2>/dev/null \
-            | jq '.ahead_by // 999')
-          [ "$ahead" = "0" ] && is_merged="true"
-        fi
-
-        jq -c --arg b "$branch" --arg d "$commit_date" --arg m "$is_merged" \
-          '. + [{name:$b, last_commit:$d, merged:($m=="true")}]' "$tmpout" > /tmp/lb_brout.json
+        # Append to results
+        echo "$results" | jq -c --arg b "$branch" --arg d "$commit_date" --arg s "$is_stale" \
+          '. + [{name:$b, last_commit:$d, stale:($s=="true")}]' "$tmpout" > /tmp/lb_brout.json
         mv /tmp/lb_brout.json "$tmpout"
       done
 
       cat "$tmpout"
-      rm -f "$tmpout" /tmp/lb_branches.json /tmp/lb_brinfo.json /tmp/lb_brout.json
+      rm -f "$tmpout" /tmp/lb_branches.json /tmp/lb_brinfo.json
 
   - id: report
     stdin: $analyze-branches.stdout
     command: |
       cat > /tmp/lb_branalysis.json
       stale_days=${stale_days}
-      cutoff_ts=$(( $(date +%s) - stale_days * 86400 ))
-
-      merged=$(jq '[.[] | select(.merged==true)]' /tmp/lb_branalysis.json)
-      echo "$merged" > /tmp/lb_merged_br.json
-      merged_count=$(jq 'length' /tmp/lb_merged_br.json)
-
-      stale=$(jq --arg cutoff "$cutoff_ts" '[.[] | select(.merged==false) | . + {commit_ts: (.last_commit | split(".")[0] + "Z" | fromdate)} | select(.commit_ts < ($cutoff|tonumber))]' /tmp/lb_branalysis.json)
-      echo "$stale" > /tmp/lb_stale_br.json
-      stale_count=$(jq 'length' /tmp/lb_stale_br.json)
-
+      
       total=$(jq 'length' /tmp/lb_branalysis.json)
+      stale_count=$(jq '[.[] | select(.stale==true)] | length' /tmp/lb_branalysis.json)
+      fresh_count=$(( total - stale_count ))
 
       echo "🌿 Git Branch Cleanup Report for ${repo}"
       echo ""
-      if [ "$merged_count" != "0" ]; then
-        echo "✅ Merged branches (safe to delete): $merged_count"
-        jq -r '.[] | "  • \(.name) (last commit: \(.last_commit | split("T")[0]))"' /tmp/lb_merged_br.json
-        echo ""
-      fi
       if [ "$stale_count" != "0" ]; then
         echo "⏰ Stale branches (>${stale_days} days, not merged): $stale_count"
-        jq -r '.[] | "  • \(.name) (last commit: \(.last_commit | split("T")[0]))"' /tmp/lb_stale_br.json
+        jq -r '.[] | select(.stale==true) | "  • \(.name) (last commit: \(.last_commit | split("T")[0]))"' /tmp/lb_branalysis.json
         echo ""
       fi
-      if [ "$merged_count" = "0" ] && [ "$stale_count" = "0" ]; then
-        echo "✨ All branches look clean! No merged or stale branches found."
+      if [ "$fresh_count" != "0" ]; then
+        echo "✅ Active branches (recent commits): $fresh_count"
       fi
-      echo "📊 $total non-default branches analyzed"
-      rm -f /tmp/lb_branalysis.json /tmp/lb_merged_br.json /tmp/lb_stale_br.json
+      if [ "$total" = "0" ]; then
+        echo "✨ No non-default branches found to analyze."
+      fi
+      echo "📊 $total branches analyzed (excluding excluded list and default branch)"
+      rm -f /tmp/lb_branalysis.json

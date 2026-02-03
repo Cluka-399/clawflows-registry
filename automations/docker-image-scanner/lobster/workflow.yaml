@@ -1,0 +1,97 @@
+# Lobster workflow: docker-image-scanner
+# Check Docker images for vulnerabilities or size issues
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"max_image_size_mb":"1000","check_dangling":"true"}'
+#
+# Requires: docker, jq
+
+name: docker-image-scanner
+description: Scan Docker images for vulnerabilities and size issues
+
+args:
+  max_image_size_mb:
+    description: "Maximum image size in MB before warning"
+    default: "1000"
+  check_dangling:
+    description: "Report dangling (untagged) images"
+    default: "true"
+  check_vulnerabilities:
+    description: "Run vulnerability scan (requires docker scout or trivy)"
+    default: "false"
+
+steps:
+  - id: scan-and-report
+    command: |
+      echo "🐳 Docker Image Scanner Report"
+      echo ""
+      
+      # Check docker availability
+      if ! command -v docker >/dev/null 2>&1; then
+        echo "ERROR: Docker is not installed"
+        exit 0
+      fi
+      
+      if ! docker info >/dev/null 2>&1; then
+        echo "ERROR: Docker daemon is not running"
+        exit 0
+      fi
+      
+      # Get image data
+      images_json=$(docker images --format '{{json .}}' 2>/dev/null | jq -sc '.')
+      
+      if [ -z "$images_json" ] || [ "$images_json" = "null" ]; then
+        images_json="[]"
+      fi
+      
+      total_images=$(echo "$images_json" | jq 'length')
+      
+      if [ "$total_images" -eq 0 ]; then
+        echo "No Docker images found."
+        exit 0
+      fi
+      
+      # Analyze image sizes
+      echo "Image Summary:"
+      echo "$images_json" | jq -r --arg max "${max_image_size_mb}" '
+        group_by(.Repository)[] | {
+          repo: .[0].Repository,
+          count: length,
+          total_size_mb: ([.[].Size | 
+            if contains("GB") then (split("GB")[0] | tonumber * 1024)
+            elif contains("MB") then (split("MB")[0] | tonumber)
+            elif contains("kB") then (split("kB")[0] | tonumber / 1024)
+            else 0 end
+          ] | add | floor)
+        } | "  • \(.repo): \(.count) tags, \(.total_size_mb) MB"
+      '
+      
+      # Find dangling images
+      if [ "${check_dangling}" = "true" ]; then
+        echo ""
+        dangling_info=$(echo "$images_json" | jq '[.[] | select(.Tag == "<none>")] | {count: length, reclaimable_mb: ([.[].Size | 
+          if contains("GB") then (split("GB")[0] | tonumber * 1024)
+          elif contains("MB") then (split("MB")[0] | tonumber)
+          elif contains("kB") then (split("kB")[0] | tonumber / 1024)
+          else 0 end
+        ] | add | floor)}')
+        
+        dcount=$(echo "$dangling_info" | jq -r '.count')
+        if [ "$dcount" -gt 0 ]; then
+          dsize=$(echo "$dangling_info" | jq -r '.reclaimable_mb')
+          echo "⚠️ Dangling images: $dcount (~${dsize} MB reclaimable)"
+          echo "   Run: docker image prune"
+        fi
+      fi
+      
+      # Security check
+      if [ "${check_vulnerabilities}" = "true" ]; then
+        echo ""
+        if docker scout version >/dev/null 2>&1; then
+          echo "Security: Docker Scout available (run 'docker scout cves <image>' for details)"
+        elif command -v trivy >/dev/null 2>&1; then
+          echo "Security: Trivy available (run 'trivy image <image>' for details)"
+        else
+          echo "Security: No vulnerability scanner installed (docker scout or trivy)"
+        fi
+      fi

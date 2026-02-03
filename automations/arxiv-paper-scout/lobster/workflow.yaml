@@ -1,0 +1,39 @@
+# Lobster workflow: arxiv-paper-scout
+# Fetches recent arXiv papers and filters by keywords
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"categories":"cs.AI,cs.LG","keywords":"language model,transformer","max_results":"5"}'
+#
+# Requires: wget or curl, python3
+
+name: arxiv-paper-scout
+description: Find new arXiv papers matching your research interests
+
+args:
+  categories:
+    description: "arXiv categories (cs.AI, cs.LG, etc.)"
+    default: "cs.AI,cs.LG,cs.CL"
+  keywords:
+    description: "Keywords to search for in abstracts"
+    default: "language model,transformer,agent"
+  max_results:
+    description: "Maximum papers to return"
+    default: "10"
+
+steps:
+  - id: fetch-and-report
+    command: |
+      cat=$(echo "${categories}" | cut -d',' -f1 | xargs)
+      
+      # Fetch papers
+      timeout 30 wget -qO- "http://export.arxiv.org/api/query?search_query=cat:$cat&sortBy=submittedDate&sortOrder=descending&max_results=50" 2>/dev/null > /tmp/lb_arxiv.xml || \
+      timeout 30 curl -sf "http://export.arxiv.org/api/query?search_query=cat:$cat&sortBy=submittedDate&sortOrder=descending&max_results=50" 2>/dev/null > /tmp/lb_arxiv.xml || \
+      echo '<feed></feed>' > /tmp/lb_arxiv.xml
+      
+      # Write python script to file
+      printf '%s\n' "import xml.etree.ElementTree as ET" "import json" "import sys" "" "keywords = '''${keywords}'''.lower().split(',')" "keywords = [k.strip() for k in keywords if k.strip()]" "max_results = int('''${max_results}''')" "" "try:" "    with open('/tmp/lb_arxiv.xml', 'r') as f:" "        xml = f.read()" "    ns = {'atom': 'http://www.w3.org/2005/Atom'}" "    root = ET.fromstring(xml)" "    papers = []" "    for entry in root.findall('atom:entry', ns):" "        title_elem = entry.find('atom:title', ns)" "        summary_elem = entry.find('atom:summary', ns)" "        id_elem = entry.find('atom:id', ns)" "        if title_elem is None or not title_elem.text:" "            continue" "        title = title_elem.text.replace('\\n', ' ').strip()" "        summary = summary_elem.text.replace('\\n', ' ').strip() if summary_elem and summary_elem.text else ''" "        link = id_elem.text.strip() if id_elem and id_elem.text else ''" "        if 'arxiv' in title.lower() and 'query' in title.lower():" "            continue" "        text = (title + ' ' + summary).lower()" "        if any(k in text for k in keywords):" "            papers.append({'title': title, 'summary': summary[:500], 'link': link, 'authors': ''})" "            if len(papers) >= max_results:" "                break" "    if not papers:" "        print('📚 No papers found matching keywords: ${keywords}')" "    else:" "        print(f'📚 Found {len(papers)} paper(s) matching: ${keywords}')" "        print('')" "        for p in papers:" "            preview = p['summary'][:200] + '...' if len(p['summary']) > 200 else p['summary']" "            print(f'**{p[\"title\"]}**')" "            print(p['authors'])" "            print(p['link'])" "            print(preview)" "            print('')" "except Exception as e:" "    print(f'Error: {e}')" "    sys.exit(1)" > /tmp/lb_parse.py
+      
+      # Run python script
+      python3 /tmp/lb_parse.py
+      
+      rm -f /tmp/lb_arxiv.xml /tmp/lb_parse.py

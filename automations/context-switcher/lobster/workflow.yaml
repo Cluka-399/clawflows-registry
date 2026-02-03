@@ -1,0 +1,108 @@
+# Lobster workflow: context-switcher
+# Save and restore workspace state when switching between projects
+#
+# Usage (save):
+#   lobster run --file workflow.yaml --args-json '{"action":"save","project":"myproject","workspace_dir":"/path/to/workspace"}'
+#
+# Usage (restore):
+#   lobster run --file workflow.yaml --args-json '{"action":"restore","project":"myproject","workspace_dir":"/path/to/workspace"}'
+#
+# Usage (list):
+#   lobster run --file workflow.yaml --args-json '{"action":"list"}'
+#
+# Requires: jq
+
+name: context-switcher
+description: Save and restore workspace state when switching between projects
+
+args:
+  action:
+    description: "Action: save, restore, or list"
+    default: "list"
+  project:
+    description: "Project name to save/restore"
+    default: "default"
+  workspace_dir:
+    description: "Workspace directory to capture state from"
+    default: "."
+  state_dir:
+    description: "Directory to store context snapshots"
+    default: "/tmp/clawflows-context-switcher"
+
+steps:
+  - id: run-action
+    command: |
+      STATE_DIR="${state_dir}"
+      mkdir -p "$STATE_DIR"
+      ACTION="${action}"
+      PROJECT="${project}"
+      WORKSPACE="${workspace_dir}"
+
+      case "$ACTION" in
+        save)
+          snapshot="$STATE_DIR/$PROJECT.json"
+          cd "$WORKSPACE" 2>/dev/null || { echo "❌ Cannot access $WORKSPACE"; exit 1; }
+
+          # Capture git state
+          git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "n/a")
+          git_status=$(git status --porcelain 2>/dev/null | head -20 || echo "n/a")
+          git_stash_count=$(git stash list 2>/dev/null | wc -l || echo "0")
+
+          # Capture open-ish context (recent files)
+          recent_files=$(find . -maxdepth 3 -type f -name '*.md' -o -name '*.yaml' -o -name '*.json' -o -name '*.ts' -o -name '*.js' 2>/dev/null | head -20 | sort)
+
+          # Capture environment
+          pwd_val=$(pwd)
+
+          cat > "$snapshot" <<ENDJSON
+      {
+        "project": "$PROJECT",
+        "saved_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+        "working_dir": "$pwd_val",
+        "git_branch": "$git_branch",
+        "git_stash_count": $git_stash_count,
+        "git_dirty_files": $(echo "$git_status" | jq -R -s 'split("\n") | map(select(length>0))'),
+        "recent_files": $(echo "$recent_files" | jq -R -s 'split("\n") | map(select(length>0))')
+      }
+      ENDJSON
+
+          echo "💾 Context saved for project: $PROJECT"
+          echo "  Branch: $git_branch"
+          echo "  Dirty files: $(echo "$git_status" | grep -c . || echo 0)"
+          echo "  Snapshot: $snapshot"
+          ;;
+
+        restore)
+          snapshot="$STATE_DIR/$PROJECT.json"
+          if [ ! -f "$snapshot" ]; then
+            echo "❌ No saved context for project: $PROJECT"
+            echo "Available: $(ls "$STATE_DIR"/*.json 2>/dev/null | xargs -I{} basename {} .json | tr '\n' ', ')"
+            exit 1
+          fi
+
+          echo "🔄 Restoring context for project: $PROJECT"
+          cat "$snapshot" | jq -r '"  Saved at: \(.saved_at)\n  Directory: \(.working_dir)\n  Branch: \(.git_branch)\n  Dirty files: \(.git_dirty_files | length)"'
+          echo ""
+          echo "📋 To fully restore, run:"
+          cat "$snapshot" | jq -r '"  cd \(.working_dir)\n  git checkout \(.git_branch)"'
+          ;;
+
+        list)
+          echo "📂 Saved contexts:"
+          if ls "$STATE_DIR"/*.json 1>/dev/null 2>&1; then
+            for f in "$STATE_DIR"/*.json; do
+              name=$(basename "$f" .json)
+              saved=$(jq -r '.saved_at // "unknown"' "$f")
+              branch=$(jq -r '.git_branch // "?"' "$f")
+              echo "  • $name (branch: $branch, saved: $saved)"
+            done
+          else
+            echo "  (none)"
+          fi
+          ;;
+
+        *)
+          echo "❌ Unknown action: $ACTION (use: save, restore, list)"
+          exit 1
+          ;;
+      esac

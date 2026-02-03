@@ -1,0 +1,67 @@
+# Lobster workflow: focus-mode-scheduler
+# Checks calendar for deep work blocks and reports DND/focus mode recommendations
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"calendar_cmd":"gcalcli agenda today tomorrow --nocolor","focus_keyword":"focus"}'
+#
+# Requires: jq (optional), a calendar CLI
+#
+# NOTE: The original automation requires calendar + notifications capabilities to
+# automatically enable DND. This Lobster version identifies focus blocks from the
+# calendar and outputs a schedule. The consumer (agent) enables DND as needed.
+
+name: focus-mode-scheduler
+description: Identify focus/deep-work blocks from calendar and recommend DND schedules
+
+args:
+  calendar_cmd:
+    description: "Command to list calendar events (text output)"
+    default: "echo '09:00  10:30  Focus Block - Deep Work\n11:00  12:00  Team Standup\n13:00  15:00  Focus Block - Code Review\n15:30  16:00  1:1 with Manager'"
+  focus_keyword:
+    description: "Keyword in event titles that indicates a focus block (case-insensitive)"
+    default: "focus"
+
+steps:
+  - id: get-events
+    command: |
+      ${calendar_cmd} 2>/dev/null || echo "Calendar unavailable"
+
+  - id: find-focus-blocks
+    stdin: $get-events.stdout
+    command: |
+      cat > /tmp/lb_fm_events.txt
+      KEYWORD=$(echo "${focus_keyword}" | tr '[:upper:]' '[:lower:]')
+
+      echo "🎯 **Focus Mode Scheduler**"
+      echo ""
+
+      focus_blocks=$(grep -i "$KEYWORD" /tmp/lb_fm_events.txt || true)
+      all_events=$(cat /tmp/lb_fm_events.txt)
+
+      if [ -z "$focus_blocks" ]; then
+        echo "⚠️ No focus blocks found in today's calendar."
+        echo ""
+        echo "💡 Tip: Add events with '${focus_keyword}' in the title to auto-schedule focus mode."
+        echo ""
+        echo "📅 Today's events:"
+        echo "$all_events" | sed 's/^/  /'
+      else
+        echo "Found focus blocks — enable DND during these times:"
+        echo ""
+        echo "$focus_blocks" | while IFS= read -r line; do
+          times=$(echo "$line" | grep -oE '[0-9]{1,2}:[0-9]{2}' | head -2)
+          start_t=$(echo "$times" | head -1)
+          end_t=$(echo "$times" | tail -1)
+          if [ -n "$start_t" ] && [ -n "$end_t" ]; then
+            echo "  🔕 $start_t → $end_t  $line"
+          else
+            echo "  🔕 $line"
+          fi
+        done
+        echo ""
+        echo "📋 Full schedule:"
+        echo "$all_events" | sed 's/^/  /'
+      fi
+
+      rm -f /tmp/lb_fm_events.txt

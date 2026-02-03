@@ -1,0 +1,72 @@
+# Lobster workflow: deep-work-protector
+# Checks calendar for meetings during protected focus hours and flags conflicts
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"focus_start":"09:00","focus_end":"12:00","calendar_cmd":"gcalcli agenda --nocolor"}'
+#
+# Requires: jq, a calendar CLI (gcalcli or similar)
+#
+# NOTE: The original automation requires calendar + email capabilities to auto-decline
+# meetings. This Lobster version collects the data (calendar events during focus hours)
+# and reports conflicts. The consumer (agent) can then act on the report.
+
+name: deep-work-protector
+description: Detect meetings during protected focus hours, suggest alternatives
+
+args:
+  focus_start:
+    description: "Focus block start time (HH:MM, 24h)"
+    default: "09:00"
+  focus_end:
+    description: "Focus block end time (HH:MM, 24h)"
+    default: "12:00"
+  calendar_cmd:
+    description: "Command to list today's calendar events as text"
+    default: "echo 'No calendar CLI configured. Set calendar_cmd arg.'"
+
+steps:
+  - id: get-events
+    command: |
+      ${calendar_cmd} 2>/dev/null || echo "Calendar unavailable"
+
+  - id: check-conflicts
+    stdin: $get-events.stdout
+    command: |
+      cat > /tmp/lb_dw_events.txt
+      focus_s="${focus_start}"
+      focus_e="${focus_end}"
+      fs_h=$(echo "$focus_s" | cut -d: -f1 | sed 's/^0//')
+      fs_m=$(echo "$focus_s" | cut -d: -f2 | sed 's/^0//')
+      fe_h=$(echo "$focus_e" | cut -d: -f1 | sed 's/^0//')
+      fe_m=$(echo "$focus_e" | cut -d: -f2 | sed 's/^0//')
+      focus_s_min=$(( fs_h * 60 + fs_m ))
+      focus_e_min=$(( fe_h * 60 + fe_m ))
+
+      echo "🛡️ **Deep Work Protector**"
+      echo ""
+      echo "Protected focus block: $focus_s – $focus_e"
+      echo ""
+
+      conflicts=$(grep -E '[0-9]{1,2}:[0-9]{2}' /tmp/lb_dw_events.txt | while IFS= read -r line; do
+        event_time=$(echo "$line" | grep -oE '[0-9]{1,2}:[0-9]{2}' | head -1)
+        if [ -n "$event_time" ]; then
+          eh=$(echo "${event_time%%:*}" | sed 's/^0//')
+          em=$(echo "${event_time##*:}" | sed 's/^0//')
+          event_min=$(( eh * 60 + em ))
+          if [ "$event_min" -ge "$focus_s_min" ] && [ "$event_min" -lt "$focus_e_min" ]; then
+            echo "  ⚠️ CONFLICT: $line"
+          fi
+        fi
+      done)
+
+      if [ -n "$conflicts" ]; then
+        echo "🚨 Conflicts found during focus time:"
+        echo "$conflicts"
+        echo ""
+        echo "💡 Suggestion: Reschedule these outside your focus block (after $focus_e)"
+      else
+        echo "✅ No conflicts — your focus time is clear!"
+      fi
+
+      rm -f /tmp/lb_dw_events.txt

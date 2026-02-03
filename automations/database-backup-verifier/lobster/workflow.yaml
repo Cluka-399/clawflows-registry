@@ -1,0 +1,108 @@
+# Lobster workflow: database-backup-verifier
+# Verify database backup files exist and are recent
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"backup_dir":"/backups","max_age_hours":"24","pattern":"*.sql,*.dump,*.gz"}'
+#
+# Requires: stat, jq, awk
+
+name: database-backup-verifier
+description: Verify database backups exist and can be restored
+
+args:
+  backup_dir:
+    description: "Directory containing backup files"
+    default: "/backups"
+  max_age_hours:
+    description: "Maximum age of backups before warning"
+    default: "24"
+  pattern:
+    description: "File patterns to consider as backups (comma-separated)"
+    default: "*.sql,*.dump,*.sql.gz,*.dump.gz,*.backup"
+  min_size_mb:
+    description: "Minimum backup size in MB (alerts if smaller)"
+    default: "1"
+
+steps:
+  - id: verify-and-report
+    command: |
+      if [ ! -d "${backup_dir}" ]; then
+        echo "💾 Database Backup Verifier"
+        echo ""
+        echo "ERROR: Directory does not exist: ${backup_dir}"
+        exit 0
+      fi
+      
+      cd "${backup_dir}" 2>/dev/null || cd .
+      
+      now=$(date +%s)
+      max_age_sec=$((${max_age_hours} * 3600))
+      min_size_bytes=$((${min_size_mb} * 1024 * 1024))
+      
+      tmpf=$(mktemp)
+      total=0
+      stale=0
+      small=0
+      
+      for pat in $(echo "${pattern}" | tr ',' ' '); do
+        for f in $pat; do
+          [ -f "$f" ] || continue
+          fullpath="${backup_dir}/$f"
+          size=$(stat -c%s "$fullpath" 2>/dev/null || echo "0")
+          mtime=$(stat -c%Y "$fullpath" 2>/dev/null || echo "0")
+          
+          [ "$mtime" = "0" ] && continue
+          
+          total=$((total + 1))
+          age_sec=$((now - mtime))
+          age_hours=$((age_sec / 3600))
+          size_mb=$(awk "BEGIN {printf \"%.2f\", $size/1024/1024}")
+          
+          status="ok"
+          issues=""
+          if [ "$age_sec" -gt "$max_age_sec" ]; then
+            status="stale"
+            stale=$((stale + 1))
+            issues="Older than ${max_age_hours}h; "
+          fi
+          if [ "$size" -lt "$min_size_bytes" ]; then
+            status="small"
+            small=$((small + 1))
+            issues="${issues}Smaller than ${min_size_mb}MB; "
+          fi
+          
+          jq -n --arg path "$fullpath" --arg basename "$f" --arg size "$size_mb" --arg age "$age_hours" --arg status "$status" --arg issues "$issues" \
+            '{path: $path, basename: $basename, size_mb: $size, age_hours: $age, status: $status, issues: $issues}' >> "$tmpf"
+        done
+      done
+      
+      # Build report
+      if [ -s "$tmpf" ]; then
+        backups_json=$(jq -s '.' "$tmpf")
+      else
+        backups_json="[]"
+      fi
+      
+      echo "💾 Database Backup Verifier"
+      echo ""
+      echo "Directory: ${backup_dir}"
+      echo ""
+      echo "Summary:"
+      echo "  Total backups: $total"
+      echo "  Stale (>${max_age_hours}h): $stale"
+      echo "  Undersized: $small"
+      echo ""
+      
+      if [ "$total" -eq 0 ]; then
+        echo "⚠️ WARNING: No backup files found!"
+      elif [ "$stale" -gt 0 ]; then
+        echo "⚠️ WARNING: Some backups are stale!"
+      else
+        echo "✅ All backups are recent"
+      fi
+      
+      echo ""
+      echo "Backups:"
+      echo "$backups_json" | jq -r '.[] | "  • " + .basename + " (" + .size_mb + " MB, " + .age_hours + "h ago) - " + .status'
+      
+      rm -f "$tmpf"

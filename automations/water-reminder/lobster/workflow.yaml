@@ -1,0 +1,33 @@
+# Lobster workflow: water-reminder
+# Periodic reminders to stay hydrated
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"daily_goal_ml":"3000","glass_size_ml":"300"}'
+#
+# Requires: (no external deps)
+
+name: water-reminder
+description: Periodic reminders to stay hydrated
+
+args:
+  daily_goal_ml:
+    description: "Daily water intake goal in ml"
+    default: "2000"
+  glass_size_ml:
+    description: "Size of one glass in ml"
+    default: "250"
+  messages:
+    description: "Comma-separated reminder messages"
+    default: "Time to hydrate!,Don't forget to drink water,Water break!,Stay hydrated"
+
+steps:
+  - id: pick-message
+    command: |
+      msg=$(echo "${messages}" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | shuf -n1)
+      glasses=$(( (${daily_goal_ml} + ${glass_size_ml} - 1) / ${glass_size_ml} ))
+      cat <<EOF
+      💧 $msg
+
+      Goal: $glasses glasses today (${daily_goal_ml}ml)
+      EOF

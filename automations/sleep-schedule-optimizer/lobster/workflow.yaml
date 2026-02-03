@@ -1,0 +1,102 @@
+# Lobster workflow: sleep-schedule-optimizer
+# Analyzes sleep log data and calendar to suggest optimal bedtimes
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"sleep_log":"/path/to/sleep.json","calendar_cmd":"gcalcli agenda --nocolor tomorrow"}'
+#
+# sleep.json format: [{"date":"2026-02-01","bed":"23:30","wake":"07:15","quality":4}]
+# quality: 1-5 scale
+#
+# Requires: jq
+
+name: sleep-schedule-optimizer
+description: Analyze sleep patterns and suggest optimal bedtimes based on calendar
+
+args:
+  sleep_log:
+    description: "Path to sleep log JSON file"
+    default: "/tmp/clawflows-sleep-log.json"
+  calendar_cmd:
+    description: "Shell command to fetch tomorrow's calendar (or empty to skip)"
+    default: ""
+  days:
+    description: "Number of recent days to analyze"
+    default: "14"
+
+steps:
+  - id: ensure-log
+    command: |
+      if [ ! -f "${sleep_log}" ]; then
+        echo '[{"date":"2026-02-01","bed":"23:30","wake":"07:15","quality":4},{"date":"2026-02-02","bed":"00:15","wake":"07:45","quality":3},{"date":"2026-02-03","bed":"23:00","wake":"06:50","quality":5}]' > "${sleep_log}"
+        echo "Created sample sleep log at ${sleep_log}"
+      else
+        echo "Using existing sleep log at ${sleep_log}"
+      fi
+
+  - id: load-sleep-data
+    command: |
+      jq -c --argjson n ${days} '
+        sort_by(.date) | .[-$n:] |
+        map(
+          (.bed | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber)) as $bed_min |
+          (.wake | split(":") | (.[0]|tonumber)*60 + (.[1]|tonumber)) as $wake_min |
+          (if $bed_min > $wake_min then (1440 - $bed_min + $wake_min) else ($wake_min - $bed_min) end) as $dur |
+          . + {sleep_minutes: $dur, bed_minutes: $bed_min, wake_minutes: $wake_min}
+        )
+      ' "${sleep_log}" > /tmp/lb_sleep_enriched.json
+      cat /tmp/lb_sleep_enriched.json
+
+  - id: compute-stats
+    stdin: $load-sleep-data.stdout
+    command: |
+      cat > /tmp/lb_sleep_in.json
+      jq '{
+        total_nights: length,
+        avg_sleep_hrs: ([.[].sleep_minutes] | add / length / 60 * 10 | round / 10),
+        avg_quality: ([.[].quality] | add / length * 10 | round / 10),
+        avg_bed_time: (([.[].bed_minutes] | add / length) | floor | "\(. / 60 | floor):\(. % 60 | tostring | if length < 2 then "0"+. else . end)"),
+        avg_wake_time: (([.[].wake_minutes] | add / length) | floor | "\(. / 60 | floor):\(. % 60 | tostring | if length < 2 then "0"+. else . end)"),
+        best_quality_nights: [.[] | select(.quality >= 4) | {date, bed, wake, sleep_hrs: (.sleep_minutes / 60 * 10 | round / 10)}],
+        worst_quality_nights: [.[] | select(.quality <= 2) | {date, bed, wake, sleep_hrs: (.sleep_minutes / 60 * 10 | round / 10)}],
+        consistency_score: (([.[].bed_minutes] | (max - min)) | if . < 60 then "good" elif . < 120 then "fair" else "poor" end)
+      }' /tmp/lb_sleep_in.json > /tmp/lb_sleep_stats.json
+      cat /tmp/lb_sleep_stats.json
+      rm -f /tmp/lb_sleep_in.json
+
+  - id: fetch-calendar
+    command: |
+      if [ -n "${calendar_cmd}" ]; then
+        eval "${calendar_cmd}" 2>/dev/null || echo "Calendar fetch failed"
+      else
+        echo "No calendar command configured - skipping"
+      fi
+
+  - id: report
+    stdin: $compute-stats.stdout
+    command: |
+      cal_info=$(cat <<'CALEOF'
+      $fetch-calendar.stdout
+      CALEOF
+      )
+      cat > /tmp/lb_stats.json
+      jq -r '
+        "🛏️ Sleep Schedule Analysis (last \(.total_nights) nights)\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "• Average sleep: \(.avg_sleep_hrs)h\n" +
+        "• Average quality: \(.avg_quality)/5\n" +
+        "• Average bedtime: \(.avg_bed_time)\n" +
+        "• Average wake time: \(.avg_wake_time)\n" +
+        "• Bedtime consistency: \(.consistency_score)\n" +
+        "\n📊 Best nights (quality ≥ 4):\n" +
+        (.best_quality_nights | map("  \(.date): bed \(.bed), wake \(.wake) (\(.sleep_hrs)h)") | join("\n")) +
+        if (.worst_quality_nights | length) > 0 then
+          "\n\n⚠️ Worst nights (quality ≤ 2):\n" +
+          (.worst_quality_nights | map("  \(.date): bed \(.bed), wake \(.wake) (\(.sleep_hrs)h)") | join("\n"))
+        else "" end +
+        "\n\n# LLM STEP (not automated):\n" +
+        "# Feed this data + calendar to LLM to get:\n" +
+        "# - Optimal bedtime recommendation based on best-quality patterns\n" +
+        "# - Adjustments for tomorrow'\''s early meetings\n" +
+        "# - Consistency improvement tips"
+      ' /tmp/lb_stats.json
+      rm -f /tmp/lb_stats.json

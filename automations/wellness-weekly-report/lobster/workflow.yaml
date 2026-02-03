@@ -1,0 +1,167 @@
+# Lobster workflow: wellness-weekly-report
+# Aggregates weekly health data (sleep, exercise, mood, habits) into a report
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"data_dir":"/path/to/wellness/"}'
+#
+# Expected files in data_dir:
+#   sleep.json:    [{"date":"2026-02-01","bed":"23:30","wake":"07:15","quality":4}]
+#   exercise.json: [{"date":"2026-02-01","type":"running","duration_min":30,"calories":280}]
+#   mood.json:     [{"date":"2026-02-01","score":4,"notes":"good day"}]
+#   habits.json:   [{"date":"2026-02-01","water_glasses":8,"meditation_min":10,"steps":8500}]
+#
+# Requires: jq
+
+name: wellness-weekly-report
+description: Weekly health summary - sleep, exercise, mood, habits
+
+args:
+  data_dir:
+    description: "Directory containing wellness data JSON files"
+    default: "/tmp/clawflows-wellness"
+  days:
+    description: "Number of days to include in report"
+    default: "7"
+
+steps:
+  - id: ensure-data
+    command: |
+      mkdir -p "${data_dir}"
+      if [ ! -f "${data_dir}/sleep.json" ]; then
+        cat > "${data_dir}/sleep.json" << 'EOF'
+      [{"date":"2026-01-27","bed":"23:30","wake":"07:00","quality":4},
+       {"date":"2026-01-28","bed":"00:15","wake":"07:30","quality":3},
+       {"date":"2026-01-29","bed":"23:00","wake":"06:45","quality":5},
+       {"date":"2026-01-30","bed":"23:45","wake":"07:15","quality":4},
+       {"date":"2026-01-31","bed":"01:00","wake":"08:00","quality":2},
+       {"date":"2026-02-01","bed":"23:15","wake":"07:00","quality":4},
+       {"date":"2026-02-02","bed":"23:30","wake":"07:30","quality":4}]
+      EOF
+      fi
+      if [ ! -f "${data_dir}/exercise.json" ]; then
+        cat > "${data_dir}/exercise.json" << 'EOF'
+      [{"date":"2026-01-27","type":"running","duration_min":35,"calories":320},
+       {"date":"2026-01-28","type":"yoga","duration_min":45,"calories":150},
+       {"date":"2026-01-30","type":"weights","duration_min":50,"calories":280},
+       {"date":"2026-02-01","type":"running","duration_min":40,"calories":360},
+       {"date":"2026-02-02","type":"cycling","duration_min":60,"calories":450}]
+      EOF
+      fi
+      if [ ! -f "${data_dir}/mood.json" ]; then
+        cat > "${data_dir}/mood.json" << 'EOF'
+      [{"date":"2026-01-27","score":4,"notes":"productive day"},
+       {"date":"2026-01-28","score":3,"notes":"tired afternoon"},
+       {"date":"2026-01-29","score":5,"notes":"great energy"},
+       {"date":"2026-01-30","score":4,"notes":"steady"},
+       {"date":"2026-01-31","score":2,"notes":"stressed, late night"},
+       {"date":"2026-02-01","score":4,"notes":"recovered"},
+       {"date":"2026-02-02","score":4,"notes":"relaxed weekend"}]
+      EOF
+      fi
+      if [ ! -f "${data_dir}/habits.json" ]; then
+        cat > "${data_dir}/habits.json" << 'EOF'
+      [{"date":"2026-01-27","water_glasses":8,"meditation_min":10,"steps":9200},
+       {"date":"2026-01-28","water_glasses":6,"meditation_min":0,"steps":7100},
+       {"date":"2026-01-29","water_glasses":9,"meditation_min":15,"steps":11000},
+       {"date":"2026-01-30","water_glasses":7,"meditation_min":10,"steps":8500},
+       {"date":"2026-01-31","water_glasses":4,"meditation_min":0,"steps":5200},
+       {"date":"2026-02-01","water_glasses":8,"meditation_min":10,"steps":10300},
+       {"date":"2026-02-02","water_glasses":7,"meditation_min":15,"steps":8800}]
+      EOF
+      fi
+      echo "Data directory ready: ${data_dir}"
+
+  - id: aggregate-sleep
+    command: |
+      jq -c --argjson n ${days} '
+        sort_by(.date) | .[-$n:] |
+        {
+          nights: length,
+          avg_quality: ([.[].quality] | add / length * 10 | round / 10),
+          avg_hours: ([.[] |
+            ((.bed|split(":")|.[0]|tonumber)*60 + (.bed|split(":")|.[1]|tonumber)) as $b |
+            ((.wake|split(":")|.[0]|tonumber)*60 + (.wake|split(":")|.[1]|tonumber)) as $w |
+            (if $b > $w then 1440 - $b + $w else $w - $b end) / 60
+          ] | add / length * 10 | round / 10),
+          best_night: (sort_by(.quality) | last | {date, quality}),
+          worst_night: (sort_by(.quality) | first | {date, quality})
+        }
+      ' "${data_dir}/sleep.json" > /tmp/lb_w_sleep.json
+      cat /tmp/lb_w_sleep.json
+
+  - id: aggregate-exercise
+    command: |
+      jq -c --argjson n ${days} '
+        sort_by(.date) | .[-$n:] |
+        {
+          sessions: length,
+          total_minutes: ([.[].duration_min] | add),
+          total_calories: ([.[].calories] | add),
+          types: ([.[].type] | group_by(.) | map({type: .[0], count: length}) | sort_by(-.count))
+        }
+      ' "${data_dir}/exercise.json" > /tmp/lb_w_exercise.json
+      cat /tmp/lb_w_exercise.json
+
+  - id: aggregate-mood
+    command: |
+      jq -c --argjson n ${days} '
+        sort_by(.date) | .[-$n:] |
+        {
+          entries: length,
+          avg_score: ([.[].score] | add / length * 10 | round / 10),
+          best_day: (sort_by(.score) | last | {date, score, notes}),
+          worst_day: (sort_by(.score) | first | {date, score, notes}),
+          trend: (if length >= 4 then
+            ((.[:length/2|floor] | [.[].score] | add / length) as $first_half |
+             (.[length/2|floor:] | [.[].score] | add / length) as $second_half |
+             if ($second_half - $first_half) > 0.3 then "improving"
+             elif ($first_half - $second_half) > 0.3 then "declining"
+             else "stable" end)
+          else "insufficient data" end)
+        }
+      ' "${data_dir}/mood.json" > /tmp/lb_w_mood.json
+      cat /tmp/lb_w_mood.json
+
+  - id: aggregate-habits
+    command: |
+      jq -c --argjson n ${days} '
+        sort_by(.date) | .[-$n:] |
+        {
+          days_tracked: length,
+          avg_water: ([.[].water_glasses] | add / length * 10 | round / 10),
+          meditation_days: ([.[] | select(.meditation_min > 0)] | length),
+          avg_meditation_min: ([.[] | select(.meditation_min > 0) | .meditation_min] | if length > 0 then add / length | round else 0 end),
+          avg_steps: ([.[].steps] | add / length | round),
+          step_goal_days: ([.[] | select(.steps >= 8000)] | length)
+        }
+      ' "${data_dir}/habits.json" > /tmp/lb_w_habits.json
+      cat /tmp/lb_w_habits.json
+
+  - id: report
+    command: |
+      jq -rn --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json '
+        $sleep[0] as $s | $ex[0] as $e | $mood[0] as $m | $habits[0] as $h |
+        "🏥 Wellness Weekly Report\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+        "🛏️ Sleep (\($s.nights) nights)\n" +
+        "  Average: \($s.avg_hours)h | Quality: \($s.avg_quality)/5\n" +
+        "  Best: \($s.best_night.date) (\($s.best_night.quality)/5)\n" +
+        "  Worst: \($s.worst_night.date) (\($s.worst_night.quality)/5)\n\n" +
+        "🏃 Exercise (\($e.sessions) sessions)\n" +
+        "  Total: \($e.total_minutes)min | \($e.total_calories) cal\n" +
+        "  Activities: " + ($e.types | map("\(.type)×\(.count)") | join(", ")) + "\n\n" +
+        "😊 Mood (avg \($m.avg_score)/5 — \($m.trend))\n" +
+        "  Best: \($m.best_day.date) (\($m.best_day.score)/5) — \($m.best_day.notes)\n" +
+        "  Worst: \($m.worst_day.date) (\($m.worst_day.score)/5) — \($m.worst_day.notes)\n\n" +
+        "💧 Habits\n" +
+        "  Water: \($h.avg_water) glasses/day\n" +
+        "  Meditation: \($h.meditation_days)/\($h.days_tracked) days (avg \($h.avg_meditation_min)min)\n" +
+        "  Steps: \($h.avg_steps)/day (\($h.step_goal_days)/\($h.days_tracked) hit 8k goal)\n\n" +
+        "# LLM STEP (not automated):\n" +
+        "# Feed all aggregated data to LLM for:\n" +
+        "# - Correlations (sleep quality vs mood, exercise vs mood)\n" +
+        "# - Week-over-week trend comparison\n" +
+        "# - Actionable recommendations\n" +
+        "# - Highlight achievements and areas for improvement"
+      '
+      rm -f /tmp/lb_w_sleep.json /tmp/lb_w_exercise.json /tmp/lb_w_mood.json /tmp/lb_w_habits.json

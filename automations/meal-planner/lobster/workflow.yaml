@@ -1,0 +1,101 @@
+# Lobster workflow: meal-planner
+# Generates weekly meal plan framework with shopping list
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"preferences":"/path/to/prefs.json","pantry":"/path/to/pantry.json"}'
+#
+# prefs.json: {"diet":"omnivore","allergies":["nuts"],"cuisine":["mediterranean","asian"],"meals_per_day":3,"servings":2}
+# pantry.json: ["rice","olive oil","chicken breast","tomatoes","garlic"]
+#
+# Requires: jq
+
+name: meal-planner
+description: Weekly meal planning with shopping list generation
+
+args:
+  preferences:
+    description: "Path to dietary preferences JSON"
+    default: "/tmp/clawflows-meal-prefs.json"
+  pantry:
+    description: "Path to current pantry inventory JSON"
+    default: "/tmp/clawflows-pantry.json"
+  week_start:
+    description: "Start date (YYYY-MM-DD), defaults to next Monday"
+    default: ""
+
+steps:
+  - id: ensure-prefs
+    command: |
+      if [ ! -f "${preferences}" ]; then
+        cat > "${preferences}" << 'EOF'
+      {"diet":"omnivore","allergies":[],"cuisine_prefs":["mediterranean","asian","mexican"],"meals_per_day":3,"servings":2,"budget":"moderate","prep_time_max_min":45}
+      EOF
+        echo "Created sample preferences at ${preferences}"
+      else
+        echo "Using existing preferences at ${preferences}"
+      fi
+
+  - id: ensure-pantry
+    command: |
+      if [ ! -f "${pantry}" ]; then
+        cat > "${pantry}" << 'EOF'
+      ["rice","pasta","olive oil","salt","pepper","garlic","onions","eggs","milk","butter","flour","canned tomatoes","soy sauce","chicken breast","cheddar cheese"]
+      EOF
+        echo "Created sample pantry at ${pantry}"
+      else
+        echo "Using existing pantry at ${pantry}"
+      fi
+
+  - id: load-inputs
+    command: |
+      jq -nc --slurpfile prefs "${preferences}" --slurpfile pantry "${pantry}" '{
+        preferences: $prefs[0],
+        pantry: $pantry[0],
+        pantry_count: ($pantry[0] | length)
+      }' > /tmp/lb_meal_inputs.json
+      cat /tmp/lb_meal_inputs.json
+
+  - id: compute-week
+    command: |
+      if [ -n "${week_start}" ]; then
+        start="${week_start}"
+      else
+        start=$(date -d "next Monday" +%Y-%m-%d 2>/dev/null || date -v+1w -v-mon +%Y-%m-%d 2>/dev/null || date +%Y-%m-%d)
+      fi
+      days=""
+      for i in 0 1 2 3 4 5 6; do
+        d=$(date -d "$start + $i days" +%Y-%m-%d 2>/dev/null || date -v+"$i"d -j -f "%Y-%m-%d" "$start" +%Y-%m-%d 2>/dev/null || echo "day-$i")
+        dow=$(date -d "$start + $i days" +%A 2>/dev/null || date -v+"$i"d -j -f "%Y-%m-%d" "$start" +%A 2>/dev/null || echo "Day$i")
+        days="$days{\"date\":\"$d\",\"day\":\"$dow\"},"
+      done
+      echo "[${days%,}]" | jq -c '.'
+
+  - id: report
+    stdin: $load-inputs.stdout
+    command: |
+      cat > /tmp/lb_meal_data.json
+      week='$compute-week.stdout'
+      echo "$week" > /tmp/lb_week.json
+      jq -r --slurpfile week /tmp/lb_week.json '
+        "🍽️ Meal Planner — Weekly Setup\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "\n📋 Preferences:\n" +
+        "• Diet: \(.preferences.diet)\n" +
+        "• Allergies: \(.preferences.allergies | if length==0 then "none" else join(", ") end)\n" +
+        "• Cuisines: \(.preferences.cuisine_prefs | join(", "))\n" +
+        "• Max prep time: \(.preferences.prep_time_max_min)min\n" +
+        "• Servings: \(.preferences.servings)\n" +
+        "• Budget: \(.preferences.budget)\n" +
+        "\n🗓️ Week: \($week[0][0].date) → \($week[0][6].date)\n" +
+        ($week[0] | map("  \(.day) (\(.date))") | join("\n")) +
+        "\n\n🥫 Pantry (\(.pantry_count) items):\n" +
+        (.pantry | map("  • \(.)") | join("\n")) +
+        "\n\n# LLM STEP (not automated):\n" +
+        "# Feed preferences + pantry + week dates to LLM to generate:\n" +
+        "# - 7-day meal plan (breakfast, lunch, dinner per day)\n" +
+        "# - Recipes using pantry items where possible\n" +
+        "# - Shopping list (items NOT in pantry)\n" +
+        "# - Estimated weekly cost\n" +
+        "# - Meal prep suggestions (batch cooking)"
+      ' /tmp/lb_meal_data.json
+      rm -f /tmp/lb_meal_data.json /tmp/lb_week.json

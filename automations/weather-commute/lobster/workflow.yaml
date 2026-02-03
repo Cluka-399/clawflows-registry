@@ -26,7 +26,7 @@ steps:
     command: |
       tmpf=$(mktemp)
       loc=$(echo "${location}" | tr ' ' '+')
-      curl -sf --max-time 15 \
+      curl -sf --max-time 30 \
         "https://wttr.in/${loc}?format=j1" \
         -o "$tmpf" 2>/dev/null
       if [ -s "$tmpf" ] && jq -e '.current_condition' "$tmpf" >/dev/null 2>&1; then
@@ -100,9 +100,9 @@ steps:
       rm -f "$weather_file"
 
   - id: report
-    stdin: $analyze.stdout
     command: |
-      cat > /tmp/lb_weather_report.json
+      analysis_file=$(mktemp)
+      printf '%s' '$analyze.stdout' > "$analysis_file"
       jq -r --arg loc "${location}" '
         "🚗 Commute Weather Report — " + $loc + "\n" +
         "\n🌡️ Current: " + .current.temp_c + "°C" +
@@ -137,5 +137,5 @@ steps:
             " (rain: " + .rain_chance + "%)"
           ] | join("\n"))
         else "" end)
-      ' /tmp/lb_weather_report.json
-      rm -f /tmp/lb_weather_report.json
+      ' "$analysis_file"
+      rm -f "$analysis_file"

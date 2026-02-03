@@ -43,7 +43,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/agent-drift-detector/"
@@ -99,7 +99,7 @@
         "papers",
         "ai"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/arxiv-paper-scout/"
@@ -286,7 +286,7 @@
         "quality",
         "linting"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/code-quality-report/"
@@ -437,7 +437,7 @@
         "productivity",
         "developer"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/context-switcher/"
@@ -563,7 +563,7 @@
         "developer",
         "devops"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/database-backup-verifier/"
@@ -597,7 +597,7 @@
       "tags": [
         "productivity"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/deep-work-protector/"
@@ -633,7 +633,7 @@
         "developer",
         "security"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/docker-image-scanner/"
@@ -807,7 +807,7 @@
         "productivity",
         "calendar"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/focus-mode-scheduler/"
@@ -823,7 +823,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/focus-time-report/"
@@ -1093,7 +1093,7 @@
         "health",
         "planning"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/meal-planner/"
@@ -1503,7 +1503,7 @@
       "tags": [
         "health"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/sleep-schedule-optimizer/"
@@ -1657,7 +1657,7 @@
         "productivity",
         "tasks"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/task-prioritizer/"
@@ -1709,7 +1709,7 @@
         "productivity",
         "calendar"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/time-block-optimizer/"
@@ -1762,7 +1762,7 @@
         "wellness",
         "reminder"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/water-reminder/"
@@ -1831,7 +1831,7 @@
       "tags": [
         "health"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/wellness-weekly-report/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 40
+  "lobster_ready": 55
 }
