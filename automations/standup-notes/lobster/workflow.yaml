@@ -1,0 +1,74 @@
+# Lobster workflow: standup-notes
+# Reads yesterday's memory file and generates standup notes
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"memory_path":"/data/clawd/memory"}'
+#
+# Requires: jq, date
+#
+# NOTE: Original uses LLM to extract/structure standup items.
+# This version reads the raw file and formats it. An LLM extraction
+# step would use clawd.invoke (commented below).
+
+name: standup-notes
+description: Auto-generate daily standup notes from yesterday's activity
+
+args:
+  memory_path:
+    description: "Path to agent memory directory"
+    default: "/data/clawd/memory"
+  include_blockers:
+    description: "Include blockers section (true/false)"
+    default: "true"
+
+steps:
+  - id: read-yesterday
+    command: |
+      yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+      file="${memory_path}/${yesterday}.md"
+      echo "$yesterday" > /tmp/lb_standup_date.txt
+      if [ -f "$file" ]; then
+        cp "$file" /tmp/lb_standup_yesterday.md
+        echo "found"
+      else
+        echo "(No memory file found for ${yesterday})" > /tmp/lb_standup_yesterday.md
+        echo "empty"
+      fi
+
+  - id: get-calendar
+    command: |
+      if [ -x /data/clawd/.venv-gcal/bin/gcalcli ]; then
+        TZ=Asia/Jerusalem /data/clawd/.venv-gcal/bin/gcalcli agenda --nocolor --nostarted 2>/dev/null > /tmp/lb_standup_cal.txt || echo "(calendar unavailable)" > /tmp/lb_standup_cal.txt
+      else
+        echo "(gcalcli not available)" > /tmp/lb_standup_cal.txt
+      fi
+      echo "done"
+
+  - id: format-standup
+    command: |
+      yesterday_date=$(cat /tmp/lb_standup_date.txt)
+      today=$(date '+%A, %b %d')
+      echo "🌅 **Daily Standup**"
+      echo "_${today}_"
+      echo ""
+      echo "**Yesterday (${yesterday_date}):**"
+      items=$(grep -E '^\s*[-*]' /tmp/lb_standup_yesterday.md 2>/dev/null | head -8 | sed 's/^[[:space:]]*[-*][[:space:]]*/• /' || true)
+      if [ -n "$items" ]; then
+        echo "$items"
+      else
+        echo "• (Review memory file for details)"
+      fi
+      echo ""
+      echo "**Today:**"
+      if grep -qv 'unavailable\|not available' /tmp/lb_standup_cal.txt 2>/dev/null; then
+        grep -v '^$' /tmp/lb_standup_cal.txt | head -5 | sed 's/^/• /'
+      else
+        echo "• (Check calendar for schedule)"
+      fi
+      if [ "${include_blockers}" = "true" ]; then
+        echo ""
+        echo "**Blockers:**"
+        echo "• (None identified)"
+      fi
+      rm -f /tmp/lb_standup_date.txt /tmp/lb_standup_yesterday.md /tmp/lb_standup_cal.txt
+      # NOTE: To add LLM structuring, pipe memory content to clawd.invoke

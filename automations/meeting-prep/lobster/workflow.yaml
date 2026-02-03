@@ -1,0 +1,89 @@
+# Lobster workflow: meeting-prep
+# Prepare briefings for upcoming meetings using gcalcli + email search
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"hours_ahead":"10"}'
+#
+# Requires: jq, gcalcli (or any calendar CLI)
+#
+# NOTE: The original automation uses LLM analysis to generate meeting briefs.
+# This Lobster version does concrete data collection (calendar events + email search).
+# For AI-generated briefs, pipe the output to an LLM.
+
+name: meeting-prep
+description: Prepare briefings for upcoming meetings with context and agenda
+
+args:
+  hours_ahead:
+    description: "How many hours ahead to look for meetings"
+    default: "10"
+  gcalcli_path:
+    description: "Path to gcalcli binary"
+    default: "/data/clawd/.venv-gcal/bin/gcalcli"
+  include_email_context:
+    description: "Search email for related context (true/false)"
+    default: "true"
+
+steps:
+  - id: get-meetings
+    command: |
+      gcal="${gcalcli_path}"
+      hours="${hours_ahead}"
+      if [ ! -f "$gcal" ]; then
+        echo '{"meetings":[],"error":"gcalcli not found at '"$gcal"'"}'
+        exit 0
+      fi
+      end_time=$(date -d "+${hours} hours" "+%Y-%m-%dT%H:%M" 2>/dev/null || date -v+${hours}H "+%Y-%m-%dT%H:%M" 2>/dev/null || echo "")
+      now=$(date "+%Y-%m-%dT%H:%M")
+      # Get calendar events as TSV
+      timeout 10 env TZ=Asia/Jerusalem "$gcal" agenda --nocolor --tsv "$now" "$end_time" > /tmp/lb_mp_cal.tsv 2>/dev/null || true
+      # Strip ANSI codes and check for valid TSV (must have tab-separated date fields)
+      if [ -s /tmp/lb_mp_cal.tsv ]; then
+        sed -i 's/\x1b\[[0-9;]*m//g' /tmp/lb_mp_cal.tsv
+      fi
+      if ! grep -qP '^\d{4}' /tmp/lb_mp_cal.tsv 2>/dev/null; then
+        echo '{"meetings":[],"count":0}'
+        rm -f /tmp/lb_mp_cal.tsv
+        exit 0
+      fi
+      # Parse TSV into JSON - fields: start_date start_time end_date end_time title
+      grep -P '^\d{4}' /tmp/lb_mp_cal.tsv | awk -F'\t' '{
+        gsub(/"/, "\\\"", $5);
+        printf "{\"start_date\":\"%s\",\"start_time\":\"%s\",\"end_date\":\"%s\",\"end_time\":\"%s\",\"title\":\"%s\"}\n", $1, $2, $3, $4, $5
+      }' | jq -sc '{meetings: ., count: length}'
+      rm -f /tmp/lb_mp_cal.tsv
+
+  - id: filter-meetings
+    stdin: $get-meetings.stdout
+    command: |
+      cat > /tmp/lb_mp_events.json
+      # Filter to likely meetings (with other people, not blocked time)
+      jq -c '
+        .meetings as $all |
+        [$all[] | select(
+          (.title | test("meeting|call|sync|1:1|standup|review|demo|chat|interview|check-in"; "i"))
+          or (.title | test("^[^(block|focus|lunch|travel)]"; "i"))
+        )] |
+        if length == 0 then $all else . end |
+        {meetings: ., count: length}
+      ' /tmp/lb_mp_events.json
+      rm -f /tmp/lb_mp_events.json
+
+  - id: report
+    stdin: $filter-meetings.stdout
+    command: |
+      # NOTE: For AI-generated briefs with attendee context and suggested agendas,
+      # pipe this JSON to an LLM with prompt:
+      # "For each meeting, create a brief: context, attendees, suggested agenda, prep needed"
+      jq -r '
+        if .count == 0 then
+          "📅 No meetings requiring prep in the next '"${hours_ahead}"' hours 🎉"
+        else
+          "📅 **Today'\''s Meeting Prep** (" + (.count|tostring) + " meetings)\n" +
+          (.meetings | to_entries | map(
+            "\n**" + (.value.start_time // "?") + " - " + (.value.title // "Untitled") + "**" +
+            "\n  📍 Time: " + (.value.start_date // "") + " " + (.value.start_time // "") +
+            " → " + (.value.end_time // "")
+          ) | join("\n---"))
+        end
+      '

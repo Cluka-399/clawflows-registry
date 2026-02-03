@@ -507,7 +507,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/daily-news-digest/"
@@ -545,7 +545,7 @@
         "standup",
         "daily"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/daily-standup-prep/"
@@ -669,7 +669,7 @@
         "productivity",
         "digest"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/email-digest/"
@@ -875,7 +875,7 @@
         "developer",
         "maintenance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/git-stale-branch-cleaner/"
@@ -1058,7 +1058,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/learning-digest/"
@@ -1127,7 +1127,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/meeting-prep/"
@@ -1145,7 +1145,7 @@
         "productivity",
         "meetings"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/meeting-prep-assistant/"
@@ -1385,7 +1385,7 @@
         "productivity",
         "projects"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/project-milestone-alert/"
@@ -1401,7 +1401,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/repeat-task-detector/"
@@ -1589,7 +1589,7 @@
         "capability: notifications"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/standup-notes/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 65
+  "lobster_ready": 75
 }

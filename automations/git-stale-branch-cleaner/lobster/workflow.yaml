@@ -1,0 +1,70 @@
+# Lobster workflow: git-stale-branch-cleaner
+# Identify merged or stale git branches in a local repo
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repo_path":"/data/clawd","stale_days":"90"}'
+#
+# Requires: git, jq
+
+name: git-stale-branch-cleaner
+description: Identify and clean up merged or stale git branches
+
+args:
+  repo_path:
+    description: "Path to the git repository"
+    default: "."
+  stale_days:
+    description: "Days since last commit to consider branch stale"
+    default: "90"
+
+steps:
+  - id: scan-branches
+    command: |
+      cd "${repo_path}" 2>/dev/null || { echo '{"merged":[],"stale":[],"error":"repo not found"}'; exit 0; }
+      default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+
+      # Find merged branches
+      merged=$(git branch --merged "$default_branch" 2>/dev/null \
+        | grep -v "^\*" \
+        | grep -vE "^\s*(main|master|develop)$" \
+        | sed 's/^[ \t]*//' || true)
+      if [ -z "$merged" ]; then
+        echo '[]' > /tmp/lb_gc_merged.json
+      else
+        echo "$merged" | jq -R '.' | jq -sc '.' > /tmp/lb_gc_merged.json
+      fi
+
+      # Find stale branches
+      cutoff_days="${stale_days}"
+      now=$(date +%s)
+      echo '[]' > /tmp/lb_gc_stale.json
+      git for-each-ref --sort=committerdate --format='%(refname:short)|%(committerdate:unix)|%(committerdate:relative)' refs/heads/ 2>/dev/null | while IFS='|' read branch epoch reldate; do
+        case "$branch" in main|master|develop) continue;; esac
+        age_days=$(( (now - epoch) / 86400 ))
+        if [ "$age_days" -ge "$cutoff_days" ] 2>/dev/null; then
+          jq -c --arg b "$branch" --arg d "$reldate" --argjson a "$age_days" \
+            '. + [{"branch":$b,"last_commit":$d,"age_days":$a}]' /tmp/lb_gc_stale.json > /tmp/lb_gc_stale2.json
+          mv /tmp/lb_gc_stale2.json /tmp/lb_gc_stale.json
+        fi
+      done
+
+      jq -n --slurpfile m /tmp/lb_gc_merged.json --slurpfile s /tmp/lb_gc_stale.json \
+        '{merged: $m[0], stale: $s[0]}'
+      rm -f /tmp/lb_gc_merged.json /tmp/lb_gc_stale.json /tmp/lb_gc_stale2.json
+
+  - id: report
+    stdin: $scan-branches.stdout
+    command: |
+      cat > /tmp/lb_gc_data.json
+      jq -r '
+        "🌿 **Git Branch Cleanup Report**\n" +
+        "\n**Merged branches** (safe to delete): " + (.merged|length|tostring) + "\n" +
+        if (.merged|length) > 0 then
+          (.merged | map("  • " + .) | join("\n")) + "\n"
+        else "  None\n" end +
+        "\n**Stale branches** (>" + (env.STALE_DAYS // "90") + " days): " + (.stale|length|tostring) + "\n" +
+        if (.stale|length) > 0 then
+          (.stale | map("  • " + .branch + " (last commit: " + .last_commit + ")") | join("\n"))
+        else "  None" end
+      ' /tmp/lb_gc_data.json
+      rm -f /tmp/lb_gc_data.json

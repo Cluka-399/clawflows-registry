@@ -1,0 +1,104 @@
+# Lobster workflow: learning-digest
+# Searches for educational content based on specified topics
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"topics":"AI/ML, system design, leadership"}'
+#
+# Requires: jq, curl
+#
+# NOTE: Original uses LLM to curate/filter content quality.
+# This version collects concrete search results. An LLM curation
+# step would use clawd.invoke (commented below).
+
+name: learning-digest
+description: Curate educational content based on your interests and learning goals
+
+args:
+  topics:
+    description: "Comma-separated topics to learn about"
+    default: "AI/ML, system design, leadership"
+  max_items:
+    description: "Maximum items per digest"
+    default: "10"
+  difficulty:
+    description: "beginner, intermediate, or advanced"
+    default: "intermediate"
+
+steps:
+  - id: search-hn-learning
+    command: |
+      # Search HN Algolia for educational content on each topic
+      echo '[]' > /tmp/lb_learn_all.json
+      IFS=','
+      for topic in ${topics}; do
+        topic=$(echo "$topic" | xargs)
+        [ -z "$topic" ] && continue
+        query=$(echo "${topic} tutorial OR guide OR explained" | jq -sRr @uri)
+        curl -sf "https://hn.algolia.com/api/v1/search_by_date?query=${query}&tags=story&hitsPerPage=5" \
+          | jq -c --arg t "$topic" '[.hits[]? | {title:.title, url:(.url // "https://news.ycombinator.com/item?id=\(.objectID)"), topic:$t, points:(.points // 0), source:"HN"}]' \
+          > /tmp/lb_learn_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_learn_chunk.json
+        jq -sc '.[0] + .[1]' /tmp/lb_learn_all.json /tmp/lb_learn_chunk.json > /tmp/lb_learn_merged.json
+        mv /tmp/lb_learn_merged.json /tmp/lb_learn_all.json
+      done
+      cat /tmp/lb_learn_all.json
+      rm -f /tmp/lb_learn_all.json /tmp/lb_learn_chunk.json
+
+  - id: search-web-learning
+    command: |
+      # Use Brave Search if available for broader coverage
+      if [ -z "$BRAVE_API_KEY" ]; then
+        echo '[]'
+        exit 0
+      fi
+      echo '[]' > /tmp/lb_learn_web.json
+      IFS=','
+      for topic in ${topics}; do
+        topic=$(echo "$topic" | xargs)
+        [ -z "$topic" ] && continue
+        query=$(echo "${topic} tutorial guide ${difficulty}" | jq -sRr @uri)
+        curl -sf "https://api.search.brave.com/res/v1/web/search?q=${query}&count=5&freshness=pw" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          | jq -c --arg t "$topic" '[.web.results[]? | {title:.title, url:.url, topic:$t, points:0, source:"Web"}]' \
+          > /tmp/lb_learn_wchunk.json 2>/dev/null || echo '[]' > /tmp/lb_learn_wchunk.json
+        jq -sc '.[0] + .[1]' /tmp/lb_learn_web.json /tmp/lb_learn_wchunk.json > /tmp/lb_learn_wmerged.json
+        mv /tmp/lb_learn_wmerged.json /tmp/lb_learn_web.json
+      done
+      cat /tmp/lb_learn_web.json
+      rm -f /tmp/lb_learn_web.json /tmp/lb_learn_wchunk.json
+
+  - id: combine-and-rank
+    command: |
+      hn='$search-hn-learning.stdout'
+      web='$search-web-learning.stdout'
+      echo "$hn" > /tmp/lb_learn_hn.json
+      echo "$web" > /tmp/lb_learn_web2.json
+      max=${max_items}
+      jq -sc --argjson max "$max" '
+        .[0] + .[1] |
+        unique_by(.url) |
+        sort_by(-.points) |
+        .[0:$max]
+      ' /tmp/lb_learn_hn.json /tmp/lb_learn_web2.json
+      rm -f /tmp/lb_learn_hn.json /tmp/lb_learn_web2.json
+
+  - id: format-digest
+    stdin: $combine-and-rank.stdout
+    command: |
+      cat > /tmp/lb_learn_final.json
+      count=$(jq 'length' /tmp/lb_learn_final.json)
+      echo "📚 **Learning Digest**"
+      echo "_Topics: ${topics}_"
+      echo ""
+      # Group by topic
+      jq -r '
+        group_by(.topic) | .[] |
+        "**\(.[0].topic | gsub("^\\s+|\\s+$";"")):**\n" +
+        ([.[] | "• \(.title)\n  \(.url)"] | join("\n")) + "\n"
+      ' /tmp/lb_learn_final.json
+      echo "---"
+      echo "_${count} resources collected | Difficulty: ${difficulty}_"
+      echo "_Tip: Bookmark what interests you, schedule time to learn_"
+      # NOTE: To add LLM curation (quality filtering, difficulty tagging, 
+      # reading time estimates), pipe /tmp/lb_learn_final.json to clawd.invoke
+      rm -f /tmp/lb_learn_final.json

@@ -1,0 +1,108 @@
+# Lobster workflow: meeting-prep-assistant
+# Generate meeting briefs with attendee info and relevant docs
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"minutes_before":"30"}'
+#
+# Requires: jq, gcalcli (or any calendar CLI)
+#
+# NOTE: The original automation uses calendar + file_system capabilities.
+# This version fetches imminent meetings and searches for related docs/notes.
+# For AI-generated briefs, pipe the output to an LLM.
+
+name: meeting-prep-assistant
+description: Generate meeting briefs 30 min before - attendees, agenda, relevant docs
+
+args:
+  minutes_before:
+    description: "How many minutes ahead to look for meetings"
+    default: "30"
+  gcalcli_path:
+    description: "Path to gcalcli binary"
+    default: "/data/clawd/.venv-gcal/bin/gcalcli"
+  notes_path:
+    description: "Path to search for related notes/docs"
+    default: "/data/clawd/memory"
+
+steps:
+  - id: get-imminent
+    command: |
+      gcal="${gcalcli_path}"
+      mins="${minutes_before}"
+      if [ ! -f "$gcal" ]; then
+        echo '{"meetings":[],"error":"gcalcli not found"}'
+        exit 0
+      fi
+      now=$(date "+%Y-%m-%dT%H:%M")
+      end_time=$(date -d "+${mins} minutes" "+%Y-%m-%dT%H:%M" 2>/dev/null || date -v+${mins}M "+%Y-%m-%dT%H:%M" 2>/dev/null || echo "")
+      timeout 10 env TZ=Asia/Jerusalem "$gcal" agenda --nocolor --tsv "$now" "$end_time" > /tmp/lb_mpa_cal.tsv 2>/dev/null || true
+      # Strip ANSI codes and check for valid TSV
+      if [ -s /tmp/lb_mpa_cal.tsv ]; then
+        sed -i 's/\x1b\[[0-9;]*m//g' /tmp/lb_mpa_cal.tsv
+      fi
+      if ! grep -qP '^\d{4}' /tmp/lb_mpa_cal.tsv 2>/dev/null; then
+        echo '{"meetings":[],"count":0}'
+        rm -f /tmp/lb_mpa_cal.tsv
+        exit 0
+      fi
+      grep -P '^\d{4}' /tmp/lb_mpa_cal.tsv | awk -F'\t' '{
+        gsub(/"/, "\\\"", $5);
+        printf "{\"start_date\":\"%s\",\"start_time\":\"%s\",\"end_date\":\"%s\",\"end_time\":\"%s\",\"title\":\"%s\"}\n", $1, $2, $3, $4, $5
+      }' | jq -sc '{meetings: ., count: length}'
+      rm -f /tmp/lb_mpa_cal.tsv
+
+  - id: find-related-docs
+    stdin: $get-imminent.stdout
+    command: |
+      cat > /tmp/lb_mpa_meetings.json
+      notes_dir="${notes_path}"
+      # For each meeting, search notes directory for related files
+      echo '[]' > /tmp/lb_mpa_docs.json
+      jq -r '.meetings[].title // empty' /tmp/lb_mpa_meetings.json | while read title; do
+        # Extract key words from title (skip common words)
+        keywords=$(echo "$title" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alpha:]' '\n' | grep -vE '^(the|and|or|for|with|our|a|an|in|on|at|to|of|is)$' | head -5)
+        found='[]'
+        if [ -d "$notes_dir" ] && [ -n "$keywords" ]; then
+          for kw in $keywords; do
+            matches=$(grep -ril "$kw" "$notes_dir"/*.md 2>/dev/null | head -3 || true)
+            if [ -n "$matches" ]; then
+              found=$(echo "$matches" | jq -R '.' | jq -sc '.')
+              break
+            fi
+          done
+        fi
+        jq -c --arg t "$title" --argjson f "$found" \
+          '. + [{"meeting": $t, "related_files": $f}]' /tmp/lb_mpa_docs.json > /tmp/lb_mpa_docs2.json
+        mv /tmp/lb_mpa_docs2.json /tmp/lb_mpa_docs.json
+      done
+
+      jq -nc --slurpfile m /tmp/lb_mpa_meetings.json --slurpfile d /tmp/lb_mpa_docs.json \
+        '{meetings: $m[0].meetings, docs: $d[0], count: $m[0].count}'
+      rm -f /tmp/lb_mpa_meetings.json /tmp/lb_mpa_docs.json
+
+  - id: report
+    stdin: $find-related-docs.stdout
+    command: |
+      # NOTE: For AI-powered briefs analyzing attendee relationships, 
+      # history, and suggesting talking points, pipe this JSON to an LLM.
+      jq -r '
+        if .count == 0 then
+          "📅 No meetings in the next '"${minutes_before}"' minutes."
+        else
+          "📋 **Meeting Brief** (" + (.count|tostring) + " upcoming)\n" +
+          ([range(.count)] | map(
+            .meetings[.] as $m |
+            (.docs[.] // {related_files:[]}) as $d |
+            "\n**" + ($m.start_time // "?") + " — " + ($m.title // "Untitled") + "**" +
+            if ($d.related_files | length) > 0 then
+              "\n  📎 Related notes: " + ($d.related_files | join(", "))
+            else
+              "\n  📎 No related notes found"
+            end
+          ) | join("\n---"))
+        end
+      ' 2>/dev/null || jq -r '
+        if .count == 0 then "📅 No meetings in the next '"${minutes_before}"' minutes."
+        else "📋 " + (.count|tostring) + " meeting(s) coming up. See JSON output for details."
+        end
+      '

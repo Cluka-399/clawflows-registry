@@ -1,0 +1,91 @@
+# Lobster workflow: daily-news-digest
+# Aggregates news from HN front page + web search into a morning briefing
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"topics":"AI, startups, technology"}'
+#
+# Requires: jq, curl
+#
+# NOTE: The original ClawFlows version uses LLM to summarize articles.
+# This Lobster version collects all data concretely; an LLM summarization
+# step would need a `clawd.invoke` or external API call (commented below).
+
+name: daily-news-digest
+description: Aggregate and summarize news from multiple sources into a morning briefing
+
+args:
+  topics:
+    description: "Topics to track (comma-separated)"
+    default: "AI, startups, technology"
+  max_articles:
+    description: "Maximum articles to include"
+    default: "20"
+
+steps:
+  - id: fetch-hn
+    command: |
+      curl -sf "https://hacker-news.firebaseio.com/v0/topstories.json" \
+        | jq '.[0:10]' > /tmp/lb_hn_ids.json
+      echo '[]' > /tmp/lb_hn_articles.json
+      for id in $(jq -r '.[]' /tmp/lb_hn_ids.json); do
+        curl -sf "https://hacker-news.firebaseio.com/v0/item/$id.json" \
+          | jq -c '{title:.title, url:(.url//"https://news.ycombinator.com/item?id=\(.id)"), source:"HN", score:.score}' \
+          >> /tmp/lb_hn_each.jsonl 2>/dev/null || true
+      done
+      if [ -f /tmp/lb_hn_each.jsonl ]; then
+        jq -sc '.' /tmp/lb_hn_each.jsonl
+      else
+        echo '[]'
+      fi
+      rm -f /tmp/lb_hn_ids.json /tmp/lb_hn_each.jsonl /tmp/lb_hn_articles.json
+
+  - id: search-topics
+    command: |
+      # Use Brave Search API if BRAVE_API_KEY is set, otherwise skip
+      query=$(echo "${topics}" | tr ',' ' ' | sed 's/  */ OR /g')
+      if [ -n "$BRAVE_API_KEY" ]; then
+        curl -sf "https://api.search.brave.com/res/v1/web/search?q=$(echo "$query" | jq -sRr @uri)&count=10&freshness=pd" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          | jq -c '[.web.results[]? | {title:.title, url:.url, source:"Web", score:0}]' 2>/dev/null || echo '[]'
+      else
+        echo '[]'
+      fi
+
+  - id: combine-and-dedup
+    command: |
+      hn=$(cat <<'HNEOF'
+      $fetch-hn.stdout
+      HNEOF
+      )
+      search=$(cat <<'SEARCHEOF'
+      $search-topics.stdout
+      SEARCHEOF
+      )
+      echo "$hn" > /tmp/lb_nd_hn.json
+      echo "$search" > /tmp/lb_nd_search.json
+      max=${max_articles}
+      jq -sc --argjson max "$max" '
+        .[0] + .[1] |
+        unique_by(.title | ascii_downcase | .[0:50]) |
+        sort_by(-.score) |
+        .[0:$max]
+      ' /tmp/lb_nd_hn.json /tmp/lb_nd_search.json
+      rm -f /tmp/lb_nd_hn.json /tmp/lb_nd_search.json
+
+  - id: format-digest
+    stdin: $combine-and-dedup.stdout
+    command: |
+      cat > /tmp/lb_nd_combined.json
+      today=$(date '+%A, %b %d')
+      count=$(jq 'length' /tmp/lb_nd_combined.json)
+      echo "☀️ **Morning News Digest**"
+      echo "_${today}_"
+      echo ""
+      jq -r '.[] | "• [\(.source)] \(.title)\n  \(.url)"' /tmp/lb_nd_combined.json
+      echo ""
+      echo "---"
+      echo "_${count} articles from HN + web search_"
+      # NOTE: To add LLM summarization, pipe /tmp/lb_nd_combined.json to
+      # an LLM API (e.g., clawd.invoke) for grouping and summarization
+      rm -f /tmp/lb_nd_combined.json

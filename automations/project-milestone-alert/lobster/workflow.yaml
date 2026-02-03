@@ -1,0 +1,114 @@
+# Lobster workflow: project-milestone-alert
+# Track project milestones via GitHub and alert on status
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repos":"owner/repo","github_token":""}'
+#
+# Requires: curl, jq
+
+name: project-milestone-alert
+description: Track project milestones and alert on completion or delays
+
+args:
+  repos:
+    description: "Comma-separated GitHub repos to check milestones (owner/repo)"
+    default: "openclaw/lobster"
+  github_token:
+    description: "GitHub token for API access (optional, for private repos)"
+    default: ""
+  state_file:
+    description: "File to track previously seen milestone states"
+    default: "/tmp/clawflows-milestone-state.json"
+
+steps:
+  - id: fetch-milestones
+    command: |
+      auth_header=""
+      if [ -n "${github_token}" ]; then
+        auth_header="-H \"Authorization: Bearer ${github_token}\""
+      fi
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+      for repo in $(echo "${repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        # Fetch open milestones
+        curl -sf -H "Accept: application/vnd.github+json" \
+          ${auth_header} \
+          "https://api.github.com/repos/$repo/milestones?state=all&per_page=10&sort=due_on&direction=desc" 2>/dev/null \
+          | jq -c --arg r "$repo" '[.[] | {
+              repo: $r,
+              title: .title,
+              state: .state,
+              due_on: .due_on,
+              open_issues: .open_issues,
+              closed_issues: .closed_issues,
+              progress: (if (.open_issues + .closed_issues) > 0 then ((.closed_issues * 100) / (.open_issues + .closed_issues) | round) else 0 end),
+              url: .html_url
+            }]' > /tmp/lb_ms_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_ms_chunk.json
+        jq -sc '.[0]+.[1]' "$tmpf" /tmp/lb_ms_chunk.json > /tmp/lb_ms_merged.json
+        mv /tmp/lb_ms_merged.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_ms_chunk.json
+
+  - id: check-status
+    stdin: $fetch-milestones.stdout
+    command: |
+      cat > /tmp/lb_ms_all.json
+      prev=$(cat "${state_file}" 2>/dev/null || echo '{}')
+      echo "$prev" > /tmp/lb_ms_prev.json
+
+      jq -c --slurpfile prev /tmp/lb_ms_prev.json '
+        ($prev[0] // {}) as $old |
+        [.[] | . + {
+          id: "\(.repo):\(.title)",
+          prev_progress: ($old["\(.repo):\(.title)"].progress // null),
+          is_overdue: (if .due_on then (.due_on < (now | strftime("%Y-%m-%dT%H:%M:%SZ"))) else false end),
+          newly_closed: (.state == "closed" and ($old["\(.repo):\(.title)"].state // "open") == "open")
+        }] as $enriched |
+        {
+          milestones: $enriched,
+          overdue: [$enriched[] | select(.is_overdue and .state == "open")],
+          completed: [$enriched[] | select(.newly_closed)],
+          in_progress: [$enriched[] | select(.state == "open" and .progress > 0)]
+        }
+      ' /tmp/lb_ms_all.json
+      rm -f /tmp/lb_ms_all.json /tmp/lb_ms_prev.json
+
+  - id: save-state
+    stdin: $check-status.stdout
+    command: |
+      cat > /tmp/lb_ms_status.json
+      jq '[.milestones[] | {key: .id, value: {progress: .progress, state: .state}}] | from_entries' \
+        /tmp/lb_ms_status.json > "${state_file}"
+      cat /tmp/lb_ms_status.json
+      rm -f /tmp/lb_ms_status.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        "🎯 **Project Milestone Report**\n" +
+
+        if (.completed|length) > 0 then
+          "\n✅ **Newly Completed:**\n" +
+          (.completed | map("  • " + .repo + " → " + .title) | join("\n")) + "\n"
+        else "" end +
+
+        if (.overdue|length) > 0 then
+          "\n⚠️ **Overdue:**\n" +
+          (.overdue | map("  • " + .repo + " → " + .title + " (" + (.progress|tostring) + "% done, due: " + (.due_on[:10] // "unknown") + ")") | join("\n")) + "\n"
+        else "" end +
+
+        if (.in_progress|length) > 0 then
+          "\n📊 **In Progress:**\n" +
+          (.in_progress | map("  • " + .repo + " → " + .title + " (" + (.progress|tostring) + "%)") | join("\n")) + "\n"
+        else "" end +
+
+        if (.milestones|length) == 0 then
+          "No milestones found for the specified repos."
+        else
+          "\n_Tracking " + (.milestones|length|tostring) + " milestone(s)_"
+        end
+      '

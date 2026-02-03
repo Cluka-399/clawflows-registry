@@ -1,0 +1,107 @@
+# Lobster workflow: repeat-task-detector
+# Analyze agent activity logs to find repetitive patterns
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"memory_path":"/data/clawd/memory","days_to_analyze":"14","min_occurrences":"3"}'
+#
+# Requires: jq
+#
+# NOTE: The original automation uses LLM analysis to extract tasks from logs.
+# This Lobster version does concrete data collection (grep-based pattern detection)
+# from markdown logs. For deeper semantic analysis, pipe the output to an LLM.
+
+name: repeat-task-detector
+description: Analyze agent activity logs to find repetitive patterns that could be automated
+
+args:
+  memory_path:
+    description: "Path to agent memory/logs directory"
+    default: "/data/clawd/memory"
+  days_to_analyze:
+    description: "How many days of logs to scan"
+    default: "14"
+  min_occurrences:
+    description: "Minimum times a pattern must appear to be reported"
+    default: "3"
+
+steps:
+  - id: collect-logs
+    command: |
+      mem="${memory_path}"
+      days="${days_to_analyze}"
+      if [ ! -d "$mem" ]; then
+        echo '{"error":"memory path not found","files":0,"content":""}'
+        exit 0
+      fi
+      # Find recent daily log files (YYYY-MM-DD.md format)
+      cutoff=$(date -d "-${days} days" +%Y-%m-%d 2>/dev/null || date -v-${days}d +%Y-%m-%d 2>/dev/null || echo "2020-01-01")
+      files=$(find "$mem" -maxdepth 1 -name "????-??-??.md" -type f | sort -r | head -n "$days")
+      count=$(echo "$files" | grep -c . || echo 0)
+      if [ "$count" -eq 0 ] || [ -z "$files" ]; then
+        echo '{"files":0,"lines":[]}'
+        exit 0
+      fi
+      # Extract action-like lines from logs (bullets, commands, tasks)
+      echo "$files" | xargs grep -hE '^\s*[-*•]\s+' 2>/dev/null \
+        | sed 's/^[ \t]*[-*•][ \t]*//' \
+        | grep -iE '(check|search|fetch|send|read|write|update|monitor|alert|email|calendar|deploy|push|pull|run|post|tweet|notify|scan|review)' \
+        | jq -R '.' | jq -sc --argjson n "$count" '{files: $n, lines: .}'
+
+  - id: find-patterns
+    stdin: $collect-logs.stdout
+    command: |
+      cat > /tmp/lb_rt_logs.json
+      min_occ="${min_occurrences}"
+      jq -c --argjson min "$min_occ" '
+        .files as $filecount |
+        if (.lines | length) == 0 then
+          {patterns: [], candidates: [], file_count: $filecount}
+        else
+          # Normalize lines: lowercase, strip specifics (dates, numbers, urls)
+          [.lines[] |
+            gsub("\\d{4}-\\d{2}-\\d{2}"; "DATE") |
+            gsub("\\d{1,2}:\\d{2}"; "TIME") |
+            gsub("https?://[^\\s]+"; "URL") |
+            gsub("\\d+"; "N") |
+            ascii_downcase
+          ] |
+          # Count occurrences of each normalized pattern
+          group_by(.) | map({pattern: .[0], count: length}) |
+          sort_by(-.count) |
+          [.[] | select(.count >= $min)] |
+          {
+            patterns: .,
+            candidates: [.[] | select(.count >= ($min * 2)) | . + {suggestion: "High frequency - strong automation candidate"}],
+            file_count: $filecount
+          }
+        end
+      ' /tmp/lb_rt_logs.json
+      rm -f /tmp/lb_rt_logs.json
+
+  - id: report
+    stdin: $find-patterns.stdout
+    command: |
+      cat > /tmp/lb_rt_patterns.json
+      # NOTE: For deeper semantic analysis of what tasks to automate,
+      # pipe this JSON output to an LLM with a prompt like:
+      # "Analyze these repeated patterns and suggest specific automations"
+      min_occ="${min_occurrences}"
+      jq -r --arg minocc "$min_occ" '
+        "🔄 **Repeat Task Analysis**\n" +
+        "_Scanned " + (.file_count|tostring) + " days of logs_\n" +
+
+        if (.patterns|length) == 0 then
+          "\nNo significant repeat patterns found (min threshold: " + $minocc + ")."
+        else
+          "\n**Found " + (.patterns|length|tostring) + " repeated pattern(s):**\n" +
+          (.patterns[:10] | to_entries | map(
+            (.value.count|tostring) + "x  " + .value.pattern
+          ) | join("\n")) +
+
+          if (.candidates|length) > 0 then
+            "\n\n💡 **Top Automation Candidates:**\n" +
+            (.candidates[:5] | map("  → " + .pattern + " (" + (.count|tostring) + "x)") | join("\n"))
+          else "" end
+        end
+      ' /tmp/lb_rt_patterns.json
+      rm -f /tmp/lb_rt_patterns.json

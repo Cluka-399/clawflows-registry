@@ -1,0 +1,75 @@
+# Lobster workflow: email-digest
+# Fetches unread emails from AgentMail and produces a categorized digest
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"priority_senders":"danny@animaapp.com,dannyshmueli@gmail.com"}'
+#
+# Requires: jq, curl
+# Env: AGENTMAIL_API_KEY, AGENTMAIL_INBOX (defaults to cluka@agentmail.to)
+
+name: email-digest
+description: Summarize unread emails into a daily digest
+
+args:
+  max_emails:
+    description: "Maximum emails to include"
+    default: "20"
+  priority_senders:
+    description: "Comma-separated email addresses to highlight"
+    default: ""
+  inbox:
+    description: "AgentMail inbox address"
+    default: "cluka@agentmail.to"
+
+steps:
+  - id: fetch-emails
+    command: |
+      curl -sf "https://api.agentmail.to/v0/inboxes/${inbox}/messages?limit=${max_emails}" \
+        -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+        -H "Accept: application/json" \
+        | jq -c '[.messages[]? | {id:.id, from:(.from // .sender // "unknown"), subject:(.subject // "(no subject)"), preview:(.text // .body // "" | .[0:100]), date:(.date // .created_at // "")}]' \
+        2>/dev/null || echo '[]'
+
+  - id: categorize
+    stdin: $fetch-emails.stdout
+    command: |
+      cat > /tmp/lb_emails.json
+      priority_list=$(echo "${priority_senders}" | tr ',' '\n' | tr '[:upper:]' '[:lower:]' | jq -Rsc 'split("\n") | map(select(length>0))')
+      jq -c --argjson priority "$priority_list" '
+        . as $all |
+        [.[] | select(
+          (.from | ascii_downcase) as $f |
+          any($priority[]; . != "" and ($f | contains(.)))
+        )] as $pri |
+        [.[] | select(
+          (.from | ascii_downcase) as $f |
+          (any($priority[]; . != "" and ($f | contains(.))) | not)
+        )] as $reg |
+        {priority: $pri, regular: $reg, total: ($all | length)}
+      ' /tmp/lb_emails.json
+      rm -f /tmp/lb_emails.json
+
+  - id: format-digest
+    stdin: $categorize.stdout
+    command: |
+      cat > /tmp/lb_cat.json
+      total=$(jq '.total' /tmp/lb_cat.json)
+      if [ "$total" = "0" ]; then
+        echo "📧 No unread emails."
+      else
+        echo "📧 **Email Digest** (${total} unread)"
+        echo ""
+        pri_count=$(jq '.priority | length' /tmp/lb_cat.json)
+        if [ "$pri_count" != "0" ]; then
+          echo "**⭐ Priority:**"
+          jq -r '.priority[] | "• \(.from): \(.subject)"' /tmp/lb_cat.json
+          echo ""
+        fi
+        echo "**Other:**"
+        jq -r '.regular[:10][] | "• \(.from): \(.subject)"' /tmp/lb_cat.json
+        overflow=$(jq '.regular | length - 10 | if . > 0 then . else 0 end' /tmp/lb_cat.json)
+        if [ "$overflow" != "0" ]; then
+          echo "...and ${overflow} more"
+        fi
+      fi
+      rm -f /tmp/lb_cat.json

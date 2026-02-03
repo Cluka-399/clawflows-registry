@@ -1,0 +1,85 @@
+# Lobster workflow: daily-standup-prep
+# Gathers git commits from yesterday + calendar to prepare standup
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"git_repos":"/data/clawd"}'
+#
+# Requires: git, date
+
+name: daily-standup-prep
+description: Prepare your daily standup by summarizing recent git activity
+
+args:
+  git_repos:
+    description: "Comma-separated paths to git repos"
+    default: "/data/clawd"
+  include_calendar:
+    description: "Include today's meetings (true/false)"
+    default: "true"
+  author_email:
+    description: "Git author email to filter commits (empty = all)"
+    default: ""
+
+steps:
+  - id: get-commits
+    command: |
+      yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+      found_any=false
+      > /tmp/lb_prep_commits.txt
+      for repo in $(echo "${git_repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        cd "$repo" 2>/dev/null || continue
+        reponame=$(basename "$(pwd)")
+        author_flag=""
+        if [ -n "${author_email}" ]; then
+          author_flag="--author=${author_email}"
+        fi
+        commits=$(git log --since="$yesterday" --oneline $author_flag 2>/dev/null | head -10)
+        if [ -n "$commits" ]; then
+          echo "=== ${reponame} ===" >> /tmp/lb_prep_commits.txt
+          echo "$commits" >> /tmp/lb_prep_commits.txt
+          echo "" >> /tmp/lb_prep_commits.txt
+          found_any=true
+        fi
+      done
+      if [ "$found_any" = "false" ]; then
+        echo "No commits found since ${yesterday}" > /tmp/lb_prep_commits.txt
+      fi
+      echo "done"
+
+  - id: get-calendar
+    command: |
+      if [ "${include_calendar}" != "true" ]; then
+        echo "(calendar disabled)" > /tmp/lb_prep_cal.txt
+        echo "done"
+        exit 0
+      fi
+      if [ -x /data/clawd/.venv-gcal/bin/gcalcli ]; then
+        TZ=Asia/Jerusalem /data/clawd/.venv-gcal/bin/gcalcli agenda --nocolor --nostarted 2>/dev/null > /tmp/lb_prep_cal.txt || echo "(calendar unavailable)" > /tmp/lb_prep_cal.txt
+      else
+        echo "(gcalcli not available)" > /tmp/lb_prep_cal.txt
+      fi
+      echo "done"
+
+  - id: format-standup
+    command: |
+      today=$(date '+%A, %b %d')
+      echo "📋 **Daily Standup Prep**"
+      echo "_${today}_"
+      echo ""
+      echo "**Yesterday's commits:**"
+      sed 's/^/  /' /tmp/lb_prep_commits.txt
+      echo ""
+      echo "**Today's meetings:**"
+      if grep -qv 'unavailable\|not available\|disabled' /tmp/lb_prep_cal.txt 2>/dev/null; then
+        grep -v '^$' /tmp/lb_prep_cal.txt | head -5 | sed 's/^/• /'
+      else
+        echo "• No meetings or calendar unavailable"
+      fi
+      echo ""
+      echo "**Template:**"
+      echo "• Yesterday I..."
+      echo "• Today I will..."
+      echo "• Blockers:"
+      rm -f /tmp/lb_prep_commits.txt /tmp/lb_prep_cal.txt
