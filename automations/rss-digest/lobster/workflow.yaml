@@ -1,0 +1,118 @@
+# Lobster workflow: rss-digest
+# Aggregate multiple RSS feeds into a digest
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"feeds":"https://hnrss.org/frontpage,https://feeds.arstechnica.com/arstechnica/index"}'
+#
+# Requires: curl, python3, jq
+
+name: rss-digest
+description: Aggregate multiple RSS feeds into a digest
+
+args:
+  feeds:
+    description: "Comma-separated list of RSS feed URLs"
+  max_items_per_feed:
+    default: "5"
+
+steps:
+  - id: fetch-feeds
+    command: |
+      tmpdir="/tmp/lb_rss_feeds"
+      rm -rf "$tmpdir"
+      mkdir -p "$tmpdir"
+      feed_num=0
+      for feed_url in $(echo "${feeds}" | tr ',' ' '); do
+        feed_url=$(echo "$feed_url" | xargs)
+        [ -z "$feed_url" ] && continue
+        feed_num=$((feed_num + 1))
+        curl -sf -L --max-time 15 \
+          -H "User-Agent: ClawFlows/1.0" \
+          -H "Accept: application/rss+xml, application/xml, text/xml" \
+          "$feed_url" > "$tmpdir/feed_$feed_num.xml" 2>/dev/null || true
+      done
+      echo "$feed_num feeds fetched"
+
+  - id: parse-feeds
+    command: |
+      MAX_ITEMS=${max_items_per_feed} python3 << 'PYEOF'
+      import xml.etree.ElementTree as ET
+      import os, json
+
+      tmpdir = '/tmp/lb_rss_feeds'
+      max_items = int(os.environ.get('MAX_ITEMS', '5'))
+      items = []
+      feed_names = []
+
+      for f in sorted(os.listdir(tmpdir)):
+          if not f.endswith('.xml'):
+              continue
+          path = os.path.join(tmpdir, f)
+          if os.path.getsize(path) == 0:
+              continue
+          try:
+              tree = ET.parse(path)
+              root = tree.getroot()
+              count = 0
+              feed_title = ''
+
+              # RSS 2.0
+              channel = root.find('.//channel')
+              if channel is not None:
+                  feed_title = (channel.findtext('title') or '').strip()
+
+              for item in root.iter('item'):
+                  if count >= max_items:
+                      break
+                  title = (item.findtext('title') or '').strip()
+                  link = (item.findtext('link') or '').strip()
+                  if title and link:
+                      items.append({'title': title, 'link': link, 'feed': feed_title or f})
+                      count += 1
+
+              # Atom fallback
+              if count == 0:
+                  ns = 'http://www.w3.org/2005/Atom'
+                  ft = root.find('{%s}title' % ns)
+                  if ft is not None:
+                      feed_title = (ft.text or '').strip()
+                  for entry in root.iter('{%s}entry' % ns):
+                      if count >= max_items:
+                          break
+                      title_el = entry.find('{%s}title' % ns)
+                      title = (title_el.text or '').strip() if title_el is not None else ''
+                      link_el = entry.find('{%s}link' % ns)
+                      link = link_el.get('href', '') if link_el is not None else ''
+                      if title and link:
+                          items.append({'title': title, 'link': link, 'feed': feed_title or f})
+                          count += 1
+
+              if feed_title:
+                  feed_names.append(feed_title)
+          except Exception:
+              continue
+
+      result = {'items': items[:20], 'count': len(items), 'feeds': feed_names}
+      with open('/tmp/lb_rss_result.json', 'w') as fout:
+          json.dump(result, fout)
+      print(json.dumps(result))
+      PYEOF
+
+  - id: report
+    stdin: $parse-feeds.stdout
+    command: |
+      cat > /tmp/lb_rss_parsed.json
+      jq -r '
+        if .count == 0 then
+          "No items found in feeds."
+        else
+          "📰 RSS Digest — \(.count) items from \(.feeds | length) feed(s)\n" +
+          if (.feeds | length) > 0 then "Sources: " + (.feeds | join(", ")) + "\n" else "" end +
+          "\n" +
+          (.items | to_entries | map(
+            "  \(.key + 1). \(.value.title)\n     \(.value.link)"
+          ) | join("\n\n"))
+        end
+      ' /tmp/lb_rss_parsed.json
+      rm -f /tmp/lb_rss_parsed.json /tmp/lb_rss_result.json
+      rm -rf /tmp/lb_rss_feeds

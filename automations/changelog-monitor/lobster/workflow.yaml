@@ -1,0 +1,63 @@
+# Lobster workflow: changelog-monitor
+# Monitors GitHub releases for specified repos
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"repos":"jqlang/jq,nodejs/node"}'
+#
+# Requires: jq, curl
+
+name: changelog-monitor
+description: Monitor GitHub releases and changelogs for projects you use
+
+args:
+  repos:
+    description: "Comma-separated GitHub repos (owner/repo)"
+  state_file:
+    default: "/tmp/clawflows-changelog-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: fetch-releases
+    command: |
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+      for repo in $(echo "${repos}" | tr ',' ' '); do
+        repo=$(echo "$repo" | xargs)
+        [ -z "$repo" ] && continue
+        curl -sf -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/$repo/releases?per_page=3" \
+          | jq -c --arg r "$repo" \
+            '[.[] | {repo:$r, tag:.tag_name, name:(.name//.tag_name), url:.html_url, prerelease:.prerelease}]' \
+          > /tmp/lb_chunk.json 2>/dev/null || echo '[]' > /tmp/lb_chunk.json
+        jq -sc '.[0]+.[1]' "$tmpf" /tmp/lb_chunk.json > /tmp/lb_merged.json
+        mv /tmp/lb_merged.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_chunk.json
+
+  - id: find-new
+    stdin: $fetch-releases.stdout
+    command: |
+      cat > /tmp/lb_releases.json
+      seen=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      jq -c --argjson seen "$seen" '
+        ($seen | if type=="array" then . else [] end | map({(.):1}) | add // {}) as $idx |
+        [.[] | select(.prerelease!=true) | .+{id:"\(.repo):\(.tag)"} | select($idx[.id]==null)] as $new |
+        {new: $new, seen: ([$seen[], ($new[]|.id)] | unique | .[-500:]), count: ($new|length)}
+      ' /tmp/lb_releases.json
+      rm -f /tmp/lb_releases.json
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      cat > /tmp/lb_findnew.json
+      jq '.seen' /tmp/lb_findnew.json > "${state_file}"
+      cat /tmp/lb_findnew.json
+      rm -f /tmp/lb_findnew.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r 'if .count==0 then "No new releases." else "📦 \(.count) new release(s)\n\n"+(.new|map("• \(.repo) → \(.tag)\n  \(.url)")|join("\n\n")) end'

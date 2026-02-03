@@ -1,0 +1,101 @@
+# Lobster workflow: api-health-check
+# Monitors API endpoint health with status codes and latency tracking
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"endpoints":"https://api.example.com,https://other.api/health"}'
+#
+# Requires: jq, curl
+
+name: api-health-check
+description: Comprehensive API health monitoring with endpoint validation
+
+args:
+  endpoints:
+    description: "Comma-separated endpoint URLs to check"
+  timeout:
+    description: "Request timeout in seconds"
+    default: "5"
+  state_file:
+    default: "/tmp/clawflows-api-health-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: check-endpoints
+    command: |
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+      for url in $(echo "${endpoints}" | tr ',' ' '); do
+        url=$(echo "$url" | xargs)
+        [ -z "$url" ] && continue
+        result=$(curl -o /dev/null -s -w '%{http_code} %{time_total}' \
+          --max-time ${timeout} "$url" 2>/dev/null) || result="000 0.000"
+        code=$(echo "$result" | awk '{print $1}')
+        latency=$(echo "$result" | awk '{print $2}')
+        healthy="false"
+        if [ "$code" -ge 200 ] && [ "$code" -lt 300 ] 2>/dev/null; then
+          healthy="true"
+        fi
+        jq -nc --arg url "$url" --arg code "$code" --arg latency "$latency" --argjson healthy "$healthy" \
+          '{url:$url, status:($code|tonumber), latency:$latency, healthy:$healthy}' > /tmp/lb_ep.json
+        jq -sc '.[0]+[.[1]]' "$tmpf" /tmp/lb_ep.json > /tmp/lb_ep_merged.json
+        mv /tmp/lb_ep_merged.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_ep.json
+
+  - id: analyze
+    stdin: $check-endpoints.stdout
+    command: |
+      cat > /tmp/lb_health_results.json
+      prev=$(cat "${state_file}" 2>/dev/null || echo '{}')
+      echo "$prev" > /tmp/lb_health_prev.json
+      jq -c --slurpfile prev /tmp/lb_health_prev.json '
+        ($prev[0] // {}) as $old |
+        [.[] | . + {
+          was_healthy: (if $old[.url] then $old[.url].healthy else true end),
+          alert: (
+            ($old[.url] // null) as $prev_entry |
+            ($prev_entry | if . == null then true else .healthy end) as $prev_healthy |
+            if .healthy and ($prev_healthy | not) then "recovered"
+            elif (.healthy | not) and $prev_healthy then "down"
+            else null end
+          )
+        }] |
+        {
+          results: .,
+          alerts: [.[] | select(.alert != null)],
+          healthy_count: ([.[] | select(.healthy)] | length),
+          total_count: length,
+          all_healthy: (all(.healthy))
+        }
+      ' /tmp/lb_health_results.json
+      rm -f /tmp/lb_health_results.json /tmp/lb_health_prev.json
+
+  - id: save-state
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_health_analysis.json
+      jq '{results: [.results[] | {(.url): {healthy: .healthy, status: .status, last_check: now}}]} | .results | add // {}' \
+        /tmp/lb_health_analysis.json > "${state_file}"
+      cat /tmp/lb_health_analysis.json
+      rm -f /tmp/lb_health_analysis.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        "🏥 API Health Check — \(.healthy_count)/\(.total_count) healthy\n" +
+        (.results | map(
+          (if .healthy then "🟢" else "🔴" end) +
+          " \(.url) — HTTP \(.status) (\(.latency)s)"
+        ) | join("\n")) +
+        if (.alerts | length) > 0 then
+          "\n\n⚠️ Alerts:\n" +
+          (.alerts | map(
+            if .alert == "down" then "🔴 DOWN: \(.url) — HTTP \(.status)"
+            else "🟢 RECOVERED: \(.url)" end
+          ) | join("\n"))
+        else "" end
+      '

@@ -11,8 +11,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/ab-test-automator/"
     },
     {
@@ -26,8 +27,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/affiliate-builder/"
     },
     {
@@ -41,8 +43,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/agent-drift-detector/"
     },
     {
@@ -59,8 +62,9 @@
         "monitoring",
         "devops"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": true,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/api-health-check/"
     },
     {
@@ -77,8 +81,9 @@
         "reviews",
         "mobile"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/app-store-reviews/"
     },
     {
@@ -94,8 +99,9 @@
         "papers",
         "ai"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/arxiv-paper-scout/"
     },
     {
@@ -108,8 +114,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/attribution-detective/"
     },
     {
@@ -125,8 +132,9 @@
         "social",
         "analytics"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/audience-growth-report/"
     },
     {
@@ -140,8 +148,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/backlink-hunter/"
     },
     {
@@ -156,8 +165,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/bill-due-reminder/"
     },
     {
@@ -171,8 +181,9 @@
         "capability: social-search"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/bitcoin-tracker/"
     },
     {
@@ -187,8 +198,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/bookmark-organizer/"
     },
     {
@@ -196,14 +208,15 @@
       "description": "Remind yourself to take regular breaks (Pomodoro-style)",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": [],
+      "requires": "[]",
       "tags": [
         "health",
         "productivity",
         "pomodoro"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/break-reminder/"
     },
     {
@@ -218,8 +231,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/budget-tracker/"
     },
     {
@@ -236,8 +250,9 @@
         "github",
         "releases"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": true,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/changelog-monitor/"
     },
     {
@@ -253,8 +268,9 @@
         "ci-cd",
         "monitoring"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/cicd-status-monitor/"
     },
     {
@@ -270,8 +286,9 @@
         "quality",
         "linting"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/code-quality-report/"
     },
     {
@@ -286,8 +303,9 @@
       "tags": [
         "developer"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/code-review-reminder/"
     },
     {
@@ -301,8 +319,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/cold-email-personalizer/"
     },
     {
@@ -318,8 +337,9 @@
         "social",
         "moderation"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/comment-moderator/"
     },
     {
@@ -332,8 +352,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/community-infiltrator/"
     },
     {
@@ -347,8 +368,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/competitor-shadow/"
     },
     {
@@ -364,8 +386,9 @@
         "social",
         "content"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/content-calendar/"
     },
     {
@@ -380,8 +403,9 @@
         "social",
         "content"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/content-repurposer/"
     },
     {
@@ -395,8 +419,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/content-syndication/"
     },
     {
@@ -412,8 +437,9 @@
         "productivity",
         "developer"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/context-switcher/"
     },
     {
@@ -429,8 +455,9 @@
         "finance",
         "crypto"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/crypto-dca-reminder/"
     },
     {
@@ -447,8 +474,9 @@
         "finance",
         "portfolio"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/crypto-portfolio/"
     },
     {
@@ -456,14 +484,15 @@
       "description": "Start your day with a positive affirmation",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": [],
+      "requires": "[]",
       "tags": [
         "wellness",
         "motivation",
         "daily"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/daily-affirmation/"
     },
     {
@@ -478,8 +507,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/daily-news-digest/"
     },
     {
@@ -496,8 +526,9 @@
         "productivity",
         "developer"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/daily-standup-generator/"
     },
     {
@@ -514,8 +545,9 @@
         "standup",
         "daily"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/daily-standup-prep/"
     },
     {
@@ -531,8 +563,9 @@
         "developer",
         "devops"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/database-backup-verifier/"
     },
     {
@@ -547,8 +580,9 @@
       "tags": [
         "productivity"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/deadline-tracker/"
     },
     {
@@ -563,8 +597,9 @@
       "tags": [
         "productivity"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/deep-work-protector/"
     },
     {
@@ -580,8 +615,9 @@
         "developer",
         "security"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/dependency-updater/"
     },
     {
@@ -597,8 +633,9 @@
         "developer",
         "security"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/docker-image-scanner/"
     },
     {
@@ -614,8 +651,9 @@
         "monitoring",
         "business"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/domain-expiry-monitor/"
     },
     {
@@ -631,8 +669,9 @@
         "productivity",
         "digest"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/email-digest/"
     },
     {
@@ -648,8 +687,9 @@
         "social",
         "analytics"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/engagement-analyzer/"
     },
     {
@@ -663,8 +703,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/event-hijacker/"
     },
     {
@@ -680,8 +721,9 @@
         "health",
         "fitness"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/exercise-tracker/"
     },
     {
@@ -696,8 +738,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/expense-categorizer/"
     },
     {
@@ -713,8 +756,9 @@
         "expenses",
         "budget"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/expense-tracker/"
     },
     {
@@ -729,8 +773,9 @@
         "health",
         "ergonomics"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/eye-strain-break/"
     },
     {
@@ -744,8 +789,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/financial-snapshot/"
     },
     {
@@ -761,8 +807,9 @@
         "productivity",
         "calendar"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/focus-mode-scheduler/"
     },
     {
@@ -776,8 +823,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/focus-time-report/"
     },
     {
@@ -792,8 +840,9 @@
       "tags": [
         "social"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/follower-milestone/"
     },
     {
@@ -809,8 +858,9 @@
         "git",
         "cleanup"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/git-branch-cleaner/"
     },
     {
@@ -825,8 +875,9 @@
         "developer",
         "maintenance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/git-stale-branch-cleaner/"
     },
     {
@@ -839,8 +890,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/github-stale-prs/"
     },
     {
@@ -856,8 +908,9 @@
         "github",
         "trending"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/github-trending/"
     },
     {
@@ -873,8 +926,9 @@
         "health",
         "productivity"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/habit-streaks/"
     },
     {
@@ -890,8 +944,9 @@
         "social",
         "marketing"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/hashtag-researcher/"
     },
     {
@@ -904,8 +959,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/hn-timing-bot/"
     },
     {
@@ -920,8 +976,9 @@
       "tags": [
         "health"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/hydration-reminder/"
     },
     {
@@ -935,8 +992,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/inbox-zero-helper/"
     },
     {
@@ -950,8 +1008,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/influencer-outreach/"
     },
     {
@@ -967,8 +1026,9 @@
         "finance",
         "business"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/invoice-reminder/"
     },
     {
@@ -982,8 +1042,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/launch-blitz/"
     },
     {
@@ -997,8 +1058,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/learning-digest/"
     },
     {
@@ -1014,8 +1076,9 @@
         "developer",
         "monitoring"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/log-analyzer/"
     },
     {
@@ -1030,8 +1093,9 @@
         "health",
         "planning"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/meal-planner/"
     },
     {
@@ -1046,8 +1110,9 @@
       "tags": [
         "health"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/medication-reminder/"
     },
     {
@@ -1062,8 +1127,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/meeting-prep/"
     },
     {
@@ -1079,8 +1145,9 @@
         "productivity",
         "meetings"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/meeting-prep-assistant/"
     },
     {
@@ -1094,8 +1161,9 @@
         "message"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/molt-price-alert/"
     },
     {
@@ -1111,8 +1179,9 @@
         "health",
         "wellness"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/mood-tracker/"
     },
     {
@@ -1126,8 +1195,9 @@
         "capability: tts"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": true,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/morning-brief/"
     },
     {
@@ -1141,8 +1211,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/newsletter-growth/"
     },
     {
@@ -1158,8 +1229,9 @@
         "developer",
         "security"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/npm-audit-scheduler/"
     },
     {
@@ -1173,8 +1245,9 @@
         "email"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/partnership-scout/"
     },
     {
@@ -1190,8 +1263,9 @@
         "developer",
         "performance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/performance-benchmark/"
     },
     {
@@ -1208,8 +1282,9 @@
         "podcasts",
         "entertainment"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/podcast-tracker/"
     },
     {
@@ -1224,8 +1299,9 @@
       "tags": [
         "social"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/post-scheduler/"
     },
     {
@@ -1240,8 +1316,9 @@
         "health",
         "ergonomics"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/posture-check/"
     },
     {
@@ -1256,8 +1333,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/pr-newsjacking/"
     },
     {
@@ -1271,8 +1349,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/pricing-intelligence/"
     },
     {
@@ -1288,8 +1367,9 @@
         "startups",
         "daily"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/product-hunt-daily/"
     },
     {
@@ -1305,8 +1385,9 @@
         "productivity",
         "projects"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/project-milestone-alert/"
     },
     {
@@ -1320,8 +1401,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/repeat-task-detector/"
     },
     {
@@ -1335,8 +1417,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/review-defense/"
     },
     {
@@ -1352,8 +1435,9 @@
         "news",
         "rss"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": true,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/rss-digest/"
     },
     {
@@ -1368,8 +1452,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/savings-goal-tracker/"
     },
     {
@@ -1385,8 +1470,9 @@
         "developer",
         "security"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/security-advisory-monitor/"
     },
     {
@@ -1400,8 +1486,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/seo-gap-assassin/"
     },
     {
@@ -1416,8 +1503,9 @@
       "tags": [
         "health"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/sleep-schedule-optimizer/"
     },
     {
@@ -1433,8 +1521,9 @@
         "social",
         "analytics"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/social-engagement-tracker/"
     },
     {
@@ -1450,8 +1539,9 @@
         "marketing",
         "mentions"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/social-mentions/"
     },
     {
@@ -1465,8 +1555,9 @@
         "file_system"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/social-proof-collector/"
     },
     {
@@ -1482,8 +1573,9 @@
         "ssl",
         "monitoring"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/ssl-certificate-monitor/"
     },
     {
@@ -1497,8 +1589,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/standup-notes/"
     },
     {
@@ -1514,8 +1607,9 @@
         "finance",
         "investing"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/stock-watchlist-alert/"
     },
     {
@@ -1530,8 +1624,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/subscription-auditor/"
     },
     {
@@ -1544,8 +1639,9 @@
         "messaging"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/support-to-content/"
     },
     {
@@ -1561,8 +1657,9 @@
         "productivity",
         "tasks"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/task-prioritizer/"
     },
     {
@@ -1577,8 +1674,9 @@
       "tags": [
         "finance"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/tax-document-organizer/"
     },
     {
@@ -1594,8 +1692,9 @@
         "developer",
         "quality"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/test-coverage-monitor/"
     },
     {
@@ -1610,8 +1709,9 @@
         "productivity",
         "calendar"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/time-block-optimizer/"
     },
     {
@@ -1627,8 +1727,9 @@
         "social",
         "marketing"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/trending-topic-alert/"
     },
     {
@@ -1645,8 +1746,9 @@
         "uptime",
         "devops"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": true,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/uptime-monitor/"
     },
     {
@@ -1654,14 +1756,15 @@
       "description": "Periodic reminders to stay hydrated",
       "author": "cluka",
       "version": "1.0.0",
-      "requires": [],
+      "requires": "[]",
       "tags": [
         "health",
         "wellness",
         "reminder"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/water-reminder/"
     },
     {
@@ -1677,8 +1780,9 @@
         "commute",
         "daily"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/weather-commute/"
     },
     {
@@ -1693,8 +1797,9 @@
         "capability: notifications"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/weekly-retro-generator/"
     },
     {
@@ -1710,8 +1815,9 @@
       "tags": [
         "productivity"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/weekly-review-generator/"
     },
     {
@@ -1725,8 +1831,9 @@
       "tags": [
         "health"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/wellness-weekly-report/"
     },
     {
@@ -1746,8 +1853,9 @@
         "tts",
         "x-twitter"
       ],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/x-audio-brief/"
     },
     {
@@ -1761,10 +1869,12 @@
         "capability: chart-generation"
       ],
       "tags": [],
-      "created": "2026-02-02",
-      "updated": "2026-02-02",
+      "lobster_ready": false,
+      "created": "2026-01-31",
+      "updated": "2026-02-03",
       "url": "/automations/youtube-competitor-tracker/"
     }
   ],
-  "count": 109
+  "count": 109,
+  "lobster_ready": 5
 }

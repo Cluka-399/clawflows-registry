@@ -1,0 +1,103 @@
+# Lobster workflow: uptime-monitor
+# Monitors website uptime and response times, alerts on status changes
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"urls":"https://example.com,https://other.com"}'
+#
+# Requires: jq, curl
+
+name: uptime-monitor
+description: Monitor website uptime and response times
+
+args:
+  urls:
+    description: "Comma-separated URLs to monitor"
+  timeout:
+    default: "10"
+    description: "Request timeout in seconds"
+  slow_threshold:
+    default: "3000"
+    description: "Response time in ms to consider slow"
+  state_file:
+    default: "/tmp/clawflows-uptime-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: check-urls
+    command: |
+      set -f
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+      for url in $(echo "${urls}" | tr ',' '\n'); do
+        url=$(echo "$url" | xargs)
+        [ -z "$url" ] && continue
+        response=$(curl -o /dev/null -s -w "%{http_code} %{time_total}" --max-time ${timeout} "$url" 2>/dev/null) || response="000 0"
+        http_code=$(echo "$response" | awk '{print $1}')
+        time_s=$(echo "$response" | awk '{print $2}')
+        duration_ms=$(echo "$time_s" | awk '{printf "%d", $1*1000}')
+        if [ "$http_code" = "000" ]; then
+          status="down"
+        elif [ "$http_code" -ge 400 ] 2>/dev/null; then
+          status="down"
+        elif [ "$duration_ms" -gt ${slow_threshold} ]; then
+          status="slow"
+        else
+          status="up"
+        fi
+        jq -c --arg u "$url" --arg s "$status" --argjson c "$http_code" --argjson t "$duration_ms" \
+          '. + [{url:$u, status:$s, code:$c, time:$t}]' "$tmpf" > /tmp/lb_up_tmp.json
+        mv /tmp/lb_up_tmp.json "$tmpf"
+      done
+      cat "$tmpf"
+      rm -f "$tmpf"
+
+  - id: analyze
+    stdin: $check-urls.stdout
+    command: |
+      cat > /tmp/lb_check_results.json
+      cat "${state_file}" 2>/dev/null > /tmp/lb_prev.json || echo '{}' > /tmp/lb_prev.json
+      [ -s /tmp/lb_prev.json ] || echo '{}' > /tmp/lb_prev.json
+      jq -c --slurpfile prev /tmp/lb_prev.json '
+        ($prev[0] // {}) as $old |
+        {
+          results: .,
+          alerts: [.[] |
+            ($old[.url].status // "unknown") as $was |
+            if .status == "down" and $was != "down" then
+              {type:"down", url:.url, msg:("🔴 " + .url + " is DOWN (HTTP " + (.code|tostring) + ")")}
+            elif .status != "down" and $was == "down" then
+              {type:"recovered", url:.url, msg:("🟢 " + .url + " is back UP (HTTP " + (.code|tostring) + ", " + (.time|tostring) + "ms)")}
+            elif .status == "slow" and $was != "slow" then
+              {type:"slow", url:.url, msg:("🟡 " + .url + " is slow (" + (.time|tostring) + "ms)")}
+            else empty end
+          ],
+          state: (reduce .[] as $r ({}; . + {($r.url): {status:$r.status, code:$r.code, time:$r.time}}))
+        }
+      ' /tmp/lb_check_results.json
+      rm -f /tmp/lb_check_results.json /tmp/lb_prev.json
+
+  - id: save-state
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_analysis.json
+      jq '.state' /tmp/lb_analysis.json > "${state_file}"
+      cat /tmp/lb_analysis.json
+      rm -f /tmp/lb_analysis.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        "Uptime Check Results\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━\n" +
+        (.results | map(
+          (if .status == "up" then "UP " elif .status == "down" then "DOWN" else "SLOW" end) +
+          " " + .url + " (HTTP " + (.code|tostring) + ", " + (.time|tostring) + "ms)"
+        ) | join("\n")) +
+        if (.alerts|length) > 0 then
+          "\n\nAlerts:\n" + (.alerts | map("  " + .msg) | join("\n"))
+        else "\n\nNo status changes."
+        end
+      '

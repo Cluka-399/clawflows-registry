@@ -1,0 +1,72 @@
+# Lobster workflow: morning-brief
+# Danny's actual morning briefing — calendar, weather, competitors, Iran/Israel
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"location":"Tel Aviv"}'
+
+name: morning-brief
+description: "Daily morning briefing: calendar, weather, competitors, open loops"
+
+args:
+  location:
+    default: "Tel Aviv"
+
+steps:
+  - id: work-calendar
+    command: |
+      timeout 10 env TZ="Asia/Jerusalem" /data/clawd/.venv-gcal/bin/gcalcli agenda --nocolor today today 2>/dev/null \
+        || echo "Work calendar unavailable (needs re-auth)"
+
+  - id: personal-calendar
+    command: |
+      timeout 20 /data/clawd/.local/bin/uv run --with khal -- khal -c /data/clawd/.config/khal/config list today 1d 2>/dev/null \
+        || echo "Personal calendar unavailable"
+
+  - id: weather
+    command: |
+      timeout 5 curl -sf "wttr.in/${location}?format=%l:+%c+%t+%w+%h+humidity&lang=en" 2>/dev/null \
+        || echo "Weather unavailable"
+
+  - id: competitor-intel
+    command: |
+      timeout 45 node /data/skills/search-x/scripts/search.js --days 1 "Lovable OR Bolt.new OR Tempo Labs OR cursor AI" 2>/dev/null \
+        | head -40 || echo "Competitor search unavailable"
+
+  - id: iran-check
+    command: |
+      timeout 15 node /data/clawd/scripts/iran-israel-monitor.js 2>/dev/null | grep -E "^(•|📋|\*\*)" | head -8 \
+        || echo "Iran monitor unavailable"
+
+  - id: open-loops
+    command: |
+      head -20 /data/clawd/NOW.md 2>/dev/null || echo "No pending items"
+
+  - id: compose
+    command: |
+      echo "📋 MORNING BRIEF"
+      echo ""
+      echo "🗓️ WORK CALENDAR"
+      echo "$work_cal"
+      echo ""
+      echo "📅 PERSONAL"
+      echo "$pers_cal"
+      echo ""
+      echo "🌤️ WEATHER — ${location}"
+      echo "$weather_data"
+      echo ""
+      echo "📰 COMPETITORS (24h)"
+      echo "$competitors"
+      echo ""
+      echo "🇮🇷 IRAN/ISRAEL"
+      echo "$iran"
+      echo ""
+      echo "📌 OPEN LOOPS"
+      echo "$loops"
+    env:
+      work_cal: "$work-calendar.stdout"
+      pers_cal: "$personal-calendar.stdout"
+      weather_data: "$weather.stdout"
+      competitors: "$competitor-intel.stdout"
+      iran: "$iran-check.stdout"
+      loops: "$open-loops.stdout"

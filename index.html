@@ -546,6 +546,12 @@
       font-weight: 500;
     }
     
+    .tag.lobster {
+      background: rgba(107, 255, 140, 0.15);
+      color: #6bff8c;
+      font-weight: 600;
+    }
+    
     /* How It Works */
     .how-it-works {
       background: var(--bg-secondary);
@@ -813,6 +819,7 @@
       </a>
       <ul class="nav-links">
         <li><a href="#automations">Automations</a></li>
+        <li><a href="#lobster">Lobster Engine</a></li>
         <li><a href="./capabilities/">Capabilities</a></li>
         <li><a href="#contribute">Contribute</a></li>
         <li><a href="https://github.com/Cluka-399/clawflows-registry">GitHub</a></li>
@@ -825,7 +832,7 @@
       <div class="container">
         <img src="./hero.png" alt="ClawFlows mascot" class="hero-mascot">
         <h1>Claw<span>Flows</span></h1>
-        <p class="hero-tagline">Multi-skill automations for AI agents. Combine capabilities like charts, databases, and alerts into powerful workflows.</p>
+        <p class="hero-tagline">Multi-skill automations for AI agents. Powered by <a href="https://github.com/openclaw/lobster" style="color: var(--accent); text-decoration: none; font-weight: 600;">Lobster</a> — the workflow engine that runs deterministic pipelines with zero LLM tokens.</p>
         <p class="hero-count" id="hero-count" style="color: var(--accent); font-weight: 600; font-size: 1.2rem; margin-bottom: 1rem;">🚀 109+ automations and growing!</p>
         
         <div class="hero-cta">
@@ -853,30 +860,83 @@
       </div>
     </section>
     
+    <!-- Lobster Engine Section -->
+    <section id="lobster" class="value-section">
+      <div class="container" style="padding: 3rem 2rem;">
+        <h2 class="section-title">🦞 Powered by Lobster</h2>
+        <p class="section-subtitle">The open-source workflow engine that makes ClawFlows automations <strong>actually run</strong>.</p>
+        
+        <div class="paradigm-shift" style="margin: 2.5rem 0;">
+          <div class="old-way">
+            <h4>Without Lobster</h4>
+            <code>LLM orchestrates every step</code>
+            <p>10+ tool calls, ~100K tokens per run</p>
+          </div>
+          <div class="shift-arrow">→</div>
+          <div class="new-way">
+            <h4>With Lobster</h4>
+            <code>lobster run workflow.yaml</code>
+            <p>Deterministic pipeline, 0 LLM tokens</p>
+          </div>
+        </div>
+        
+        <div class="value-grid" style="margin-top: 2rem;">
+          <div class="value-card">
+            <div class="value-icon">⚡</div>
+            <h3>Zero Token Cost</h3>
+            <p>Data collection runs as shell commands — curl, jq, scripts. No LLM needed to fetch calendars, check APIs, or parse RSS.</p>
+          </div>
+          <div class="value-card">
+            <div class="value-icon">🔄</div>
+            <h3>Stateful Pipelines</h3>
+            <p>Workflows remember what they've processed. Yesterday's changelog check won't re-alert on old releases.</p>
+          </div>
+          <div class="value-card">
+            <div class="value-icon">✋</div>
+            <h3>Approval Gates</h3>
+            <p>Workflows halt at checkpoints and ask before acting. No "oops, it sent 50 emails" moments.</p>
+          </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 2.5rem;">
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">
+            Lobster is the <strong>execution engine</strong>. ClawFlows is the <strong>registry</strong>.<br>
+            Together: npm + node for AI agent automations.
+          </p>
+          <a href="https://github.com/openclaw/lobster" class="btn btn-primary" style="margin-right: 0.75rem;">
+            ⭐ Lobster on GitHub
+          </a>
+          <a href="./docs/lobster-guide.md" class="btn btn-secondary">
+            Integration Guide
+          </a>
+        </div>
+      </div>
+    </section>
+    
     <section id="how-it-works">
       <div class="container">
         <div class="how-it-works">
           <div class="section-visual">
             <img src="./assets/vision.png" alt="The future of automation" class="section-image">
           </div>
-          <h2>⚡ The Skill-Agnostic Future</h2>
-          <p class="big-idea">Traditional automations break when you change skills. <strong>ClawFlows automations don't.</strong></p>
+          <h2>⚡ Two Formats, One Registry</h2>
+          <p class="big-idea">Every automation comes in two flavors: <strong>abstract</strong> (portable) and <strong>Lobster-ready</strong> (runs now).</p>
           
           <div class="paradigm-shift">
-            <div class="old-way">
-              <h4>❌ Old Way: Skill-Locked</h4>
-              <code>use: polymarket-skill</code>
-              <p>Breaks if you switch to kalshi-skill</p>
-            </div>
-            <div class="shift-arrow">→</div>
-            <div class="new-way">
-              <h4>✅ New Way: Capability-Based</h4>
+            <div class="old-way" style="opacity: 1;">
+              <h4>📋 Abstract (Capability-Based)</h4>
               <code>needs: prediction-markets</code>
-              <p>Works with ANY skill that provides it</p>
+              <p>Portable — works with any skill</p>
+            </div>
+            <div class="shift-arrow">+</div>
+            <div class="new-way">
+              <h4>🦞 Lobster-Ready (Concrete)</h4>
+              <code>command: curl ... | jq ...</code>
+              <p>Runs NOW — zero LLM tokens</p>
             </div>
           </div>
           
-          <p class="paradigm-explain">Capabilities are <strong>abstract interfaces</strong>. Skills are concrete implementations. Write once, run anywhere — regardless of which skills your agent has installed.</p>
+          <p class="paradigm-explain"><strong>Abstract format</strong> = universal spec for any agent runtime. <strong>Lobster format</strong> = deterministic shell pipelines that execute today. Use abstract for portability, Lobster for performance.</p>
           
           <div class="workflow-visual">
             <div class="workflow-step">📊 Fetch</div>
@@ -994,7 +1054,7 @@
       try {
         const res = await fetch('./index.json');
         const data = await res.json();
-        const automations = Array.isArray(data) ? data : (data.automations || []);
+        const automations = (Array.isArray(data) ? data : (data.automations || [])).sort((a, b) => (b.lobster_ready ? 1 : 0) - (a.lobster_ready ? 1 : 0));
         
         if (!automations.length) {
           container.innerHTML = '<p class="loading">No automations yet. Be the first to contribute!</p>';
@@ -1010,6 +1070,7 @@
             <h3>${escapeHtml(a.name)}</h3>
             <p>${escapeHtml(a.description || '')}</p>
             <div class="tags">
+              ${a.lobster_ready ? '<span class="tag lobster">🦞 Lobster Ready</span>' : ''}
               ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
             </div>
           </a>
@@ -1017,8 +1078,9 @@
         
         // Update counts dynamically
         const count = automations.length;
+        const lobsterCount = automations.filter(a => a.lobster_ready).length;
         document.getElementById('automation-count').textContent = `(${count})`;
-        document.getElementById('hero-count').textContent = `🚀 ${count}+ automations and growing!`;
+        document.getElementById('hero-count').textContent = `🚀 ${count}+ automations (${lobsterCount} Lobster-ready) and growing!`;
         
         mixpanel.track('page_loaded', { automation_count: count });
         
