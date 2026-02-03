@@ -1,0 +1,82 @@
+# Lobster workflow: competitor-shadow
+# Monitor competitor web pages for changes to pricing, blog, changelog, careers
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"competitor_url":"https://example.com","competitor_name":"Example"}'
+#
+# Requires: curl, jq, md5sum/sha256sum
+
+name: competitor-shadow
+description: Monitor competitors for changes to pricing, features, blog posts, job listings. Get alerts on any update.
+
+args:
+  competitor_url:
+    description: "Main competitor website URL (no trailing slash)"
+  competitor_name:
+    description: "Competitor name for alerts"
+    default: "Competitor"
+  pages:
+    description: "Comma-separated page paths to monitor"
+    default: "/pricing,/changelog,/blog,/careers"
+  state_file:
+    description: "File to store page hashes"
+    default: "/tmp/clawflows-competitor-shadow-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: check-pages
+    command: |
+      state_json='$load-state.stdout'
+      base_url="${competitor_url}"
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      for path in $(echo "${pages}" | tr ',' ' '); do
+        path=$(echo "$path" | xargs)
+        [ -z "$path" ] && continue
+        full_url="${base_url}${path}"
+
+        # Fetch page content (text only, strip tags for comparison)
+        content=$(curl -sfL --max-time 15 "$full_url" 2>/dev/null | sed 's/<[^>]*>//g' | tr -s '[:space:]' ' ' | head -c 50000)
+        new_hash=$(echo "$content" | sha256sum | cut -d' ' -f1)
+
+        # Get old hash from state
+        old_hash=$(echo "$state_json" | jq -r --arg p "$path" '.[$p] // "none"' 2>/dev/null)
+
+        if [ "$old_hash" != "none" ] && [ "$new_hash" != "$old_hash" ]; then
+          # Change detected
+          jq -c --arg p "$path" --arg u "$full_url" --arg h "$new_hash" \
+            '. + [{path:$p, url:$u, hash:$h, changed:true}]' "$tmpout" > /tmp/lb_cs_m.json
+          mv /tmp/lb_cs_m.json "$tmpout"
+        fi
+
+        # Always update state
+        echo "$state_json" | jq --arg p "$path" --arg h "$new_hash" '. + {($p):$h}' > /tmp/lb_cs_state.json
+        state_json=$(cat /tmp/lb_cs_state.json)
+      done
+
+      # Write updated state
+      echo "$state_json" > "${state_file}"
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_cs_m.json /tmp/lb_cs_state.json
+
+  # NOTE: The original automation has an "analyze_hiring_signals" step that uses LLM.
+  # In Lobster, pipe the output to an LLM separately, or add a clawd.invoke step.
+  # For now, this workflow does concrete data collection (change detection).
+
+  - id: report
+    stdin: $check-pages.stdout
+    command: |
+      cat > /tmp/lb_cs_report.json
+      count=$(jq 'length' /tmp/lb_cs_report.json)
+      if [ "$count" = "0" ]; then
+        echo "No changes detected for ${competitor_name}."
+      else
+        jq -r --arg name "${competitor_name}" \
+          '"🔍 **" + $name + " Update Detected**\n\n" + (map("• **" + .path + "** changed\n  " + .url) | join("\n\n"))' \
+          /tmp/lb_cs_report.json
+      fi
+      rm -f /tmp/lb_cs_report.json

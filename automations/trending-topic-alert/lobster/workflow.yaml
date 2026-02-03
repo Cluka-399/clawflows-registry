@@ -1,0 +1,90 @@
+# Lobster workflow: trending-topic-alert
+# Alert when topics in your niche start trending on Hacker News
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"niche_keywords":"ai,llm,agents"}'
+#
+# Requires: curl, jq
+#
+# Strategy: Fetch HN front page stories, count how many match niche keywords.
+# If concentration exceeds threshold, alert. Tracks state to avoid repeat alerts.
+
+name: trending-topic-alert
+description: Alert when topics in your niche start trending on Hacker News
+
+args:
+  niche_keywords:
+    description: "Comma-separated keywords for your niche"
+  threshold:
+    description: "Number of front-page stories matching keywords to trigger alert"
+    default: "3"
+  state_file:
+    description: "File to track last alert time"
+    default: "/tmp/clawflows-trending-alert-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{"last_alert":0}'
+
+  - id: fetch-hn-front
+    command: |
+      # Fetch top 30 HN stories via Algolia
+      curl -sf "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30" \
+        2>/dev/null > /tmp/lb_ta_front.json || echo '{"hits":[]}' > /tmp/lb_ta_front.json
+      cat /tmp/lb_ta_front.json
+
+  - id: detect-trend
+    stdin: $fetch-hn-front.stdout
+    command: |
+      cat > /tmp/lb_ta_stories.json
+      last_alert=$(echo '$load-state.stdout' | jq -r '.last_alert // 0' 2>/dev/null || echo "0")
+      now=$(date +%s)
+      cooldown=21600  # 6 hours between alerts
+
+      jq -c --arg kw "${niche_keywords}" --argjson thresh ${threshold} \
+        --argjson last "$last_alert" --argjson now "$now" --argjson cd "$cooldown" '
+        ($kw | split(",") | map(select(length>0) | gsub("^\\s+|\\s+$";"") | ascii_downcase)) as $keywords |
+        [.hits[] | {
+          title: .title,
+          url: .url,
+          points: (.points // 0),
+          objectID: .objectID,
+          hn_url: ("https://news.ycombinator.com/item?id=" + .objectID)
+        } |
+        select(
+          (.title // "" | ascii_downcase) as $t |
+          ($keywords | any(. as $k | $t | contains($k)))
+        )] as $matches |
+        {
+          matches: $matches,
+          match_count: ($matches | length),
+          threshold: $thresh,
+          trending: (($matches | length) >= $thresh and ($now - $last) > $cd),
+          total_stories: 30
+        }
+      ' /tmp/lb_ta_stories.json
+      rm -f /tmp/lb_ta_stories.json
+
+  - id: save-state
+    stdin: $detect-trend.stdout
+    command: |
+      cat > /tmp/lb_ta_trend.json
+      trending=$(jq -r '.trending' /tmp/lb_ta_trend.json)
+      if [ "$trending" = "true" ]; then
+        echo "{\"last_alert\": $(date +%s)}" > "${state_file}"
+      fi
+      cat /tmp/lb_ta_trend.json
+      rm -f /tmp/lb_ta_trend.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if .trending then
+          "🔥 Trending Alert: \(.match_count)/\(.total_stories) front page stories match your niche!\n\n" +
+          (.matches | map("• \(.title) (\(.points) pts)\n  \(.hn_url)") | join("\n\n"))
+        elif .match_count > 0 then
+          "📊 \(.match_count) matching stories (threshold: \(.threshold)) — not alerting yet."
+        else
+          "No matching stories on HN front page right now."
+        end'

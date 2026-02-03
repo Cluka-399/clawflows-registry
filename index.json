@@ -368,7 +368,7 @@
         "messaging"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/competitor-shadow/"
@@ -615,7 +615,7 @@
         "developer",
         "security"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/dependency-updater/"
@@ -959,7 +959,7 @@
         "messaging"
       ],
       "tags": [],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/hn-timing-bot/"
@@ -1076,7 +1076,7 @@
         "developer",
         "monitoring"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/log-analyzer/"
@@ -1263,7 +1263,7 @@
         "developer",
         "performance"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/performance-benchmark/"
@@ -1282,7 +1282,7 @@
         "podcasts",
         "entertainment"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/podcast-tracker/"
@@ -1470,7 +1470,7 @@
         "developer",
         "security"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/security-advisory-monitor/"
@@ -1539,7 +1539,7 @@
         "marketing",
         "mentions"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/social-mentions/"
@@ -1692,7 +1692,7 @@
         "developer",
         "quality"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/test-coverage-monitor/"
@@ -1727,7 +1727,7 @@
         "social",
         "marketing"
       ],
-      "lobster_ready": false,
+      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-02-03",
       "url": "/automations/trending-topic-alert/"
@@ -1876,5 +1876,5 @@
     }
   ],
   "count": 109,
-  "lobster_ready": 55
+  "lobster_ready": 65
 }

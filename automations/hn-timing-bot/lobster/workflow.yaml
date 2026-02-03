@@ -1,0 +1,97 @@
+# Lobster workflow: hn-timing-bot
+# Analyze current HN conditions to determine optimal posting time
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"topic_keywords":"ai,llm","target_url":"https://example.com/post"}'
+#
+# Requires: curl, jq
+#
+# NOTE: The original automation uses LLM to analyze posting conditions and
+# rate titles. This Lobster version does concrete data collection:
+# - Counts competing posts on topic
+# - Checks time-of-day (US hours)
+# - Measures front page velocity (age of newest posts)
+# For LLM-based title rating, pipe output to clawd.invoke or an LLM step.
+
+name: hn-timing-bot
+description: Monitor HN activity patterns and detect optimal posting conditions
+
+args:
+  topic_keywords:
+    description: "Your topic area keywords (comma-separated)"
+  target_url:
+    description: "URL you plan to submit"
+    default: ""
+  state_file:
+    description: "File to track posting history"
+    default: "/tmp/clawflows-hn-timing-state.json"
+
+steps:
+  - id: fetch-hn-front
+    command: |
+      curl -sf "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30" \
+        2>/dev/null > /tmp/lb_ht_front.json || echo '{"hits":[]}' > /tmp/lb_ht_front.json
+      cat /tmp/lb_ht_front.json
+
+  - id: analyze-conditions
+    stdin: $fetch-hn-front.stdout
+    command: |
+      cat > /tmp/lb_ht_stories.json
+      now=$(date +%s)
+      hour_utc=$(date -u +%H)
+
+      jq -c --arg kw "${topic_keywords}" --argjson now "$now" --argjson hour "$hour_utc" '
+        ($kw | split(",") | map(select(length>0) | gsub("^\\s+|\\s+$";"") | ascii_downcase)) as $keywords |
+
+        # Count competing posts on same topic
+        [.hits[] | select(
+          (.title // "" | ascii_downcase) as $t |
+          ($keywords | any(. as $k | $t | contains($k)))
+        )] as $competing |
+
+        # Check front page velocity (average age of top 5 posts in hours)
+        ([.hits[:5][] | (($now - (.created_at_i // $now)) / 3600)] | add / length) as $avg_age_hrs |
+
+        # US hours check: good window is 6-10 AM ET (11-15 UTC) and 8-11 AM PT (16-19 UTC)
+        (if $hour >= 11 and $hour <= 19 then "good" elif $hour >= 20 or $hour <= 5 then "poor" else "moderate" end) as $time_quality |
+
+        # Competition level
+        (if ($competing | length) >= 5 then "high"
+         elif ($competing | length) >= 2 then "medium"
+         else "low" end) as $competition |
+
+        # Overall rating
+        (if $competition == "low" and $time_quality == "good" then "OPTIMAL"
+         elif $competition != "high" and $time_quality != "poor" then "GOOD"
+         else "WAIT" end) as $rating |
+
+        {
+          rating: $rating,
+          competition: $competition,
+          competing_count: ($competing | length),
+          competing_titles: [$competing[] | .title][:5],
+          time_quality: $time_quality,
+          hour_utc: $hour,
+          avg_front_page_age_hrs: ($avg_age_hrs | . * 10 | round / 10),
+          total_front_page: (.hits | length)
+        }
+      ' /tmp/lb_ht_stories.json
+      rm -f /tmp/lb_ht_stories.json /tmp/lb_ht_front.json
+
+  # NOTE: Original has an LLM step for title quality rating.
+  # To add: pipe $analyze-conditions.stdout to clawd.invoke with a prompt.
+
+  - id: report
+    stdin: $analyze-conditions.stdout
+    command: |
+      jq -r --arg url "${target_url}" '
+        if .rating == "OPTIMAL" then
+          "🟢 **HN Optimal Window**\nCompetition: \(.competition) (\(.competing_count) posts)\nTime: \(.time_quality) (UTC \(.hour_utc):00)\nFront page avg age: \(.avg_front_page_age_hrs)h" +
+          (if ($url | length) > 0 then "\n\nSubmit now: " + $url else "" end)
+        elif .rating == "GOOD" then
+          "🟡 **HN Good Window**\nCompetition: \(.competition) (\(.competing_count) posts)\nTime: \(.time_quality) (UTC \(.hour_utc):00)" +
+          (if ($url | length) > 0 then "\n\nConsider submitting: " + $url else "" end)
+        else
+          "🔴 **HN: Wait**\nCompetition: \(.competition) (\(.competing_count) posts)\nTime: \(.time_quality) (UTC \(.hour_utc):00)\n\nCompeting titles:\n" +
+          (.competing_titles | map("• " + .) | join("\n"))
+        end'

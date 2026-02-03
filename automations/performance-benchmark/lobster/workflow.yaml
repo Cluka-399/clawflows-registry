@@ -1,0 +1,140 @@
+# Lobster workflow: performance-benchmark
+# Run simple benchmarks (HTTP endpoint, command execution) and track trends
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"bench_type":"http","target":"https://example.com","iterations":"5"}'
+#   lobster run --file workflow.yaml --args-json '{"bench_type":"command","target":"node -e \"console.log(1)\"","iterations":"3"}'
+#
+# Requires: jq, curl (for http), time
+
+name: performance-benchmark
+description: Run performance benchmarks and track trends over time
+
+args:
+  bench_type:
+    description: "Benchmark type: http (response time) or command (execution time)"
+    default: "http"
+  target:
+    description: "URL for http, or shell command for command type"
+    default: "https://example.com"
+  iterations:
+    description: "Number of iterations to run"
+    default: "5"
+  label:
+    description: "Label for this benchmark (used in state tracking)"
+    default: "default"
+  state_file:
+    default: "/tmp/clawflows-benchmark-state.json"
+
+steps:
+  - id: load-history
+    command: cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: run-benchmark
+    command: |
+      bench_type="${bench_type}"
+      target="${target}"
+      iterations="${iterations}"
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+
+      i=0
+      while [ "$i" -lt "$iterations" ]; do
+        case "$bench_type" in
+          http)
+            # Measure HTTP response time with curl
+            timing=$(curl -sf -o /dev/null -w '%{time_total}' "$target" 2>/dev/null || echo "-1")
+            status=$(curl -sf -o /dev/null -w '%{http_code}' "$target" 2>/dev/null || echo "0")
+            jq -c --argjson t "$timing" --argjson s "$status" --argjson i "$i" \
+              '. + [{iteration: $i, time_s: $t, status: $s}]' "$tmpf" > /tmp/lb_bench_iter.json
+            mv /tmp/lb_bench_iter.json "$tmpf"
+            ;;
+          command)
+            # Measure command execution time
+            start_ns=$(date +%s%N 2>/dev/null || date +%s)
+            eval "$target" >/dev/null 2>&1
+            exit_code=$?
+            end_ns=$(date +%s%N 2>/dev/null || date +%s)
+            # Calculate elapsed in seconds using awk (bc not always available)
+            elapsed=$(awk "BEGIN{printf \"%.6f\", ($end_ns - $start_ns) / 1000000000}")
+            jq -c --argjson t "$elapsed" --argjson e "$exit_code" --argjson i "$i" \
+              '. + [{iteration: $i, time_s: ($t|tonumber), exit_code: $e}]' "$tmpf" > /tmp/lb_bench_iter.json
+            mv /tmp/lb_bench_iter.json "$tmpf"
+            ;;
+        esac
+        i=$((i + 1))
+      done
+      cat "$tmpf"
+      rm -f "$tmpf"
+
+  - id: analyze
+    stdin: $run-benchmark.stdout
+    command: |
+      cat > /tmp/lb_bench_raw.json
+      history=$(cat "${state_file}" 2>/dev/null || echo '{}')
+      label="${label}"
+
+      jq -c --argjson history "$history" --arg label "$label" --arg btype "${bench_type}" --arg btarget "${target}" '
+        . as $runs |
+        [.[] | .time_s | select(. >= 0)] as $times |
+        ($times | if length > 0 then (add / length) | . * 1000 | round / 1000 else null end) as $avg |
+        ($times | if length > 0 then min else null end) as $min |
+        ($times | if length > 0 then max else null end) as $max |
+        ($times | if length > 2 then sort | .[length/2 | floor] else $avg end) as $median |
+        (($history[$label] // []) | if length > 0 then .[-1].avg else null end) as $prev_avg |
+        {
+          label: $label,
+          type: $btype,
+          target: $btarget,
+          iterations: ($runs | length),
+          successful: ($times | length),
+          avg: $avg,
+          min: $min,
+          max: $max,
+          median: $median,
+          prev_avg: $prev_avg,
+          delta_pct: (if $prev_avg and $avg then (($avg - $prev_avg) / $prev_avg * 100) | . * 10 | round / 10 else null end),
+          timestamp: (now | todate)
+        }
+      ' /tmp/lb_bench_raw.json
+      rm -f /tmp/lb_bench_raw.json
+
+  - id: save-state
+    stdin: $analyze.stdout
+    command: |
+      cat > /tmp/lb_bench_analysis.json
+      history=$(cat "${state_file}" 2>/dev/null || echo '{}')
+      label="${label}"
+
+      echo "$history" | jq --argjson entry "$(cat /tmp/lb_bench_analysis.json)" --arg label "$label" '
+        .[$label] = ((.[$label] // []) + [$entry] | .[-30:])
+      ' > "${state_file}"
+
+      cat /tmp/lb_bench_analysis.json
+      rm -f /tmp/lb_bench_analysis.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        "⚡ Performance Benchmark Report",
+        "",
+        "Label: \(.label)",
+        "Type: \(.type)",
+        "Target: \(.target)",
+        "",
+        "Results (\(.successful)/\(.iterations) successful):",
+        "  Avg:    \(.avg)s",
+        "  Median: \(.median)s",
+        "  Min:    \(.min)s",
+        "  Max:    \(.max)s",
+        "",
+        (if .delta_pct then
+          (if .delta_pct > 10 then "🔴" elif .delta_pct > 0 then "🟡" elif .delta_pct < -5 then "🟢" else "✅" end) +
+          " vs previous: " +
+          (if .delta_pct >= 0 then "+" else "" end) + "\(.delta_pct)% (\(.prev_avg)s → \(.avg)s)" +
+          (if .delta_pct > 10 then " — Regression detected!" else "" end)
+        else
+          "📊 First run — no comparison available."
+        end)
+      '

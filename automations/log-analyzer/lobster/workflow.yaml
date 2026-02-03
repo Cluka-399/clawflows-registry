@@ -1,0 +1,129 @@
+# Lobster workflow: log-analyzer
+# Parse log files for errors, warnings, and patterns
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"log_path":"/var/log/syslog"}'
+#   lobster run --file workflow.yaml --args-json '{"log_path":"/tmp/app.log","patterns":"ERROR,WARN,FATAL"}'
+#
+# Requires: jq, grep, awk
+
+name: log-analyzer
+description: Analyze application logs for errors, patterns, and anomalies
+
+args:
+  log_path:
+    description: "Path to log file or directory of log files"
+    default: "/var/log/syslog"
+  patterns:
+    description: "Comma-separated patterns to search for (case-insensitive)"
+    default: "ERROR,WARN,FATAL,Exception,panic,OOM,timeout"
+  tail_lines:
+    description: "Number of recent lines to analyze (0 = all)"
+    default: "1000"
+
+steps:
+  - id: collect-logs
+    command: |
+      logpath="${log_path}"
+      lines="${tail_lines}"
+
+      if [ ! -e "$logpath" ]; then
+        echo '{"error":"Path not found: '"$logpath"'","lines":0}'
+        exit 0
+      fi
+
+      tmpf=$(mktemp)
+      if [ -d "$logpath" ]; then
+        # Directory: concatenate all .log files
+        find "$logpath" -name "*.log" -type f -exec cat {} + 2>/dev/null > "$tmpf"
+      else
+        cat "$logpath" > "$tmpf" 2>/dev/null
+      fi
+
+      total=$(wc -l < "$tmpf" | tr -d ' ')
+
+      if [ "$lines" != "0" ] && [ "$total" -gt "$lines" ]; then
+        tail -n "$lines" "$tmpf" > /tmp/lb_log_tail.txt
+        mv /tmp/lb_log_tail.txt "$tmpf"
+        analyzed="$lines"
+      else
+        analyzed="$total"
+      fi
+
+      # Output the log content and metadata
+      jq -n --arg total "$total" --arg analyzed "$analyzed" --arg path "$logpath" \
+        '{total_lines: ($total|tonumber), analyzed_lines: ($analyzed|tonumber), path: $path}'
+
+      # Keep the log data for next step
+      mv "$tmpf" /tmp/lb_log_data.txt
+
+  - id: match-patterns
+    stdin: $collect-logs.stdout
+    command: |
+      cat > /tmp/lb_log_meta.json
+
+      error=$(jq -r '.error // ""' /tmp/lb_log_meta.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo '{"error":"'"$error"'"}'
+        rm -f /tmp/lb_log_meta.json
+        exit 0
+      fi
+
+      patterns="${patterns}"
+      results=$(mktemp)
+      echo '[]' > "$results"
+
+      for pat in $(echo "$patterns" | tr ',' ' '); do
+        pat=$(echo "$pat" | xargs)
+        [ -z "$pat" ] && continue
+        count=$(grep -ic "$pat" /tmp/lb_log_data.txt 2>/dev/null || echo "0")
+        # Get last 3 matching lines as samples
+        samples=$(grep -i "$pat" /tmp/lb_log_data.txt 2>/dev/null | tail -3 | jq -R -s 'split("\n") | map(select(length>0)) | map(.[0:200])')
+        jq -c --arg pat "$pat" --argjson count "$count" --argjson samples "$samples" \
+          '. + [{pattern: $pat, count: $count, samples: $samples}]' "$results" > /tmp/lb_pat_tmp.json
+        mv /tmp/lb_pat_tmp.json "$results"
+      done
+
+      meta=$(cat /tmp/lb_log_meta.json)
+      jq -c --argjson meta "$meta" '{meta: $meta, matches: .}' "$results"
+      rm -f "$results" /tmp/lb_log_meta.json /tmp/lb_log_data.txt
+
+  - id: report
+    stdin: $match-patterns.stdout
+    command: |
+      cat > /tmp/lb_log_report.json
+
+      error=$(jq -r '.error // ""' /tmp/lb_log_report.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo "⚠️ Log analysis error: $error"
+        rm -f /tmp/lb_log_report.json
+        exit 0
+      fi
+
+      total_hits=$(jq '[.matches[].count] | add // 0' /tmp/lb_log_report.json)
+
+      jq -r '
+        "📋 Log Analysis Report",
+        "",
+        "Path: \(.meta.path)",
+        "Lines analyzed: \(.meta.analyzed_lines) / \(.meta.total_lines)",
+        "",
+        "Pattern Matches:",
+        (.matches | sort_by(-.count)[] |
+          if .count > 0 then
+            "  🔴 \(.pattern): \(.count) hit(s)" +
+            if (.samples | length) > 0 then
+              "\n" + (.samples[:2][] | "      └ \(.)")
+            else "" end
+          else
+            "  ✅ \(.pattern): 0"
+          end
+        ),
+        "",
+        if ([.matches[].count] | map(select(. > 0)) | length) == 0 then
+          "✅ No issues found — logs look clean."
+        else
+          "⚠️ Found \([.matches[] | select(.count > 0)] | length) pattern(s) with hits. Review recommended."
+        end
+      ' /tmp/lb_log_report.json
+      rm -f /tmp/lb_log_report.json

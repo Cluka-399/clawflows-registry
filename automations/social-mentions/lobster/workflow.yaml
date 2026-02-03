@@ -1,0 +1,100 @@
+# Lobster workflow: social-mentions
+# Track brand mentions on Hacker News (via Algolia API — no auth needed)
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"keywords":"openai,chatgpt"}'
+#
+# Requires: curl, jq
+#
+# NOTE: The original automation searches X/Twitter which needs API keys.
+# This Lobster version uses HN Algolia API (free, no auth) as a concrete
+# data source. For X search, pipe output to a search-x skill or add API creds.
+
+name: social-mentions
+description: Track brand mentions across searchable platforms (HN via Algolia API)
+
+args:
+  keywords:
+    description: "Comma-separated keywords/brand names to track"
+  exclude_authors:
+    description: "Comma-separated authors to exclude"
+    default: ""
+  max_results:
+    description: "Max mentions to return per keyword"
+    default: "10"
+  state_file:
+    description: "File to track seen mention IDs"
+    default: "/tmp/clawflows-social-mentions-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: search-mentions
+    command: |
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      for kw in $(echo "${keywords}" | tr ',' '\n'); do
+        kw=$(echo "$kw" | xargs)
+        [ -z "$kw" ] && continue
+
+        # Search HN via Algolia (last 24h)
+        encoded=$(echo "$kw" | sed 's/ /%20/g')
+        ts_24h_ago=$(( $(date +%s) - 86400 ))
+
+        curl -sf "https://hn.algolia.com/api/v1/search_by_date?query=${encoded}&tags=(story,comment)&numericFilters=created_at_i>${ts_24h_ago}&hitsPerPage=${max_results}" \
+          2>/dev/null > /tmp/lb_sm_raw.json || echo '{"hits":[]}' > /tmp/lb_sm_raw.json
+
+        jq -c --arg kw "$kw" --arg excl "${exclude_authors}" '
+          ($excl | split(",") | map(select(length>0) | ascii_downcase)) as $ex |
+          [.hits[] |
+            select((.author // "" | ascii_downcase) as $a | ($ex | all(. != $a))) |
+            {
+              platform: "HN",
+              keyword: $kw,
+              author: .author,
+              title: (.title // (.comment_text // "" | .[0:120])),
+              url: ("https://news.ycombinator.com/item?id=" + (.objectID // "")),
+              points: (.points // 0),
+              created: .created_at
+            }
+          ]' /tmp/lb_sm_raw.json > /tmp/lb_sm_kw.json 2>/dev/null || echo '[]' > /tmp/lb_sm_kw.json
+
+        jq -sc '.[0] + .[1]' "$tmpout" /tmp/lb_sm_kw.json > /tmp/lb_sm_merged.json
+        mv /tmp/lb_sm_merged.json "$tmpout"
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_sm_raw.json /tmp/lb_sm_kw.json
+
+  - id: find-new
+    stdin: $search-mentions.stdout
+    command: |
+      cat > /tmp/lb_sm_all.json
+      seen=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      jq -c --argjson seen "$seen" '
+        ($seen | if type=="array" then . else [] end | map({(.):1}) | add // {}) as $idx |
+        [.[] | . + {id: .url} | select($idx[.id] == null)] as $new |
+        {new: $new, seen: ([$seen[], ($new[] | .id)] | unique | .[-1000:]), count: ($new | length)}
+      ' /tmp/lb_sm_all.json
+      rm -f /tmp/lb_sm_all.json
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      cat > /tmp/lb_sm_findnew.json
+      jq '.seen' /tmp/lb_sm_findnew.json > "${state_file}"
+      cat /tmp/lb_sm_findnew.json
+      rm -f /tmp/lb_sm_findnew.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if .count == 0 then "No new mentions found."
+        else "📢 \(.count) new mention(s)\n\n" +
+          (.new | sort_by(-.points) | map(
+            "• **@\(.author)** (\(.platform), \(.keyword))\n  \(.title)\n  \(.url)"
+          ) | join("\n\n"))
+        end'

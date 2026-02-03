@@ -1,0 +1,90 @@
+# Lobster workflow: podcast-tracker
+# Track new episodes from podcast RSS feeds
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"podcast_feeds":"https://feeds.simplecast.com/54nAGcIl"}'
+#
+# Requires: curl, jq, python3
+
+name: podcast-tracker
+description: Track new episodes from your podcast subscriptions via RSS
+
+args:
+  podcast_feeds:
+    description: "Comma-separated RSS feed URLs"
+  state_file:
+    description: "File to track seen episode IDs"
+    default: "/tmp/clawflows-podcast-tracker-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: fetch-feeds
+    command: |
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+      parser=$(mktemp /tmp/lb_pt_parser_XXXX.py)
+      cat > "$parser" << 'PYEOF'
+      import xml.etree.ElementTree as ET, json, sys
+      try:
+          tree = ET.parse(sys.argv[1])
+          root = tree.getroot()
+          ch = root.find('.//channel') or root
+          show = (ch.findtext('title') or 'Unknown').strip()
+          eps = []
+          for item in (root.findall('.//item') or [])[:5]:
+              title = (item.findtext('title') or '').strip()
+              guid = (item.findtext('guid') or '').strip()
+              link = (item.findtext('link') or '').strip()
+              enc = item.find('enclosure')
+              audio = enc.get('url','') if enc is not None else ''
+              pub = (item.findtext('pubDate') or '').strip()
+              eid = guid or title
+              if eid:
+                  eps.append(dict(show=show,title=title,guid=guid,link=link or audio,pubDate=pub,id=eid))
+          print(json.dumps(eps))
+      except Exception:
+          print('[]')
+      PYEOF
+
+      for feed_url in $(echo "${podcast_feeds}" | tr ',' '\n'); do
+        feed_url=$(echo "$feed_url" | xargs)
+        [ -z "$feed_url" ] && continue
+        curl -sfL --max-time 20 "$feed_url" > /tmp/lb_pt_raw.xml 2>/dev/null || continue
+        python3 "$parser" /tmp/lb_pt_raw.xml > /tmp/lb_pt_eps.json 2>/dev/null || echo '[]' > /tmp/lb_pt_eps.json
+        jq -sc '.[0] + .[1]' "$tmpout" /tmp/lb_pt_eps.json > /tmp/lb_pt_merged.json
+        mv /tmp/lb_pt_merged.json "$tmpout"
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_pt_raw.xml /tmp/lb_pt_eps.json "$parser"
+
+  - id: find-new
+    stdin: $fetch-feeds.stdout
+    command: |
+      cat > /tmp/lb_pt_all.json
+      seen=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      jq -c --argjson seen "$seen" '
+        ($seen | if type=="array" then . else [] end | map({(.):1}) | add // {}) as $idx |
+        [.[] | select($idx[.id] == null)] as $new |
+        {new: $new, seen: ([$seen[], ($new[] | .id)] | unique | .[-500:]), count: ($new | length)}
+      ' /tmp/lb_pt_all.json
+      rm -f /tmp/lb_pt_all.json
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      cat > /tmp/lb_pt_findnew.json
+      jq '.seen' /tmp/lb_pt_findnew.json > "${state_file}"
+      cat /tmp/lb_pt_findnew.json
+      rm -f /tmp/lb_pt_findnew.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if .count == 0 then "No new podcast episodes."
+        else "🎙️ \(.count) new episode(s)\n\n" +
+          (.new | map("• **\(.show)**\n  \(.title)\n  \(.link // "no link")") | join("\n\n"))
+        end'

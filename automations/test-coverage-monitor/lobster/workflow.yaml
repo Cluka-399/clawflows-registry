@@ -1,0 +1,189 @@
+# Lobster workflow: test-coverage-monitor
+# Track test coverage and alert when it drops below threshold
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"project_dir":"/path/to/project","runner":"jest"}'
+#   lobster run --file workflow.yaml --args-json '{"project_dir":"/path/to/project","runner":"pytest","threshold":"80"}'
+#   lobster run --file workflow.yaml --args-json '{"coverage_file":"/path/to/coverage-summary.json","runner":"jest"}'
+#
+# Requires: jq, test runner (jest/pytest/go)
+# Note: If running tests is expensive, pass coverage_file directly from CI artifacts
+
+name: test-coverage-monitor
+description: Track test coverage trends and alert on drops below threshold
+
+args:
+  project_dir:
+    description: "Path to project directory"
+    default: "."
+  runner:
+    description: "Test runner: jest, pytest, go, or generic (reads coverage_file)"
+    default: "generic"
+  threshold:
+    description: "Minimum coverage percentage to pass"
+    default: "80"
+  coverage_file:
+    description: "Path to existing coverage JSON (skip running tests). For jest: coverage/coverage-summary.json"
+    default: ""
+  state_file:
+    default: "/tmp/clawflows-coverage-state.json"
+
+steps:
+  - id: load-history
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: get-coverage
+    command: |
+      cov_file="${coverage_file}"
+      tmpf=$(mktemp)
+
+      # If a coverage file is provided, use it directly
+      if [ -n "$cov_file" ] && [ -f "$cov_file" ]; then
+        cp "$cov_file" "$tmpf"
+      else
+        cd "${project_dir}" 2>/dev/null || { echo '{"error":"Directory not found"}'; exit 0; }
+
+        case "${runner}" in
+          jest)
+            # Jest outputs coverage-summary.json with --coverage --coverageReporters=json-summary
+            if [ -f "coverage/coverage-summary.json" ]; then
+              cp coverage/coverage-summary.json "$tmpf"
+            else
+              echo '{"error":"No coverage/coverage-summary.json found. Run: npx jest --coverage --coverageReporters=json-summary"}' > "$tmpf"
+            fi
+            ;;
+          pytest)
+            # pytest-cov outputs coverage.json with --cov --cov-report=json
+            if [ -f "coverage.json" ]; then
+              cp coverage.json "$tmpf"
+            else
+              echo '{"error":"No coverage.json found. Run: pytest --cov --cov-report=json"}' > "$tmpf"
+            fi
+            ;;
+          go)
+            # Go coverage profile
+            if [ -f "coverage.out" ]; then
+              total=$(go tool cover -func=coverage.out 2>/dev/null | grep total | awk '{print $3}' | tr -d '%')
+              echo "{\"total\":{\"lines\":{\"pct\":$total}}}" > "$tmpf"
+            else
+              echo '{"error":"No coverage.out found. Run: go test -coverprofile=coverage.out ./..."}' > "$tmpf"
+            fi
+            ;;
+          generic|*)
+            # Try common locations
+            for f in coverage/coverage-summary.json coverage.json .coverage/coverage-summary.json; do
+              if [ -f "$f" ]; then cp "$f" "$tmpf"; break; fi
+            done
+            if [ ! -s "$tmpf" ]; then
+              echo '{"error":"No coverage file found. Specify coverage_file arg or run tests with coverage first."}' > "$tmpf"
+            fi
+            ;;
+        esac
+      fi
+
+      error=$(jq -r '.error // ""' "$tmpf" 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        cat "$tmpf"
+        rm -f "$tmpf"
+        exit 0
+      fi
+
+      # Normalize coverage to a standard format
+      # Jest format: {total: {lines: {pct}, statements: {pct}, branches: {pct}, functions: {pct}}}
+      # Pytest format: {totals: {percent_covered}}
+      jq -c '
+        if .total.lines.pct then
+          # Jest format
+          {
+            lines: .total.lines.pct,
+            statements: (.total.statements.pct // null),
+            branches: (.total.branches.pct // null),
+            functions: (.total.functions.pct // null),
+            overall: .total.lines.pct,
+            format: "jest"
+          }
+        elif .totals.percent_covered then
+          # Pytest format
+          {
+            lines: .totals.percent_covered,
+            overall: .totals.percent_covered,
+            format: "pytest"
+          }
+        elif .total then
+          # Simple format
+          {overall: (.total | if type == "number" then . else 0 end), format: "simple"}
+        else
+          {error: "Unrecognized coverage format"}
+        end
+        | . + {timestamp: (now | todate)}
+      ' "$tmpf"
+      rm -f "$tmpf"
+
+  - id: compare
+    stdin: $get-coverage.stdout
+    command: |
+      cat > /tmp/lb_cov_current.json
+      history=$(cat "${state_file}" 2>/dev/null || echo '[]')
+
+      error=$(jq -r '.error // ""' /tmp/lb_cov_current.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo '{"error":"'"$error"'"}'
+        rm -f /tmp/lb_cov_current.json
+        exit 0
+      fi
+
+      threshold="${threshold}"
+      jq -c --argjson history "$history" --argjson threshold "$threshold" '
+        . as $curr |
+        ($history | if type!="array" then [] else . end) as $hist |
+        ($hist | if length > 0 then .[-1].overall else null end) as $prev |
+        {
+          current: $curr,
+          previous: $prev,
+          delta: (if $prev then ($curr.overall - $prev) | . * 100 | round / 100 else null end),
+          threshold: $threshold,
+          pass: ($curr.overall >= $threshold),
+          trend: (
+            if $prev == null then "first-run"
+            elif $curr.overall > $prev then "up"
+            elif $curr.overall < $prev then "down"
+            else "stable"
+            end
+          ),
+          history_len: ($hist | length)
+        }
+      ' /tmp/lb_cov_current.json
+      rm -f /tmp/lb_cov_current.json
+
+  - id: save-state
+    stdin: $compare.stdout
+    command: |
+      cat > /tmp/lb_cov_compare.json
+      error=$(jq -r '.error // ""' /tmp/lb_cov_compare.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        cat /tmp/lb_cov_compare.json
+        rm -f /tmp/lb_cov_compare.json
+        exit 0
+      fi
+      history=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      current=$(jq '.current' /tmp/lb_cov_compare.json)
+      echo "$history" | jq --argjson curr "$current" '. + [$curr] | .[-50:]' > "${state_file}"
+      cat /tmp/lb_cov_compare.json
+      rm -f /tmp/lb_cov_compare.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if .error then "⚠️ Coverage error: \(.error)"
+        else
+          (if .pass then "✅" else "🔴" end) + " Test Coverage Report\n\n" +
+          "Coverage: \(.current.overall)%" +
+          (if .delta then " (\(if .delta >= 0 then "+" else "" end)\(.delta)%)" else "" end) + "\n" +
+          "Threshold: \(.threshold)%\n" +
+          "Status: \(if .pass then "PASS ✅" else "FAIL ❌ — below threshold!" end)\n" +
+          "Trend: \(.trend)" +
+          (if .current.branches then "\n\nBreakdown:\n  Lines: \(.current.lines)%\n  Branches: \(.current.branches)%\n  Functions: \(.current.functions)%\n  Statements: \(.current.statements)%" else "" end) +
+          (if .history_len > 0 then "\n\nHistory: \(.history_len) previous run(s)" else "" end)
+        end
+      '

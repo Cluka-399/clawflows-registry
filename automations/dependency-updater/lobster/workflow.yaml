@@ -1,0 +1,139 @@
+# Lobster workflow: dependency-updater
+# Check for outdated npm or pip dependencies
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"project_dir":"/path/to/project","package_manager":"npm"}'
+#   lobster run --file workflow.yaml --args-json '{"project_dir":"/path/to/project","package_manager":"pip"}'
+#
+# Requires: jq, npm or pip
+
+name: dependency-updater
+description: Check for outdated dependencies and report available updates
+
+args:
+  project_dir:
+    description: "Path to project directory"
+    default: "."
+  package_manager:
+    description: "Package manager: npm or pip"
+    default: "npm"
+
+steps:
+  - id: check-outdated
+    command: |
+      cd "${project_dir}" 2>/dev/null || { echo '{"error":"Directory not found: ${project_dir}"}'; exit 0; }
+      tmpf=$(mktemp)
+
+      case "${package_manager}" in
+        npm)
+          if [ ! -f "package.json" ]; then
+            echo '{"error":"No package.json found in ${project_dir}"}'
+            exit 0
+          fi
+          # npm outdated --json returns non-zero when outdated packages exist
+          npm outdated --json 2>/dev/null > "$tmpf" || true
+          # Transform npm format: { "pkg": {current, wanted, latest, ...} }
+          jq -c '
+            [to_entries[] | {
+              name: .key,
+              current: .value.current,
+              wanted: .value.wanted,
+              latest: .value.latest,
+              type: .value.type,
+              update_type: (
+                if .value.current == .value.latest then "up-to-date"
+                elif .value.current == .value.wanted then "major"
+                else "minor-or-patch"
+                end
+              )
+            }]
+          ' "$tmpf" 2>/dev/null || echo '[]'
+          ;;
+        pip)
+          if ! command -v pip >/dev/null 2>&1 && ! command -v pip3 >/dev/null 2>&1; then
+            echo '{"error":"pip not found"}'
+            exit 0
+          fi
+          PIP=$(command -v pip3 2>/dev/null || command -v pip)
+          $PIP list --outdated --format=json 2>/dev/null > "$tmpf" || echo '[]' > "$tmpf"
+          # pip format: [{name, version, latest_version, latest_filetype}]
+          jq -c '[.[] | {
+            name: .name,
+            current: .version,
+            wanted: .latest_version,
+            latest: .latest_version,
+            type: .latest_filetype,
+            update_type: "available"
+          }]' "$tmpf" 2>/dev/null || echo '[]'
+          ;;
+        *)
+          echo '{"error":"Unsupported package manager: ${package_manager}. Use npm or pip."}'
+          ;;
+      esac
+      rm -f "$tmpf"
+
+  - id: categorize
+    stdin: $check-outdated.stdout
+    command: |
+      cat > /tmp/lb_deps.json
+
+      error=$(jq -r '.error // ""' /tmp/lb_deps.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo '{"error":"'"$error"'"}'
+        rm -f /tmp/lb_deps.json
+        exit 0
+      fi
+
+      jq -c '{
+        total: length,
+        major: [.[] | select(.update_type == "major")],
+        minor: [.[] | select(.update_type == "minor-or-patch" or .update_type == "available")],
+        all: .
+      } | . + {
+        major_count: (.major | length),
+        minor_count: (.minor | length)
+      }' /tmp/lb_deps.json
+      rm -f /tmp/lb_deps.json
+
+  - id: report
+    stdin: $categorize.stdout
+    command: |
+      cat > /tmp/lb_deps_cat.json
+
+      error=$(jq -r '.error // ""' /tmp/lb_deps_cat.json 2>/dev/null)
+      if [ -n "$error" ] && [ "$error" != "null" ]; then
+        echo "⚠️ Dependency check error: $(jq -r '.error' /tmp/lb_deps_cat.json)"
+        rm -f /tmp/lb_deps_cat.json
+        exit 0
+      fi
+
+      total=$(jq '.total' /tmp/lb_deps_cat.json)
+
+      if [ "$total" = "0" ]; then
+        echo "✅ All dependencies are up to date in ${project_dir} (${package_manager})."
+        rm -f /tmp/lb_deps_cat.json
+        exit 0
+      fi
+
+      jq -r '
+        "📦 Dependency Update Report",
+        "",
+        "Project: '${project_dir}'",
+        "Manager: '${package_manager}'",
+        "Outdated: \(.total) package(s)",
+        "",
+        (if (.major | length) > 0 then
+          "🔴 Major updates (\(.major_count)):",
+          (.major[] | "  • \(.name): \(.current) → \(.latest)"),
+          ""
+        else "" end),
+        (if (.minor | length) > 0 then
+          "🟡 Minor/Patch updates (\(.minor_count)):",
+          (.minor[] | "  • \(.name): \(.current) → \(.latest)"),
+          ""
+        else "" end),
+        "💡 Run: '${package_manager}' " +
+        (if "'${package_manager}'" == "npm" then "update" else "install --upgrade <pkg>" end) +
+        " to apply safe updates."
+      ' /tmp/lb_deps_cat.json
+      rm -f /tmp/lb_deps_cat.json

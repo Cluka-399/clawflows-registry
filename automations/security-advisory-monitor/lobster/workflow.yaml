@@ -1,0 +1,119 @@
+# Lobster workflow: security-advisory-monitor
+# Monitor GitHub Security Advisories for your tech stack
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"ecosystem":"npm","severity":"high"}'
+#   lobster run --file workflow.yaml --args-json '{"ecosystem":"pip","packages":"requests,flask,django"}'
+#
+# Requires: jq, curl
+
+name: security-advisory-monitor
+description: Monitor GitHub security advisories for your tech stack
+
+args:
+  ecosystem:
+    description: "Package ecosystem: npm, pip, go, rubygems, nuget, maven, rust"
+    default: "npm"
+  severity:
+    description: "Minimum severity: low, medium, high, critical"
+    default: "high"
+  packages:
+    description: "Comma-separated package names to filter (empty = all in ecosystem)"
+    default: ""
+  state_file:
+    default: "/tmp/clawflows-secadvisory-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '[]'
+
+  - id: fetch-advisories
+    command: |
+      # Use GitHub Security Advisories API (public, no auth required)
+      # GET /advisories with ecosystem filter
+      tmpf=$(mktemp)
+      eco="${ecosystem}"
+
+      curl -sf \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/advisories?ecosystem=$eco&severity=${severity}&per_page=25&sort=published&direction=desc" \
+        > "$tmpf" 2>/dev/null
+
+      if [ ! -s "$tmpf" ] || ! jq empty "$tmpf" 2>/dev/null; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+
+      # Parse into a clean list
+      packages_filter="${packages}"
+
+      if [ -n "$packages_filter" ]; then
+        # Filter to specific packages
+        jq -c --arg pkgs "$packages_filter" '
+          ($pkgs | split(",") | map(gsub("^\\s+|\\s+$";"")) | map(select(length>0))) as $filter |
+          [.[] | . as $adv |
+            select(.vulnerabilities | any(
+              .package.name as $name | ($filter | any(. == $name))
+            )) |
+            {
+              id: .ghsa_id,
+              severity: .severity,
+              summary: .summary,
+              published: .published_at,
+              url: .html_url,
+              cvss: (.cvss.score // null),
+              packages: [.vulnerabilities[].package.name] | unique
+            }
+          ]
+        ' "$tmpf"
+      else
+        # All advisories in ecosystem
+        jq -c '[.[] | {
+          id: .ghsa_id,
+          severity: .severity,
+          summary: .summary,
+          published: .published_at,
+          url: .html_url,
+          cvss: (.cvss.score // null),
+          packages: [.vulnerabilities[].package.name] | unique
+        }]' "$tmpf"
+      fi
+      rm -f "$tmpf"
+
+  - id: find-new
+    stdin: $fetch-advisories.stdout
+    command: |
+      cat > /tmp/lb_advisories.json
+      seen=$(cat "${state_file}" 2>/dev/null || echo '[]')
+      jq -c --argjson seen "$seen" '
+        ($seen | if type=="array" then . else [] end | map({(.):1}) | add // {}) as $idx |
+        [.[] | select($idx[.id] == null)] as $new |
+        {new: $new, seen: ([$seen[], ($new[]|.id)] | unique | .[-200:]), count: ($new|length)}
+      ' /tmp/lb_advisories.json
+      rm -f /tmp/lb_advisories.json
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      cat > /tmp/lb_secnew.json
+      jq '.seen' /tmp/lb_secnew.json > "${state_file}"
+      cat /tmp/lb_secnew.json
+      rm -f /tmp/lb_secnew.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if .count == 0 then
+          "✅ No new security advisories for '${ecosystem}' (severity ≥ '${severity}')."
+        else
+          "🔒 \(.count) New Security Advisory/ies ('${ecosystem}', severity ≥ '${severity}')\n\n" +
+          (.new | map(
+            "• [\(.severity | ascii_upcase)] \(.summary)\n" +
+            "  Packages: \(.packages | join(", "))\n" +
+            "  CVSS: \(.cvss // "N/A")\n" +
+            "  \(.url)"
+          ) | join("\n\n"))
+        end
+      '
