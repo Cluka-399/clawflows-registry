@@ -1,0 +1,145 @@
+name: "Daily Standup Generator"
+args:
+  repoPaths:
+    desc: "Comma-separated list of git repo paths to scan"
+    default: "."
+  author:
+    desc: "Git author name or email to filter commits (empty = all authors)"
+    default: ""
+  todoFile:
+    desc: "Path to a TODO/task file to scan for completed items (optional)"
+    default: ""
+  todayItems:
+    desc: "Comma-separated list of today's planned tasks (optional)"
+    default: ""
+  blockers:
+    desc: "Comma-separated list of current blockers (optional)"
+    default: ""
+  sinceDays:
+    desc: "Number of days back to scan for commits (default: 1 = yesterday)"
+    default: "1"
+
+steps:
+  - id: collect_commits
+    command: |
+      TMPFILE=$(mktemp /tmp/standup-commits-XXXXXX.json)
+      echo '[]' > "$TMPFILE"
+      echo "${repoPaths}" | tr ',' '\n' | while IFS= read -r repo; do
+        repo=$(echo "$repo" | xargs)
+        if [ ! -d "$repo/.git" ] && [ ! -d "$repo" ]; then
+          echo "WARN: $repo is not a git repo, skipping" >&2
+          continue
+        fi
+        AUTHOR_FLAG=""
+        if [ -n "${author}" ]; then
+          AUTHOR_FLAG="--author=${author}"
+        fi
+        SINCE_DATE=$(date -d "${sinceDays} days ago" +%Y-%m-%d 2>/dev/null || date -v-${sinceDays}d +%Y-%m-%d 2>/dev/null)
+        commits=$(cd "$repo" && git log --since="$SINCE_DATE" --format='{"hash":"%h","subject":"%s","date":"%ci","author":"%an"}' $AUTHOR_FLAG -- 2>/dev/null | while IFS= read -r line; do
+          echo "$line"
+        done)
+        if [ -n "$commits" ]; then
+          REPO_NAME=$(cd "$repo" && basename "$(git rev-parse --show-toplevel 2>/dev/null || echo "$repo")")
+          echo "$commits" | jq -Rs --arg repo "$REPO_NAME" '
+            split("\n") | map(select(length > 0)) | map(fromjson + {repo: $repo})
+          ' > /tmp/standup-repo-tmp.json
+          jq -s '.[0] + .[1]' "$TMPFILE" /tmp/standup-repo-tmp.json > /tmp/standup-merge.json
+          mv /tmp/standup-merge.json "$TMPFILE"
+        fi
+      done
+      cat "$TMPFILE"
+      rm -f "$TMPFILE" /tmp/standup-repo-tmp.json
+
+  - id: collect_todos
+    command: |
+      if [ -z "${todoFile}" ] || [ ! -f "${todoFile}" ]; then
+        echo '{"completed":[],"pending":[]}'
+        exit 0
+      fi
+      cat "${todoFile}" | awk '
+        BEGIN { print "{\"completed\":[" }
+        /^\s*[-*] \[x\]/ {
+          gsub(/^\s*[-*] \[x\]\s*/, "");
+          gsub(/"/, "\\\"");
+          if (cc++) printf ",";
+          printf "\"%s\"", $0;
+        }
+        END {
+          print "],\"pending\":["
+        }
+      ' > /tmp/standup-todo-part1.txt
+      cat "${todoFile}" | awk '
+        /^\s*[-*] \[ \]/ {
+          gsub(/^\s*[-*] \[ \]\s*/, "");
+          gsub(/"/, "\\\"");
+          if (pc++) printf ",";
+          printf "\"%s\"", $0;
+        }
+        END { print "]}" }
+      ' > /tmp/standup-todo-part2.txt
+      cat /tmp/standup-todo-part1.txt /tmp/standup-todo-part2.txt | tr -d '\n' | jq .
+      rm -f /tmp/standup-todo-part1.txt /tmp/standup-todo-part2.txt
+
+  - id: build_report
+    # This step assembles structured JSON. Could be piped to an LLM for
+    # natural-language formatting, but the raw JSON is useful on its own.
+    command: |
+      COMMITS='$collect_commits.json'
+      TODOS='$collect_todos.json'
+
+      # Parse today items and blockers from comma-separated args
+      TODAY_JSON=$(echo "${todayItems}" | jq -R 'split(",") | map(select(length > 0) | ltrimstr(" ") | rtrimstr(" "))')
+      BLOCKERS_JSON=$(echo "${blockers}" | jq -R 'split(",") | map(select(length > 0) | ltrimstr(" ") | rtrimstr(" "))')
+
+      SINCE_DATE=$(date -d "${sinceDays} days ago" +%Y-%m-%d 2>/dev/null || date -v-${sinceDays}d +%Y-%m-%d 2>/dev/null)
+      TODAY_DATE=$(date +%Y-%m-%d)
+
+      # Build yesterday section from commits + completed todos
+      YESTERDAY_COMMITS=$(echo "$COMMITS" | jq '[.[] | "\(.repo): \(.subject)"]')
+      COMPLETED_TODOS=$(echo "$TODOS" | jq '.completed')
+
+      # Merge yesterday items
+      YESTERDAY=$(jq -n --argjson commits "$YESTERDAY_COMMITS" --argjson todos "$COMPLETED_TODOS" '$commits + $todos')
+
+      # Pending todos go into today section
+      PENDING_TODOS=$(echo "$TODOS" | jq '.pending')
+      TODAY_ITEMS=$(jq -n --argjson manual "$TODAY_JSON" --argjson pending "$PENDING_TODOS" '$manual + $pending')
+
+      jq -n \
+        --arg date "$TODAY_DATE" \
+        --arg since "$SINCE_DATE" \
+        --argjson yesterday "$YESTERDAY" \
+        --argjson today "$TODAY_ITEMS" \
+        --argjson blockers "$BLOCKERS_JSON" \
+        --argjson raw_commits "$COMMITS" \
+        --argjson raw_todos "$TODOS" \
+        '{
+          standup: {
+            date: $date,
+            period_start: $since,
+            yesterday: $yesterday,
+            today: $today,
+            blockers: $blockers
+          },
+          raw: {
+            commits: $raw_commits,
+            todos: $raw_todos
+          }
+        }'
+
+  - id: format_text
+    # Human-readable standup text. Pipe this to an LLM for polish if desired.
+    command: |
+      REPORT='$build_report.json'
+      echo "$REPORT" | jq -r '
+        "# Daily Standup — " + .standup.date,
+        "",
+        "## Yesterday (since " + .standup.period_start + ")",
+        (.standup.yesterday | if length == 0 then "- (no activity recorded)" else map("- " + .) | join("\n") end),
+        "",
+        "## Today",
+        (.standup.today | if length == 0 then "- (no items planned)" else map("- " + .) | join("\n") end),
+        "",
+        "## Blockers",
+        (.standup.blockers | if length == 0 then "- None 🎉" else map("- " + .) | join("\n") end)
+      '

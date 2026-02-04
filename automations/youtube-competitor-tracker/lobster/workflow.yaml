@@ -1,0 +1,194 @@
+# Lobster workflow: youtube-competitor-tracker
+# Track competitor YouTube channels — fetch recent videos, store stats,
+# detect viral videos, and produce structured data for weekly reports.
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"channels":"@TechWithTim,@Fireship","videos_per_channel":"3"}'
+#
+# Requires: curl, python3, jq
+# Data source: YouTube RSS feeds (no API key needed)
+# State: JSON files in state_dir (default /tmp/yt-competitor-state)
+# Charts: Output includes chart-ready JSON for chart-image skill
+# LLM: generate_report output can be piped to an LLM for analysis
+
+name: youtube-competitor-tracker
+description: Track competitor YouTube channels, store stats in JSON, detect viral videos, generate report data
+
+args:
+  channels:
+    description: "Comma-separated YouTube channel handles (e.g. @TechWithTim,@Fireship)"
+    default: "@TechWithTim,@Fireship"
+  videos_per_channel:
+    description: "Number of recent videos to fetch per channel"
+    default: "5"
+  viral_threshold:
+    description: "View count threshold for viral alert"
+    default: "1000000"
+  state_dir:
+    description: "Directory to store historical JSON state"
+    default: "/tmp/yt-competitor-state"
+
+steps:
+  - id: resolve_channels
+    command: |
+      handles="${channels}"
+      results='[]'
+      echo "$handles" | tr ',' '\n' | while read -r handle; do
+        handle=$(echo "$handle" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [ -z "$handle" ] && continue
+        echo "Resolving $handle..." >&2
+        page=$(curl -sf -L -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+          "https://www.youtube.com/$handle" 2>/dev/null)
+        channel_id=$(echo "$page" | grep -oP 'channel_id=\K[^"&]+' | head -1)
+        channel_name=$(echo "$page" | grep -oP '<meta property="og:title" content="\K[^"]+' | head -1)
+        if [ -z "$channel_id" ]; then
+          echo "  WARNING: Could not resolve $handle, skipping" >&2
+          continue
+        fi
+        echo "  Found: $channel_name ($channel_id)" >&2
+        echo "$handle|$channel_id|$channel_name"
+      done > /tmp/yt_resolved.txt
+      python3 -c "
+      import json
+      channels = []
+      with open('/tmp/yt_resolved.txt') as f:
+          for line in f:
+              line = line.strip()
+              if not line: continue
+              parts = line.split('|', 2)
+              if len(parts) == 3:
+                  channels.append({'handle': parts[0], 'channel_id': parts[1], 'name': parts[2]})
+      print(json.dumps(channels))
+      "
+      rm -f /tmp/yt_resolved.txt
+
+  - id: fetch_videos
+    command: |
+      channels_json='$resolve_channels.stdout'
+      limit=${videos_per_channel}
+      echo "$channels_json" | jq -r '.[] | "\(.handle)|\(.channel_id)|\(.name)"' | while IFS='|' read -r handle cid cname; do
+        echo "Fetching RSS for $cname..." >&2
+        tmpfeed=$(mktemp)
+        curl -sf "https://www.youtube.com/feeds/videos.xml?channel_id=$cid" > "$tmpfeed" 2>/dev/null
+        if [ ! -s "$tmpfeed" ]; then
+          echo "  WARNING: Empty RSS feed for $cname" >&2
+          rm -f "$tmpfeed"
+          continue
+        fi
+        python3 -c "
+      import xml.etree.ElementTree as ET, json, sys
+      ns = {'atom':'http://www.w3.org/2005/Atom','yt':'http://www.youtube.com/xml/schemas/2015','media':'http://search.yahoo.com/mrss/'}
+      tree = ET.parse(sys.argv[1]); root = tree.getroot()
+      videos = []
+      for entry in root.findall('atom:entry', ns)[:int(sys.argv[2])]:
+          vid = entry.find('yt:videoId', ns)
+          title = entry.find('atom:title', ns)
+          published = entry.find('atom:published', ns)
+          stats = entry.find('.//media:statistics', ns)
+          rating = entry.find('.//media:starRating', ns)
+          views = int(stats.get('views','0')) if stats is not None else 0
+          likes = int(rating.get('count','0')) if rating is not None else 0
+          vid_text = vid.text if vid is not None else ''
+          videos.append({'video_id': vid_text, 'title': title.text if title is not None else '', 'published': published.text if published is not None else '', 'views': views, 'likes': likes, 'channel_handle': sys.argv[3], 'channel_name': sys.argv[4], 'url': 'https://www.youtube.com/watch?v='+vid_text})
+      print(json.dumps(videos))
+      " "$tmpfeed" "$limit" "$handle" "$cname"
+        rm -f "$tmpfeed"
+      done > /tmp/yt_channel_results.txt
+      cat /tmp/yt_channel_results.txt | jq -s 'add // []'
+      rm -f /tmp/yt_channel_results.txt
+
+  - id: save_state
+    command: |
+      state_dir="${state_dir}"
+      mkdir -p "$state_dir"
+      today=$(date -u +%Y-%m-%d)
+      state_file="$state_dir/history.json"
+      if [ ! -f "$state_file" ]; then
+        echo '{}' > "$state_file"
+      fi
+      echo '$fetch_videos.stdout' > /tmp/yt_today_videos.json
+      python3 -c "
+      import json
+      with open('${state_dir}/history.json') as f: history = json.load(f)
+      with open('/tmp/yt_today_videos.json') as f: today_videos = json.load(f)
+      import datetime; today = datetime.date.today().isoformat()
+      history[today] = today_videos
+      dates = sorted(history.keys())
+      if len(dates) > 30:
+          for d in dates[:-30]: del history[d]
+      with open('${state_dir}/history.json', 'w') as f: json.dump(history, f, indent=2)
+      print(json.dumps({'saved': len(today_videos), 'total_days': len(history), 'date': today}))
+      "
+      rm -f /tmp/yt_today_videos.json
+
+  - id: check_viral
+    command: |
+      threshold=${viral_threshold}
+      echo '$fetch_videos.stdout' | jq -c --argjson t "$threshold" '[.[] | select(.views > $t)]' > /tmp/yt_viral.json
+      viral_count=$(jq 'length' /tmp/yt_viral.json)
+      if [ "$viral_count" -gt 0 ]; then
+        echo "VIRAL ALERT: $viral_count video(s) above $threshold views!" >&2
+      else
+        echo "No viral videos detected (threshold: $threshold)" >&2
+      fi
+      cat /tmp/yt_viral.json
+      rm -f /tmp/yt_viral.json
+
+  # NOTE: Report JSON can be piped to an LLM for natural-language analysis,
+  # and chart data can be fed to chart-image skill for visualization
+  - id: generate_report
+    command: |
+      echo '$fetch_videos.stdout' > /tmp/yt_rpt_videos.json
+      echo '$check_viral.stdout' > /tmp/yt_rpt_viral.json
+      echo '$resolve_channels.stdout' > /tmp/yt_rpt_channels.json
+      python3 -c "
+      import json
+      from collections import defaultdict
+      with open('/tmp/yt_rpt_videos.json') as f: videos = json.load(f)
+      with open('/tmp/yt_rpt_viral.json') as f: viral = json.load(f)
+      with open('/tmp/yt_rpt_channels.json') as f: channels = json.load(f)
+      cs = defaultdict(lambda: {'videos':0,'total_views':0,'total_likes':0,'titles':[]})
+      for v in videos:
+          ch = v['channel_name']; cs[ch]['videos'] += 1
+          cs[ch]['total_views'] += v.get('views',0); cs[ch]['total_likes'] += v.get('likes',0)
+          cs[ch]['titles'].append(v.get('title',''))
+      chart_data = [{'label':ch,'value':s['total_views'],'videos':s['videos'],'avg_views':round(s['total_views']/max(s['videos'],1))} for ch,s in cs.items()]
+      chart_data.sort(key=lambda x: x['value'], reverse=True)
+      top = max(videos, key=lambda v: v.get('views',0)) if videos else None
+      report = {
+          'summary': {'channels_tracked': len(channels), 'total_videos_fetched': len(videos), 'viral_count': len(viral), 'top_channel': chart_data[0]['label'] if chart_data else 'N/A', 'top_channel_views': chart_data[0]['value'] if chart_data else 0},
+          'top_video': {'title': top['title'], 'channel': top['channel_name'], 'views': top.get('views',0), 'url': top.get('url','')} if top else None,
+          'channel_stats': chart_data,
+          'viral_videos': viral,
+          'all_videos': videos,
+          'chart': {'type':'bar','title':'Competitor YouTube Views (Recent Videos)','labels':[d['label'] for d in chart_data],'datasets':[{'label':'Total Views','data':[d['value'] for d in chart_data]}]}
+      }
+      print(json.dumps(report, indent=2))
+      "
+      rm -f /tmp/yt_rpt_videos.json /tmp/yt_rpt_viral.json /tmp/yt_rpt_channels.json
+
+  - id: format_output
+    command: |
+      echo '$generate_report.stdout' > /tmp/yt_final_report.json
+      echo "YouTube Competitor Tracker Report"
+      echo "===================================="
+      echo ""
+      channels=$(jq -r '.summary.channels_tracked' /tmp/yt_final_report.json)
+      total=$(jq -r '.summary.total_videos_fetched' /tmp/yt_final_report.json)
+      viral=$(jq -r '.summary.viral_count' /tmp/yt_final_report.json)
+      echo "Tracked $channels channels, fetched $total recent videos"
+      echo ""
+      echo "Top Video:"
+      jq -r '"   \(.top_video.title) (\(.top_video.channel))\n   Views: \(.top_video.views) — \(.top_video.url)"' /tmp/yt_final_report.json
+      echo ""
+      echo "Channel Breakdown:"
+      jq -r '.channel_stats[] | "   \(.label): \(.value) total views across \(.videos) videos (avg: \(.avg_views))"' /tmp/yt_final_report.json
+      echo ""
+      if [ "$viral" -gt 0 ]; then
+        echo "Viral Videos (above threshold):"
+        jq -r '.viral_videos[] | "   \(.title) — \(.views) views\n     \(.url)"' /tmp/yt_final_report.json
+        echo ""
+      fi
+      echo "Full JSON report available in generate_report step output"
+      rm -f /tmp/yt_final_report.json

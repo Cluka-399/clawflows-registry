@@ -1,0 +1,145 @@
+name: "Comment Moderator"
+description: "Fetch comments from a configurable API, apply rule-based moderation, and produce a report"
+args:
+  api_url:
+    desc: "URL to fetch comments from (must return JSON array with body/user fields)"
+    default: "https://api.github.com/repos/facebook/react/issues/comments?per_page=30"
+  blocked_words:
+    desc: "Comma-separated list of blocked words (case-insensitive)"
+    default: "spam,scam,viagra,casino,crypto,hack,free money,click here,buy now"
+  caps_threshold:
+    desc: "Max ratio of uppercase chars (0.0-1.0) before flagging"
+    default: "0.6"
+  min_length_for_caps:
+    desc: "Minimum comment length to apply caps check"
+    default: "20"
+  max_links:
+    desc: "Max number of URLs allowed per comment before flagging"
+    default: "3"
+  max_duplicates:
+    desc: "Max times the same text can appear before flagging as spam"
+    default: "1"
+
+steps:
+  - id: fetch_comments
+    command: |
+      curl -s -H "Accept: application/json" -H "User-Agent: lobster-moderator" "${api_url}" > /tmp/mod_raw_comments.json
+      # Normalize: extract array of {id, user, body, created_at} regardless of source shape
+      jq '[
+        .[] | {
+          id: (.id // .comment_id // .node_id // (. | tostring | ltrimstr("{") | rtrimstr("}") | split(",")[0])),
+          user: (.user.login // .author // .username // "unknown"),
+          body: (.body // .text // .content // .message // ""),
+          created_at: (.created_at // .timestamp // .date // "unknown")
+        }
+      ]' /tmp/mod_raw_comments.json > /tmp/mod_comments.json
+      echo "Fetched $(jq length /tmp/mod_comments.json) comments"
+      cat /tmp/mod_comments.json
+
+  - id: moderate
+    command: |
+      cat > /tmp/mod_moderate.sh << 'MODERATE_SCRIPT'
+      #!/usr/bin/env bash
+      set -e
+
+      BLOCKED_WORDS="${1}"
+      CAPS_THRESHOLD="${2}"
+      MIN_LENGTH="${3}"
+      MAX_LINKS="${4}"
+      MAX_DUPES="${5}"
+
+      # Build the jq moderation filter
+      jq --arg blocked "$BLOCKED_WORDS" \
+         --argjson caps_thresh "$CAPS_THRESHOLD" \
+         --argjson min_len "$MIN_LENGTH" \
+         --argjson max_links "$MAX_LINKS" \
+         --argjson max_dupes "$MAX_DUPES" '
+        # Pre-compute duplicate counts
+        [.[] | .body] | group_by(.) | map({key: .[0], value: (. | length)}) | from_entries as $dupes |
+
+        # Split blocked words
+        ($blocked | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $bwords |
+
+        # Process each comment
+        input | [.[] | . as $comment |
+          # Initialize flags
+          { comment: ., flags: [], score: 0 } |
+
+          # Check blocked words
+          (reduce $bwords[] as $word (.;
+            if ($comment.body | ascii_downcase | test($word; "i"))
+            then .flags += ["blocked_word:" + $word] | .score += 10
+            else . end
+          )) |
+
+          # Check caps ratio
+          (if ($comment.body | length) >= $min_len then
+            ([$comment.body | explode[] | select(. >= 65 and . <= 90)] | length) as $upper |
+            ([$comment.body | explode[] | select((. >= 65 and . <= 90) or (. >= 97 and . <= 122))] | length) as $alpha |
+            if $alpha > 0 and (($upper / $alpha) > $caps_thresh) then
+              .flags += ["excessive_caps:ratio=" + (($upper / $alpha * 100) | floor | tostring) + "%"] | .score += 5
+            else . end
+          else . end) |
+
+          # Check link count
+          ([$comment.body | match("https?://[^\\s)\"]+"; "g")] | length) as $link_count |
+          (if $link_count > $max_links then
+            .flags += ["too_many_links:count=" + ($link_count | tostring)] | .score += 7
+          else . end) |
+
+          # Check duplicates
+          (if ($dupes[$comment.body] // 0) > $max_dupes then
+            .flags += ["duplicate:count=" + ($dupes[$comment.body] | tostring)] | .score += 8
+          else . end) |
+
+          # Check very short/empty
+          (if ($comment.body | length) < 2 then
+            .flags += ["empty_or_trivial"] | .score += 3
+          else . end) |
+
+          # Check repeated characters (e.g. "aaaaaaa")
+          (if ($comment.body | test("(.)\\1{9,}")) then
+            .flags += ["repeated_chars"] | .score += 4
+          else . end) |
+
+          # Add status
+          (if (.flags | length) > 0 then .status = "flagged" else .status = "clean" end) |
+
+          {
+            id: .comment.id,
+            user: .comment.user,
+            body: (.comment.body | if length > 120 then .[:120] + "..." else . end),
+            full_body_length: (.comment.body | length),
+            status: .status,
+            flags: .flags,
+            score: .score
+          }
+        ]
+      ' /tmp/mod_comments.json /tmp/mod_comments.json > /tmp/mod_results.json
+
+      cat /tmp/mod_results.json
+      MODERATE_SCRIPT
+      chmod +x /tmp/mod_moderate.sh
+      bash /tmp/mod_moderate.sh "${blocked_words}" "${caps_threshold}" "${min_length_for_caps}" "${max_links}" "${max_duplicates}"
+
+  - id: report
+    command: |
+      jq '{
+        summary: {
+          total_comments: (. | length),
+          clean: ([.[] | select(.status == "clean")] | length),
+          flagged: ([.[] | select(.status == "flagged")] | length),
+          avg_score: (if length > 0 then ([.[].score] | add / length * 100 | floor / 100) else 0 end),
+          max_score: ([.[].score] | max // 0)
+        },
+        flag_breakdown: (
+          [.[] | .flags[]] | group_by(split(":")[0]) |
+          map({type: .[0] | split(":")[0], count: length}) |
+          sort_by(-.count)
+        ),
+        flagged_comments: [.[] | select(.status == "flagged") | {id, user, body, flags, score}],
+        # NOTE: For LLM-enhanced moderation, pipe flagged_comments to an LLM
+        # for sentiment analysis and context-aware decisions.
+        # Example: cat /tmp/mod_results.json | jq "[.[] | select(.status==\"flagged\")]" | llm-tool moderate
+        clean_sample: [.[] | select(.status == "clean") | {id, user, body}][:3]
+      }' /tmp/mod_results.json

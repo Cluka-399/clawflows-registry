@@ -1,0 +1,70 @@
+# Lobster workflow: post-scheduler
+# Checks a schedule file for posts due now, outputs them for posting
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"schedule_file":"/path/to/schedule.json"}'
+#
+# Schedule JSON format: array of objects:
+#   { "id": "...", "content": "...", "platform": "twitter|mastodon|linkedin", "scheduled_at": "YYYY-MM-DDTHH:MM", "status": "pending|posted|failed" }
+#
+# Requires: jq
+
+name: post-scheduler
+description: Check schedule for posts due now, mark them ready, output for posting
+
+args:
+  schedule_file:
+    description: "Path to JSON schedule file"
+    default: "/tmp/clawflows-post-schedule.json"
+  window_minutes:
+    description: "Time window in minutes to consider a post 'due'"
+    default: "30"
+
+steps:
+  - id: load-schedule
+    command: |
+      if [ ! -f "${schedule_file}" ]; then
+        echo '[]' > "${schedule_file}"
+      fi
+      cat "${schedule_file}"
+
+  - id: find-due-posts
+    stdin: $load-schedule.stdout
+    command: |
+      cat > /tmp/lb_sched_all.json
+      now=$(date -u +%Y-%m-%dT%H:%M)
+      window=${window_minutes}
+      # Calculate cutoff time (now + window)
+      now_epoch=$(date +%s)
+      cutoff_epoch=$((now_epoch + window * 60))
+      cutoff=$(date -u -d "@$cutoff_epoch" +%Y-%m-%dT%H:%M 2>/dev/null || date -u -r "$cutoff_epoch" +%Y-%m-%dT%H:%M 2>/dev/null || echo "$now")
+      jq -c --arg now "$now" --arg cutoff "$cutoff" '
+        {
+          due: [.[] | select(.status == "pending" and .scheduled_at >= $now and .scheduled_at <= $cutoff)],
+          overdue: [.[] | select(.status == "pending" and .scheduled_at < $now)],
+          upcoming: [.[] | select(.status == "pending" and .scheduled_at > $cutoff)] | length,
+          total_pending: [.[] | select(.status == "pending")] | length,
+          total_posted: [.[] | select(.status == "posted")] | length
+        }
+      ' /tmp/lb_sched_all.json
+      rm -f /tmp/lb_sched_all.json
+
+  - id: report
+    stdin: $find-due-posts.stdout
+    command: |
+      jq -r '
+        "📬 Post Scheduler Report\n" +
+        "─────────────────────\n" +
+        "Total pending: \(.total_pending) | Already posted: \(.total_posted)\n" +
+        if (.overdue | length) > 0 then
+          "\n⚠️  Overdue (\(.overdue | length)):\n" +
+          (.overdue | map("  🔴 [\(.platform)] \(.content[:80])... (was due \(.scheduled_at))") | join("\n")) + "\n"
+        else "" end +
+        if (.due | length) > 0 then
+          "\n🟢 Due now (\(.due | length)):\n" +
+          (.due | map("  📝 [\(.platform)] \(.content[:80])... → \(.scheduled_at)") | join("\n")) + "\n"
+        else "" end +
+        if (.due | length) == 0 and (.overdue | length) == 0 then
+          "\n✅ Nothing due right now. \(.upcoming) post(s) still upcoming."
+        else "" end
+      '

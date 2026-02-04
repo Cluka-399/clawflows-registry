@@ -1,0 +1,262 @@
+# Lobster workflow: partnership-scout
+# Find companies serving your audience (non-competitors), analyze partnership signals,
+# collect data for co-marketing pitch generation.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"target_audience":"devtools startup founders","your_product":"Anima design-to-code","exclude_competitors":"Figma,Sketch,Adobe"}'
+#
+# Requires: curl, jq
+# Env: BRAVE_API_KEY
+
+name: partnership-scout
+description: >
+  Find adjacent companies serving your audience, analyze partnership fit signals,
+  and collect structured data for co-marketing outreach.
+
+args:
+  target_audience:
+    description: "Your target audience (e.g. 'devtools startup founders')"
+  your_product:
+    description: "Your product name and short description"
+  exclude_competitors:
+    description: "Comma-separated competitor names to exclude"
+    default: ""
+  max_results:
+    description: "Max companies to discover per search query"
+    default: "5"
+
+steps:
+  # Step 1: Search for adjacent companies using Brave Search API
+  - id: discover-companies
+    command: |
+      tmpraw=$(mktemp)
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      audience="${target_audience}"
+      excludes="${exclude_competitors}"
+
+      # Build exclusion string for search
+      exclude_q=""
+      if [ -n "$excludes" ]; then
+        for comp in $(echo "$excludes" | tr ',' '\n'); do
+          comp=$(echo "$comp" | xargs)
+          [ -n "$comp" ] && exclude_q="$exclude_q -$comp"
+        done
+      fi
+
+      # Run multiple search queries to find adjacent companies
+      q1="$audience tools software platform$exclude_q"
+      q2="$audience SaaS companies$exclude_q"
+      q3="best tools for $audience 2025 2026$exclude_q"
+
+      for query in "$q1" "$q2" "$q3"; do
+        response=$(curl -s -G "https://api.search.brave.com/res/v1/web/search" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          --data-urlencode "q=$query" \
+          --data-urlencode "count=${max_results}" 2>/dev/null)
+
+        if [ -n "$response" ]; then
+          echo "$response" | jq -c '[.web.results[]? | {title: .title, url: .url, description: .description}]' 2>/dev/null >> "$tmpraw"
+        fi
+        sleep 1
+      done
+
+      # Merge and deduplicate results by domain
+      if [ -f "$tmpraw" ] && [ -s "$tmpraw" ]; then
+        cat "$tmpraw" | jq -s 'add // [] | group_by(.url | split("/")[2]) | map(.[0])' > "$tmpout"
+      fi
+
+      cat "$tmpout"
+      rm -f "$tmpraw" "$tmpout"
+
+  # Step 2: For each discovered company, search for partnership signals and content
+  - id: analyze-signals
+    stdin: $discover-companies.json
+    command: |
+      cat > /tmp/lb_ps_companies.json
+      echo '[]' > /tmp/lb_ps_analyzed_all.json
+
+      count=$(jq 'length' /tmp/lb_ps_companies.json)
+      i=0
+
+      while [ "$i" -lt "$count" ] && [ "$i" -lt 10 ]; do
+        title=$(jq -r ".[$i].title" /tmp/lb_ps_companies.json)
+        url=$(jq -r ".[$i].url" /tmp/lb_ps_companies.json)
+        desc=$(jq -r ".[$i].description // \"\"" /tmp/lb_ps_companies.json)
+        domain=$(echo "$url" | sed 's|https\?://||' | cut -d'/' -f1)
+
+        # Search for partnership/integration signals on their site
+        signals_response=$(curl -s -G "https://api.search.brave.com/res/v1/web/search" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          --data-urlencode "q=site:$domain partnerships OR integrations OR partner OR webinar" \
+          --data-urlencode "count=5" 2>/dev/null)
+
+        signal_count=0
+        signal_titles="[]"
+        if [ -n "$signals_response" ]; then
+          sc=$(echo "$signals_response" | jq '[.web.results[]?] | length' 2>/dev/null)
+          signal_count=${sc:-0}
+          st=$(echo "$signals_response" | jq -c '[.web.results[]? | .title]' 2>/dev/null)
+          signal_titles=${st:-"[]"}
+        fi
+
+        # Search for their blog/content
+        blog_response=$(curl -s -G "https://api.search.brave.com/res/v1/web/search" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          --data-urlencode "q=site:$domain blog OR podcast OR webinar" \
+          --data-urlencode "count=3" 2>/dev/null)
+
+        recent_content="[]"
+        if [ -n "$blog_response" ]; then
+          rc=$(echo "$blog_response" | jq -c '[.web.results[]? | {title: .title, url: .url}]' 2>/dev/null)
+          recent_content=${rc:-"[]"}
+        fi
+
+        # Determine fit rating based on partnership signal count
+        fit="LOW"
+        if [ "$signal_count" -ge 3 ] 2>/dev/null; then
+          fit="HIGH"
+        elif [ "$signal_count" -ge 1 ] 2>/dev/null; then
+          fit="MEDIUM"
+        fi
+
+        # Append to results
+        jq -c --arg t "$title" --arg u "$url" --arg d "$desc" --arg dom "$domain" \
+          --arg f "$fit" --argjson sc "${signal_count:-0}" --argjson st "$signal_titles" \
+          --argjson rc "$recent_content" \
+          '. + [{
+            company: $t,
+            url: $u,
+            domain: $dom,
+            description: $d,
+            fit: $f,
+            partnership_signal_count: $sc,
+            partnership_signals: $st,
+            recent_content: $rc
+          }]' /tmp/lb_ps_analyzed_all.json > /tmp/lb_ps_analyzed_tmp.json
+        mv /tmp/lb_ps_analyzed_tmp.json /tmp/lb_ps_analyzed_all.json
+
+        i=$((i + 1))
+        sleep 1
+      done
+
+      cat /tmp/lb_ps_analyzed_all.json
+      rm -f /tmp/lb_ps_companies.json /tmp/lb_ps_analyzed_tmp.json
+
+  # Step 3: Search for contact info for high/medium-fit companies
+  - id: find-contacts
+    stdin: $analyze-signals.json
+    command: |
+      cat > /tmp/lb_ps_analyzed.json
+      echo '[]' > /tmp/lb_ps_contacts_out.json
+
+      # Filter to HIGH and MEDIUM fit only
+      jq -c '[.[] | select(.fit == "HIGH" or .fit == "MEDIUM")]' /tmp/lb_ps_analyzed.json > /tmp/lb_ps_targets.json
+      count=$(jq 'length' /tmp/lb_ps_targets.json)
+      i=0
+
+      while [ "$i" -lt "$count" ] && [ "$i" -lt 5 ]; do
+        domain=$(jq -r ".[$i].domain" /tmp/lb_ps_targets.json)
+
+        # Search for partnership/marketing contacts
+        contact_response=$(curl -s -G "https://api.search.brave.com/res/v1/web/search" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          --data-urlencode "q=$domain head of partnerships OR head of marketing OR VP marketing" \
+          --data-urlencode "count=3" 2>/dev/null)
+
+        contact_hints="[]"
+        if [ -n "$contact_response" ]; then
+          ch=$(echo "$contact_response" | jq -c '[.web.results[]? | {title: .title, url: .url}]' 2>/dev/null)
+          contact_hints=${ch:-"[]"}
+        fi
+
+        # Get the full company entry and add contact hints
+        jq -c --argjson ch "$contact_hints" ".[$i] + {contact_hints: \$ch}" /tmp/lb_ps_targets.json > /tmp/lb_ps_entry.json
+        jq -c --slurpfile e /tmp/lb_ps_entry.json '. + $e' /tmp/lb_ps_contacts_out.json > /tmp/lb_ps_contacts_tmp.json
+        mv /tmp/lb_ps_contacts_tmp.json /tmp/lb_ps_contacts_out.json
+
+        i=$((i + 1))
+        sleep 1
+      done
+
+      cat /tmp/lb_ps_contacts_out.json
+      rm -f /tmp/lb_ps_analyzed.json /tmp/lb_ps_targets.json /tmp/lb_ps_entry.json /tmp/lb_ps_contacts_tmp.json /tmp/lb_ps_contacts_out.json
+
+  # Step 4: Generate final structured report
+  # NOTE: The original automation generates LLM-based pitches per company.
+  # This step produces structured JSON ready to pipe to an LLM for pitch generation.
+  # To generate pitches, pipe partnership_targets to an LLM with their recent_content.
+  - id: generate-report
+    stdin: $find-contacts.json
+    command: |
+      cat > /tmp/lb_ps_contacts_final.json
+
+      # /tmp/lb_ps_analyzed_all.json was persisted by analyze-signals step
+      jq --slurpfile targets /tmp/lb_ps_contacts_final.json \
+        --arg product "${your_product}" \
+        --arg audience "${target_audience}" \
+        '{
+          meta: {
+            product: $product,
+            audience: $audience,
+            generated_at: (now | todate),
+            note: "Pipe high-fit companies to an LLM with their recent_content for personalized pitch generation"
+          },
+          summary: {
+            total_discovered: length,
+            high_fit: ([.[] | select(.fit == "HIGH")] | length),
+            medium_fit: ([.[] | select(.fit == "MEDIUM")] | length),
+            low_fit: ([.[] | select(.fit == "LOW")] | length)
+          },
+          partnership_targets: ($targets[0] // []),
+          all_companies: .
+        }' /tmp/lb_ps_analyzed_all.json
+
+      rm -f /tmp/lb_ps_contacts_final.json /tmp/lb_ps_analyzed_all.json
+
+  # Step 5: Human-readable summary
+  - id: summary
+    stdin: $generate-report.json
+    command: |
+      cat > /tmp/lb_ps_final.json
+
+      total=$(jq '.summary.total_discovered' /tmp/lb_ps_final.json)
+      high=$(jq '.summary.high_fit' /tmp/lb_ps_final.json)
+      medium=$(jq '.summary.medium_fit' /tmp/lb_ps_final.json)
+      product=$(jq -r '.meta.product' /tmp/lb_ps_final.json)
+
+      echo "🤝 **Partnership Scout Report** for $product"
+      echo ""
+      echo "📊 Discovered **$total** adjacent companies | **$high** high fit | **$medium** medium fit"
+      echo ""
+
+      # List high-fit targets
+      if [ "$high" -gt 0 ] 2>/dev/null; then
+        echo "🟢 **High-Fit Partners:**"
+        jq -r '.partnership_targets[] | select(.fit == "HIGH") | "  • **\(.company)** (\(.domain)) — \(.partnership_signal_count) partnership signals"' /tmp/lb_ps_final.json 2>/dev/null
+        echo ""
+      fi
+
+      # List medium-fit targets
+      if [ "$medium" -gt 0 ] 2>/dev/null; then
+        echo "🟡 **Medium-Fit Partners:**"
+        jq -r '.partnership_targets[] | select(.fit == "MEDIUM") | "  • **\(.company)** (\(.domain)) — \(.partnership_signal_count) partnership signals"' /tmp/lb_ps_final.json 2>/dev/null
+        echo ""
+      fi
+
+      # Show recent content from top targets for pitch context
+      top_count=$(jq '.partnership_targets | length' /tmp/lb_ps_final.json)
+      if [ "$top_count" -gt 0 ] 2>/dev/null; then
+        echo "📝 **Recent Content (for pitch personalization):**"
+        jq -r '.partnership_targets[:3][] | select(.recent_content | length > 0) | "  \(.company): " + (.recent_content[:2] | map(.title) | join(", "))' /tmp/lb_ps_final.json 2>/dev/null
+        echo ""
+      fi
+
+      echo "💡 _Pipe the full JSON output to an LLM to generate personalized co-marketing pitches._"
+
+      rm -f /tmp/lb_ps_final.json

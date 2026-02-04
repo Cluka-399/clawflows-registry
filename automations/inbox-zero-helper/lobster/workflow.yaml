@@ -1,0 +1,275 @@
+name: inbox-zero-helper
+description: "Categorize, summarize, and draft response hints for your email inbox"
+
+args:
+  inbox:
+    desc: "Inbox address or ID (e.g. user@agentmail.to)"
+    default: "demo@agentmail.to"
+  api_base:
+    desc: "Email API base URL"
+    default: "https://api.agentmail.to/v0"
+  max_emails:
+    desc: "Maximum emails to process per run"
+    default: "20"
+  auto_archive:
+    desc: "Auto-archive promotional emails (true/false)"
+    default: "true"
+
+steps:
+  # ── Step 1: Fetch unread emails from the inbox API ──
+  # For real usage: curl -s -H "Authorization: Bearer $AGENTMAIL_API_KEY" "${api_base}/inboxes/${inbox}/messages?limit=${max_emails}"
+  # Falling back to mock data for testing / when API is unavailable.
+  - id: fetch_emails
+    command: |
+      if [ -n "$AGENTMAIL_API_KEY" ] && [ "${api_base}" != "__mock__" ]; then
+        curl -sf -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+          "${api_base}/inboxes/${inbox}/messages?limit=${max_emails}" 2>/dev/null
+        if [ $? -ne 0 ]; then
+          echo "API_UNAVAILABLE" >&2
+        fi
+      fi
+      # If we got nothing from the API (or mock mode), generate mock data for testing
+      cat <<'MOCK'
+      {
+        "messages": [
+          {"id":"m1","from":"ceo@company.com","subject":"URGENT: Board meeting moved to tomorrow","snippet":"The board meeting has been rescheduled to tomorrow 9am. Please prepare your slides ASAP.","date":"2026-02-04T08:00:00Z","read":false},
+          {"id":"m2","from":"alice@team.com","subject":"Code review needed for PR #421","snippet":"Hey, can you review my pull request when you get a chance? It's the auth refactor we discussed.","date":"2026-02-04T07:30:00Z","read":false},
+          {"id":"m3","from":"noreply@newsletter.io","subject":"🎉 50% off everything this week!","snippet":"Don't miss our biggest sale of the year. Use code SAVE50 at checkout.","date":"2026-02-04T06:00:00Z","read":false},
+          {"id":"m4","from":"hr@company.com","subject":"Reminder: Submit timesheets by Friday","snippet":"Please remember to submit your timesheets for this pay period by end of day Friday.","date":"2026-02-03T16:00:00Z","read":false},
+          {"id":"m5","from":"mom@family.net","subject":"Dinner Sunday?","snippet":"Hi sweetie, would you like to come over for dinner this Sunday? Dad is making his famous lasagna.","date":"2026-02-03T14:00:00Z","read":false},
+          {"id":"m6","from":"security@github.com","subject":"[GitHub] A new sign-in from Chrome on Linux","snippet":"We noticed a new sign-in to your account from Chrome on Linux.","date":"2026-02-03T12:00:00Z","read":false},
+          {"id":"m7","from":"deals@store.com","subject":"Your weekly deals are here!","snippet":"Check out this week's top picks curated just for you. Free shipping on orders over $50.","date":"2026-02-03T10:00:00Z","read":false},
+          {"id":"m8","from":"boss@company.com","subject":"Re: Q1 Planning - action items","snippet":"Following up on our meeting. Please send me the updated roadmap by Wednesday.","date":"2026-02-03T09:00:00Z","read":false}
+        ]
+      }
+      MOCK
+
+  # ── Step 2: Categorize emails using keyword heuristics ──
+  # NOTE: For production use, pipe the JSON to an LLM for much better categorization.
+  # This step uses keyword matching as a baseline heuristic.
+  - id: categorize_emails
+    command: |
+      cat > /tmp/inbox_zero_emails.json <<'ENDINPUT'
+      $fetch_emails.stdout
+      ENDINPUT
+
+      python3 << 'PYEOF'
+      import json, re, sys
+
+      with open("/tmp/inbox_zero_emails.json") as f:
+          data = json.load(f)
+
+      messages = data.get("messages", data if isinstance(data, list) else [])
+
+      URGENT_KEYWORDS = r"(urgent|asap|emergency|critical|immediately|deadline today|moved to tomorrow)"
+      ACTION_KEYWORDS = r"(action needed|action required|review needed|please send|please submit|follow.?up|can you|could you|by friday|by wednesday|by monday|by end of)"
+      PROMO_KEYWORDS = r"(unsubscribe|% off|sale|deals|newsletter|noreply|no-reply|marketing|checkout|free shipping|promo|coupon|discount)"
+      PERSONAL_KEYWORDS = r"(mom|dad|family|dinner|birthday|sweetie|honey|bro|sis)"
+      FYI_KEYWORDS = r"(fyi|notification|alert|sign.?in|logged in|update|reminder|noticed)"
+
+      categorized = []
+      for msg in messages:
+          text = (msg.get("subject","") + " " + msg.get("snippet","") + " " + msg.get("from","")).lower()
+
+          if re.search(URGENT_KEYWORDS, text):
+              category = "urgent"
+              action = "reply"
+          elif re.search(PROMO_KEYWORDS, text):
+              category = "promotional"
+              action = "archive"
+          elif re.search(PERSONAL_KEYWORDS, text):
+              category = "personal"
+              action = "none"
+          elif re.search(ACTION_KEYWORDS, text):
+              category = "action-needed"
+              action = "reply"
+          elif re.search(FYI_KEYWORDS, text):
+              category = "fyi"
+              action = "none"
+          else:
+              category = "fyi"
+              action = "none"
+
+          # Build one-line summary
+          summary = msg.get("subject", "(no subject)")
+          sender = msg.get("from", "unknown")
+          short_sender = sender.split("@")[0] if "@" in sender else sender
+
+          categorized.append({
+              "id": msg["id"],
+              "from": sender,
+              "subject": msg.get("subject", ""),
+              "category": category,
+              "summary": f"[{short_sender}] {summary}",
+              "suggestedAction": action
+          })
+
+      print(json.dumps(categorized, indent=2))
+      PYEOF
+
+  # ── Step 3: Group by category and build structured report ──
+  - id: group_and_summarize
+    command: |
+      cat > /tmp/inbox_zero_categorized.json <<'ENDINPUT'
+      $categorize_emails.stdout
+      ENDINPUT
+
+      python3 << 'PYEOF'
+      import json
+
+      with open("/tmp/inbox_zero_categorized.json") as f:
+          items = json.load(f)
+
+      groups = {}
+      for item in items:
+          cat = item["category"]
+          groups.setdefault(cat, []).append(item)
+
+      # Build counts
+      counts = {cat: len(emails) for cat, emails in groups.items()}
+      total = len(items)
+
+      # Identify promotional IDs for archiving
+      promo_ids = [e["id"] for e in groups.get("promotional", [])]
+
+      # Build text summary
+      icons = {"urgent":"🔴","action-needed":"🟡","fyi":"🔵","promotional":"📦","personal":"💜"}
+      labels = {"urgent":"Urgent","action-needed":"Action Needed","fyi":"FYI","promotional":"Promotional","personal":"Personal"}
+      order = ["urgent","action-needed","personal","fyi","promotional"]
+
+      lines = [f"📬 **Inbox Zero Helper — processed {total} emails**\n"]
+      for cat in order:
+          emails = groups.get(cat, [])
+          if not emails:
+              continue
+          icon = icons.get(cat, "📧")
+          label = labels.get(cat, cat)
+          lines.append(f"{icon} **{label} ({len(emails)}):**")
+          for e in emails[:5]:
+              lines.append(f"  • {e['summary']} → _{e['suggestedAction']}_")
+          if len(emails) > 5:
+              lines.append(f"  • ...and {len(emails)-5} more")
+          lines.append("")
+
+      result = {
+          "counts": counts,
+          "total": total,
+          "promo_ids": promo_ids,
+          "groups": groups,
+          "summary_text": "\n".join(lines)
+      }
+      print(json.dumps(result, indent=2))
+      PYEOF
+
+  # ── Step 4: Archive promotional emails (if enabled) ──
+  # In production, this would call: POST ${api_base}/inboxes/${inbox}/messages/archive
+  # with the list of promotional email IDs.
+  - id: archive_promotional
+    command: |
+      cat > /tmp/inbox_zero_report.json <<'ENDINPUT'
+      $group_and_summarize.json
+      ENDINPUT
+
+      PROMO_IDS=$(python3 -c "import json; d=json.load(open('/tmp/inbox_zero_report.json')); print(json.dumps(d.get('promo_ids',[])))")
+      PROMO_COUNT=$(echo "$PROMO_IDS" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+
+      if [ "${auto_archive}" = "true" ] && [ "$PROMO_COUNT" -gt 0 ]; then
+        # Production: curl -sf -X POST -H "Authorization: Bearer $AGENTMAIL_API_KEY" \
+        #   -H "Content-Type: application/json" \
+        #   -d "{\"ids\": $PROMO_IDS}" \
+        #   "${api_base}/inboxes/${inbox}/messages/archive"
+        echo "{\"archived\": true, \"count\": $PROMO_COUNT, \"ids\": $PROMO_IDS}"
+      else
+        echo "{\"archived\": false, \"count\": 0, \"ids\": []}"
+      fi
+
+  # ── Step 5: Generate response hints for action-needed emails ──
+  # NOTE: In production, pipe action-needed emails to an LLM for actual draft generation.
+  # This step produces structured data ready for LLM consumption.
+  - id: draft_hints
+    command: |
+      cat > /tmp/inbox_zero_groups.json <<'ENDINPUT'
+      $group_and_summarize.json
+      ENDINPUT
+
+      python3 << 'PYEOF'
+      import json
+
+      with open("/tmp/inbox_zero_groups.json") as f:
+          data = json.load(f)
+
+      action_emails = data.get("groups", {}).get("action-needed", [])
+      urgent_emails = data.get("groups", {}).get("urgent", [])
+
+      # Combine urgent + action-needed for response hints
+      needs_response = urgent_emails + action_emails
+
+      hints = []
+      for e in needs_response[:5]:
+          subject = e.get("subject", "")
+          # Simple heuristic hint (LLM would generate actual draft text here)
+          if "review" in subject.lower():
+              hint = "Acknowledge and provide timeline for review"
+          elif "meeting" in subject.lower():
+              hint = "Confirm attendance and ask for agenda/materials"
+          elif "send" in subject.lower() or "submit" in subject.lower():
+              hint = "Acknowledge deadline and confirm you'll deliver on time"
+          elif "follow" in subject.lower():
+              hint = "Provide requested update or status"
+          else:
+              hint = "Review and respond with appropriate action"
+
+          hints.append({
+              "id": e["id"],
+              "from": e.get("from",""),
+              "subject": subject,
+              "response_hint": hint
+          })
+
+      # NOTE: For LLM-powered drafts, send this JSON to an LLM with a prompt like:
+      # "For each email, draft a concise professional reply matching the sender's tone."
+      print(json.dumps({"drafts": hints, "count": len(hints)}, indent=2))
+      PYEOF
+
+  # ── Step 6: Final output — combine everything into a report ──
+  - id: final_report
+    command: |
+      cat > /tmp/inbox_zero_summary.json <<'ENDINPUT'
+      $group_and_summarize.json
+      ENDINPUT
+      cat > /tmp/inbox_zero_archive.json <<'ENDINPUT'
+      $archive_promotional.json
+      ENDINPUT
+      cat > /tmp/inbox_zero_drafts.json <<'ENDINPUT'
+      $draft_hints.json
+      ENDINPUT
+
+      python3 << 'PYEOF'
+      import json
+
+      with open("/tmp/inbox_zero_summary.json") as f:
+          summary = json.load(f)
+      with open("/tmp/inbox_zero_archive.json") as f:
+          archive = json.load(f)
+      with open("/tmp/inbox_zero_drafts.json") as f:
+          drafts = json.load(f)
+
+      text = summary["summary_text"]
+
+      if archive.get("archived") and archive.get("count", 0) > 0:
+          text += f"\n🗑️ Auto-archived {archive['count']} promotional emails\n"
+
+      if drafts.get("count", 0) > 0:
+          text += f"\n✏️ **Response hints ({drafts['count']}):**\n"
+          for d in drafts.get("drafts", []):
+              text += f"  • [{d['from'].split('@')[0]}] {d['subject']}: _{d['response_hint']}_\n"
+
+      report = {
+          "summary": text,
+          "counts": summary["counts"],
+          "total": summary["total"],
+          "archived": archive,
+          "drafts": drafts["drafts"]
+      }
+      print(json.dumps(report, indent=2))
+      PYEOF

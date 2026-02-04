@@ -1,0 +1,265 @@
+# Lobster workflow: cold-email-personalizer
+# Research targets via public web data, collect personalization signals,
+# and produce structured JSON ready for LLM-based email generation.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"target_domains":"github.com/tj,github.com/sindresorhus","product_name":"DevArk","product_pitch":"AI-powered dev tools that ship features 3x faster"}'
+#
+# Requires: curl, jq, BRAVE_API_KEY env var
+#
+# NOTE: The original automation finds LinkedIn decision-makers. This Lobster
+# version uses public GitHub profiles + Brave web search as concrete data
+# sources. Actual LLM personalization and email sending are TODO comments.
+
+name: cold-email-personalizer
+description: Research targets, collect personalization signals, produce structured data for hyper-personalized cold emails
+
+args:
+  target_domains:
+    desc: "Comma-separated target identifiers (GitHub profile URLs or org names)"
+  target_titles:
+    desc: "Job titles to look for (comma-separated)"
+    default: "CEO,CTO,VP Engineering,Head of Product,Founder"
+  product_name:
+    desc: "Your product name"
+    default: "DevArk"
+  product_pitch:
+    desc: "One-line product pitch"
+    default: "AI-powered dev tools that ship features 3x faster"
+  max_targets:
+    desc: "Max targets to research"
+    default: "5"
+
+steps:
+  - id: find_targets
+    command: |
+      # For each target domain/GitHub URL, search for decision-makers
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+      count=0
+      max=${max_targets}
+
+      for target in $(echo "${target_domains}" | tr ',' '\n'); do
+        target=$(echo "$target" | xargs)
+        [ -z "$target" ] && continue
+        [ "$count" -ge "$max" ] && break
+
+        # Check if it's a GitHub profile URL
+        if echo "$target" | grep -q "github.com/"; then
+          gh_user=$(echo "$target" | sed 's|.*github.com/||' | tr -d '/')
+
+          # Fetch GitHub profile
+          curl -sf "https://api.github.com/users/${gh_user}" > /tmp/lb_ce_ghprofile.json 2>/dev/null || echo '{}' > /tmp/lb_ce_ghprofile.json
+
+          jq -c --arg target "$target" '{
+            source: "github",
+            username: .login,
+            name: (.name // .login),
+            company: (.company // ""),
+            bio: (.bio // ""),
+            blog: (.blog // ""),
+            location: (.location // ""),
+            public_repos: (.public_repos // 0),
+            followers: (.followers // 0),
+            profile_url: .html_url,
+            target_input: $target
+          }' /tmp/lb_ce_ghprofile.json > /tmp/lb_ce_person.json
+        else
+          # Treat as org/company — search for it via Brave
+          encoded=$(echo "$target" | sed 's/ /%20/g')
+          curl -sf -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+            "https://api.search.brave.com/res/v1/web/search?q=${encoded}+site:github.com&count=3" \
+            > /tmp/lb_ce_bsearch.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_ce_bsearch.json
+
+          jq -c --arg target "$target" '{
+            source: "brave_search",
+            name: $target,
+            company: $target,
+            bio: "",
+            blog: "",
+            location: "",
+            public_repos: 0,
+            followers: 0,
+            profile_url: ((.web.results // [])[0].url // ""),
+            target_input: $target
+          }' /tmp/lb_ce_bsearch.json > /tmp/lb_ce_person.json
+        fi
+
+        jq -sc '.[0] + [.[1]]' "$tmpout" /tmp/lb_ce_person.json > /tmp/lb_ce_merged.json
+        mv /tmp/lb_ce_merged.json "$tmpout"
+        count=$((count + 1))
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_ce_ghprofile.json /tmp/lb_ce_person.json /tmp/lb_ce_bsearch.json /tmp/lb_ce_merged.json
+
+  - id: research_activity
+    stdin: $find_targets.stdout
+    command: |
+      # For each target, fetch recent activity (GitHub events, repos, blog posts)
+      cat > /tmp/lb_ce_targets.json
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      for row in $(jq -r '.[] | @base64' /tmp/lb_ce_targets.json); do
+        person=$(echo "$row" | base64 -d)
+        username=$(echo "$person" | jq -r '.username // empty')
+        source=$(echo "$person" | jq -r '.source // empty')
+
+        if [ "$source" = "github" ] && [ -n "$username" ]; then
+          # Fetch recent public events
+          curl -sf "https://api.github.com/users/${username}/events/public?per_page=30" \
+            > /tmp/lb_ce_events.json 2>/dev/null || echo '[]' > /tmp/lb_ce_events.json
+
+          # Fetch recent repos (sorted by update)
+          curl -sf "https://api.github.com/users/${username}/repos?sort=updated&per_page=5" \
+            > /tmp/lb_ce_repos.json 2>/dev/null || echo '[]' > /tmp/lb_ce_repos.json
+
+          # Extract activity signals
+          jq -c --argjson person "$person" '{
+            person: $person,
+            recent_events: [.[:10][] | {
+              type: .type,
+              repo: .repo.name,
+              created: .created_at,
+              action: (.payload.action // null)
+            }]
+          }' /tmp/lb_ce_events.json > /tmp/lb_ce_activity_part.json
+
+          jq -c --slurpfile act /tmp/lb_ce_activity_part.json '
+            ($act[0]) * {
+              recent_repos: [.[:5][] | {
+                name: .name,
+                description: (.description // ""),
+                language: (.language // "unknown"),
+                stars: .stargazers_count,
+                updated: .updated_at,
+                topics: (.topics // [])
+              }]
+            }
+          ' /tmp/lb_ce_repos.json > /tmp/lb_ce_activity.json
+        else
+          echo "$person" | jq -c '{person: ., recent_events: [], recent_repos: []}' > /tmp/lb_ce_activity.json
+        fi
+
+        jq -sc '.[0] + [.[1]]' "$tmpout" /tmp/lb_ce_activity.json > /tmp/lb_ce_act_merged.json
+        mv /tmp/lb_ce_act_merged.json "$tmpout"
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_ce_targets.json /tmp/lb_ce_events.json /tmp/lb_ce_repos.json /tmp/lb_ce_activity_part.json /tmp/lb_ce_activity.json /tmp/lb_ce_act_merged.json
+
+  - id: web_research
+    stdin: $research_activity.stdout
+    command: |
+      # For each target, do a Brave web search for recent mentions, blog posts, talks
+      cat > /tmp/lb_ce_activities.json
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      for row in $(jq -r '.[] | @base64' /tmp/lb_ce_activities.json); do
+        activity=$(echo "$row" | base64 -d)
+        name=$(echo "$activity" | jq -r '.person.name // .person.username // "unknown"')
+        company=$(echo "$activity" | jq -r '.person.company // ""' | sed 's/^@//')
+
+        # Search for recent mentions, posts, talks
+        search_query=$(printf '%s' "${name} ${company} developer" | sed 's/ /%20/g')
+        curl -sf -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+          "https://api.search.brave.com/res/v1/web/search?q=${search_query}&count=5&freshness=pm" \
+          > /tmp/lb_ce_web.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_ce_web.json
+
+        jq -c --argjson activity "$activity" '{
+          person: $activity.person,
+          recent_events: $activity.recent_events,
+          recent_repos: $activity.recent_repos,
+          web_mentions: [(.web.results // [])[:5][] | {
+            title: .title,
+            url: .url,
+            description: (.description // ""),
+            age: (.age // "")
+          }]
+        }' /tmp/lb_ce_web.json > /tmp/lb_ce_enriched.json
+
+        jq -sc '.[0] + [.[1]]' "$tmpout" /tmp/lb_ce_enriched.json > /tmp/lb_ce_enr_merged.json
+        mv /tmp/lb_ce_enr_merged.json "$tmpout"
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_ce_activities.json /tmp/lb_ce_web.json /tmp/lb_ce_enriched.json /tmp/lb_ce_enr_merged.json
+
+  - id: build_profiles
+    stdin: $web_research.stdout
+    command: |
+      # Assemble complete research profiles with personalization signals
+      # TODO: Pipe this output to an LLM to identify pain points and generate
+      # hyper-personalized email drafts referencing specific posts/projects
+      cat > /tmp/lb_ce_researched.json
+
+      jq -c --arg product "${product_name}" --arg pitch "${product_pitch}" '{
+        product: {name: $product, pitch: $pitch},
+        targets: [.[] | {
+          name: .person.name,
+          username: .person.username,
+          company: .person.company,
+          bio: .person.bio,
+          location: .person.location,
+          profile_url: .person.profile_url,
+          followers: .person.followers,
+          signals: {
+            active_repos: [(.recent_repos // [])[:3][] | "\(.name) (\(.language), \(.stars) ★) - \(.description)"],
+            recent_activity: [(.recent_events // [])[:5][] | "\(.type) on \(.repo)"],
+            web_mentions: [(.web_mentions // [])[:3][] | {title: .title, url: .url, snippet: .description}]
+          },
+          personalization_hooks: {
+            top_project: ((.recent_repos // [])[0] // null | if . then "\(.name) - \(.description)" else null end),
+            tech_stack: [(.recent_repos // [])[] | .language] | unique | join(", "),
+            recent_topics: [(.recent_repos // [])[] | .topics[]] | unique | join(", ")
+          }
+        }],
+        meta: {
+          researched_at: (now | todate),
+          target_count: (. | length)
+        }
+      }' /tmp/lb_ce_researched.json
+
+      rm -f /tmp/lb_ce_researched.json
+
+  - id: report
+    stdin: $build_profiles.stdout
+    command: |
+      # Format a human-readable summary
+      # TODO: In production, pipe build_profiles output to an LLM with a prompt like:
+      #   "For each target, write a cold email under 150 words referencing their
+      #    specific project/post, connecting their pain point to our product.
+      #    Include a clear CTA."
+      # TODO: Use an email-finding service or pattern-based guessing to find emails
+      # TODO: Send via email API and schedule 3-day follow-ups
+      jq -r '
+        .product.name as $pname |
+        "🎯 Cold Email Personalizer — Research Report\n" +
+        "Product: \(.product.name) — \(.product.pitch)\n" +
+        "Targets researched: \(.meta.target_count)\n" +
+        "Generated: \(.meta.researched_at)\n" +
+        "═══════════════════════════════════════════\n\n" +
+        (.targets | to_entries | map(
+          "[\(.key + 1)] \(.value.name) (@\(.value.username))\n" +
+          "    Company: \(.value.company // "N/A")\n" +
+          "    Bio: \(.value.bio // "N/A")\n" +
+          "    Location: \(.value.location // "N/A")\n" +
+          "    Followers: \(.value.followers // 0)\n" +
+          "    Profile: \(.value.profile_url)\n\n" +
+          "    📦 Top Project: \(.value.personalization_hooks.top_project // "N/A")\n" +
+          "    🛠️  Tech Stack: \(.value.personalization_hooks.tech_stack)\n" +
+          "    🏷️  Topics: \(.value.personalization_hooks.recent_topics)\n\n" +
+          "    🌐 Web Mentions:\n" +
+          (if (.value.signals.web_mentions | length) > 0
+           then (.value.signals.web_mentions | map(
+              "      • \(.title)\n        \(.url)"
+            ) | join("\n"))
+           else "      (none found)"
+           end) +
+          "\n\n    💡 Personalization angle:\n" +
+          "      Reference their project \"" + (.value.personalization_hooks.top_project // "top work") + "\" and\n" +
+          "      connect \(.value.personalization_hooks.tech_stack) expertise to " + $pname + ".\n"
+        ) | join("\n───────────────────────────────────────────\n\n"))
+      '

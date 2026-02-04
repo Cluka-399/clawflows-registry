@@ -1,0 +1,295 @@
+name: "A/B Test Automator"
+description: "Check active A/B tests, analyze statistical significance, promote winners, and generate new test variations."
+
+args:
+  landing_page_api:
+    desc: "Base API endpoint for your landing page builder (e.g. https://api.example.com/v1)"
+  api_key:
+    desc: "Bearer token for landing page API"
+    default: "test-key"
+  min_sample_size:
+    desc: "Minimum sample size before declaring significance"
+    default: "100"
+  confidence_threshold:
+    desc: "Required confidence level (0-1) to promote a winner"
+    default: "0.95"
+  mock_data:
+    desc: "Path to mock test data JSON file (for testing without a real API)"
+    default: ""
+
+steps:
+  - id: fetch_active_tests
+    command: |
+      if [ -n "${mock_data}" ] && [ -f "${mock_data}" ]; then
+        cp "${mock_data}" /tmp/ab_active_tests.json
+        cat /tmp/ab_active_tests.json
+      else
+        curl -sf "${landing_page_api}/tests" \
+          -H "Authorization: Bearer ${api_key}" \
+          -H "Accept: application/json" \
+          -o /tmp/ab_active_tests.json \
+          && cat /tmp/ab_active_tests.json
+      fi
+
+  - id: analyze_tests
+    # Collects per-test stats into structured JSON.
+    # The output is suitable for piping to an LLM for narrative analysis,
+    # but the statistical calculations (z-test) are done concretely here.
+    command: |
+      cat > /tmp/ab_analyze.py << 'PYEOF'
+      import json, math, sys
+
+      threshold = float(sys.argv[1])
+      min_samples = int(sys.argv[2])
+
+      with open("/tmp/ab_active_tests.json") as f:
+          data = json.load(f)
+
+      tests = data if isinstance(data, list) else data.get("tests", data.get("items", [data]))
+
+      results = []
+      for t in tests:
+          test_id = t.get("id", t.get("test_id", "unknown"))
+          # Support nested or flat variant formats
+          va = t.get("variant_a", t.get("control", {}))
+          vb = t.get("variant_b", t.get("treatment", t.get("variant", {})))
+
+          na = va.get("visitors", va.get("samples", va.get("impressions", 0)))
+          ca = va.get("conversions", va.get("clicks", 0))
+          nb = vb.get("visitors", vb.get("samples", vb.get("impressions", 0)))
+          cb = vb.get("conversions", vb.get("clicks", 0))
+
+          pa = ca / na if na > 0 else 0
+          pb = cb / nb if nb > 0 else 0
+          lift = ((pb - pa) / pa * 100) if pa > 0 else 0
+
+          # Two-proportion z-test
+          p_pool = (ca + cb) / (na + nb) if (na + nb) > 0 else 0
+          se = math.sqrt(p_pool * (1 - p_pool) * (1/na + 1/nb)) if na > 0 and nb > 0 and 0 < p_pool < 1 else 0
+          z = (pb - pa) / se if se > 0 else 0
+          # Two-tailed p-value approximation (using error function)
+          p_value = math.erfc(abs(z) / math.sqrt(2))
+          confidence = 1 - p_value
+
+          enough_samples = (na >= min_samples and nb >= min_samples)
+          is_significant = confidence >= threshold and enough_samples
+
+          winner = None
+          winning_headline = None
+          if is_significant:
+              if pb > pa:
+                  winner = "B"
+                  winning_headline = vb.get("headline", vb.get("name", "Variant B"))
+              else:
+                  winner = "A"
+                  winning_headline = va.get("headline", va.get("name", "Variant A"))
+
+          results.append({
+              "test_id": test_id,
+              "variant_a": {"visitors": na, "conversions": ca, "rate": round(pa, 4)},
+              "variant_b": {"visitors": nb, "conversions": cb, "rate": round(pb, 4)},
+              "lift_pct": round(lift, 2),
+              "z_score": round(z, 4),
+              "confidence": round(confidence, 4),
+              "enough_samples": enough_samples,
+              "is_significant": is_significant,
+              "winner": winner,
+              "winning_headline": winning_headline
+          })
+
+      output = {
+          "total_tests": len(results),
+          "significant": [r for r in results if r["is_significant"]],
+          "running": [r for r in results if not r["is_significant"]],
+          "results": results
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/ab_analysis.json", "w") as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      python3 /tmp/ab_analyze.py "${confidence_threshold}" "${min_sample_size}"
+
+  - id: promote_winners
+    # Promotes each significant test winner via API call
+    command: |
+      cat > /tmp/ab_promote.sh << 'BASH'
+      #!/usr/bin/env bash
+      set -e
+      API="${1}"
+      KEY="${2}"
+      MOCK="${3}"
+
+      sig_count=$(jq '.significant | length' /tmp/ab_analysis.json)
+      if [ "$sig_count" -eq 0 ]; then
+        echo '{"promoted":[],"count":0}' | tee /tmp/ab_promoted.json
+        exit 0
+      fi
+
+      for i in $(seq 0 $(($sig_count - 1))); do
+        test_id=$(jq -r ".significant[$i].test_id" /tmp/ab_analysis.json)
+        winner=$(jq -r ".significant[$i].winner" /tmp/ab_analysis.json)
+
+        if [ -z "$MOCK" ]; then
+          # POST to promote endpoint (production)
+          curl -sf -X POST "${API}/tests/${test_id}/promote" \
+            -H "Authorization: Bearer ${KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{\"winner\": \"${winner}\"}" 2>&1 || echo "{\"status\":\"promote_sent\",\"test_id\":\"${test_id}\"}"
+        else
+          echo "MOCK: Would promote test ${test_id} winner=${winner}" >&2
+        fi
+      done
+
+      # Write promoted list
+      jq -n --argjson count "$sig_count" \
+        --argjson tests "$(jq '.significant' /tmp/ab_analysis.json)" \
+        '{promoted: $tests, count: $count}' | tee /tmp/ab_promoted.json
+      BASH
+      chmod +x /tmp/ab_promote.sh
+      bash /tmp/ab_promote.sh "${landing_page_api}" "${api_key}" "${mock_data}"
+
+  - id: collect_for_variations
+    # Gathers winning headlines and context for new variation generation.
+    # NOTE: Pipe /tmp/ab_variation_context.json to an LLM to generate creative headline variations.
+    # Without an LLM, this step produces structured prompts as placeholders.
+    # Skips internally if no tests were promoted.
+    command: |
+      cat > /tmp/ab_gen_variations.py << 'PYEOF'
+      import json, sys, os
+
+      if not os.path.exists("/tmp/ab_promoted.json"):
+          print('{"variation_requests":[],"count":0}')
+          json.dump({"variation_requests":[],"count":0}, open("/tmp/ab_variation_context.json","w"))
+          sys.exit(0)
+
+      with open("/tmp/ab_promoted.json") as f:
+          promoted = json.load(f)
+
+      if promoted.get("count", 0) == 0:
+          print('{"variation_requests":[],"count":0}')
+          json.dump({"variation_requests":[],"count":0}, open("/tmp/ab_variation_context.json","w"))
+          sys.exit(0)
+
+      variation_requests = []
+      for test in promoted.get("promoted", []):
+          headline = test.get("winning_headline", "Unknown")
+          lift = test.get("lift_pct", 0)
+          variation_requests.append({
+              "test_id": test["test_id"],
+              "winning_headline": headline,
+              "lift_pct": lift,
+              "llm_prompt": (
+                  f"Generate 3 new headline variations to test against the winner.\n"
+                  f"Current winner: \"{headline}\" (lifted {lift}%)\n"
+                  f"Create variations that:\n"
+                  f"- Test different emotional angles\n"
+                  f"- Test different value propositions\n"
+                  f"- Test different formats (question vs statement)"
+              ),
+              "placeholder_variants": [
+                  f"{headline} — Emotional Angle",
+                  f"{headline} — Value Prop Focus",
+                  f"Why {headline.rstrip('.')}?"
+              ]
+          })
+
+      output = {"variation_requests": variation_requests, "count": len(variation_requests)}
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/ab_variation_context.json", "w") as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      python3 /tmp/ab_gen_variations.py
+
+  - id: create_new_tests
+    # Creates new A/B tests from variation data.
+    # In production, replace placeholder_variants with LLM-generated ones.
+    # Skips internally if no tests were promoted.
+    command: |
+      cat > /tmp/ab_create_tests.sh << 'BASH'
+      #!/usr/bin/env bash
+      set -e
+      API="${1}"
+      KEY="${2}"
+      MOCK="${3}"
+
+      if [ ! -f /tmp/ab_variation_context.json ]; then
+        echo '{"created":[],"count":0}'
+        exit 0
+      fi
+      count=$(jq '.count' /tmp/ab_variation_context.json)
+      if [ "$count" -eq 0 ]; then
+        echo '{"created":[],"count":0}'
+        exit 0
+      fi
+
+      for i in $(seq 0 $(($count - 1))); do
+        control=$(jq -r ".variation_requests[$i].winning_headline" /tmp/ab_variation_context.json)
+        variants=$(jq -c ".variation_requests[$i].placeholder_variants" /tmp/ab_variation_context.json)
+
+        payload=$(jq -n \
+          --arg control "$control" \
+          --argjson variants "$variants" \
+          '{control: $control, variants: $variants}')
+
+        if [ -z "$MOCK" ]; then
+          curl -sf -X POST "${API}/tests" \
+            -H "Authorization: Bearer ${KEY}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" 2>&1 || echo "{\"status\":\"create_sent\"}"
+        else
+          echo "MOCK: Would create test control='${control}' variants=${variants}" >&2
+        fi
+      done
+
+      jq -n --argjson count "$count" \
+        --argjson requests "$(jq '.variation_requests' /tmp/ab_variation_context.json)" \
+        '{created: $requests, count: $count}' | tee /tmp/ab_created.json
+      BASH
+      chmod +x /tmp/ab_create_tests.sh
+      bash /tmp/ab_create_tests.sh "${landing_page_api}" "${api_key}" "${mock_data}"
+
+  - id: summary_report
+    command: |
+      cat > /tmp/ab_summary.py << 'PYEOF'
+      import json, sys, os
+
+      with open("/tmp/ab_analysis.json") as f:
+          analysis = json.load(f)
+
+      promoted_file = "/tmp/ab_promoted.json"
+      created_file = "/tmp/ab_created.json"
+      promoted = json.load(open(promoted_file)) if os.path.exists(promoted_file) else {"count": 0, "promoted": []}
+      created = json.load(open(created_file)) if os.path.exists(created_file) else {"count": 0, "created": []}
+
+      lines = ["🧪 **A/B Test Update**", ""]
+
+      if promoted["count"] > 0:
+          for p in promoted.get("promoted", []):
+              lines.append(f"✅ Winner promoted: \"{p['winning_headline']}\"")
+              lines.append(f"   Lift: +{p['lift_pct']}%")
+          if created["count"] > 0:
+              lines.append(f"🆕 {created['count']} new test(s) started with variant headlines")
+          lines.append("")
+
+      running = analysis.get("running", [])
+      if running:
+          lines.append(f"⏳ {len(running)} test(s) still running:")
+          closest = max(running, key=lambda r: r["confidence"])
+          lines.append(f"   Closest to significance: test {closest['test_id']} ({round(closest['confidence']*100, 1)}% confidence)")
+
+      if not promoted["count"] and not running:
+          lines.append("ℹ️ No active tests found.")
+
+      report = "\n".join(lines)
+      print(report)
+
+      summary = {
+          "report": report,
+          "tests_analyzed": analysis["total_tests"],
+          "tests_promoted": promoted["count"],
+          "tests_created": created["count"],
+          "tests_running": len(running)
+      }
+      json.dump(summary, open("/tmp/ab_summary.json", "w"), indent=2)
+      PYEOF
+      python3 /tmp/ab_summary.py

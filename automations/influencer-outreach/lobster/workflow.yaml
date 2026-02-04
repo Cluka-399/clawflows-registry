@@ -1,0 +1,326 @@
+name: "Micro-Influencer Outreach Machine"
+# Finds micro-influencers in a niche via Brave Search + GitHub API,
+# collects public profile data and recent activity, produces a
+# structured outreach-ready JSON report.
+#
+# Required env vars: BRAVE_API_KEY, GITHUB_PAT (inherited from system env)
+
+args:
+  niche:
+    desc: "Niche or topic to find influencers for (e.g. 'rust programming', 'devops tools')"
+    default: "developer tools"
+  follower_min:
+    desc: "Minimum follower count"
+    default: "500"
+  follower_max:
+    desc: "Maximum follower count"
+    default: "50000"
+  max_results:
+    desc: "Maximum number of influencers to include in final report"
+    default: "10"
+
+steps:
+  # Step 1: Create a shared temp directory for inter-step data
+  - id: tmpdir
+    command: |
+      DIR=$(mktemp -d /tmp/lobster_influencer_XXXXXX)
+      echo -n "$DIR"
+
+  # Step 2: Search Brave for influencers/content creators in the niche
+  - id: brave_search
+    command: |
+      curl -s "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: $BRAVE_API_KEY" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=${niche} influencer OR content creator OR thought leader site:github.com OR site:dev.to OR site:medium.com" \
+        --data-urlencode "count=20" \
+        -G > "$WORK/brave.json"
+      cat "$WORK/brave.json"
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 3: Extract usernames and URLs from Brave results
+  - id: extract_handles
+    command: |
+      cat > "$WORK/extract.js"
+      node "$WORK/extract.js"
+    stdin: |
+      const fs = require('fs');
+      const data = JSON.parse(fs.readFileSync(process.env.WORK + '/brave.json', 'utf8'));
+      const results = (data.web && data.web.results) || [];
+      const handles = [];
+      const seen = new Set();
+      for (const r of results) {
+        const url = r.url || '';
+        const desc = r.description || '';
+        const ghMatch = url.match(/github\.com\/([A-Za-z0-9_-]+)(?:\/|$)/);
+        if (ghMatch && !seen.has(ghMatch[1].toLowerCase())) {
+          const username = ghMatch[1];
+          if (!['topics','trending','search','explore','features','orgs','collections','sponsors','about','pricing','enterprise','login','join','settings','notifications'].includes(username.toLowerCase())) {
+            seen.add(username.toLowerCase());
+            handles.push({ username, source: 'github', url, snippet: desc.slice(0,200) });
+          }
+        }
+        const devtoMatch = url.match(/dev\.to\/([A-Za-z0-9_-]+)/);
+        if (devtoMatch && !seen.has('devto_' + devtoMatch[1].toLowerCase())) {
+          seen.add('devto_' + devtoMatch[1].toLowerCase());
+          handles.push({ username: devtoMatch[1], source: 'devto', url, snippet: desc.slice(0,200) });
+        }
+        const mediumMatch = url.match(/medium\.com\/@([A-Za-z0-9_.-]+)/);
+        if (mediumMatch && !seen.has('medium_' + mediumMatch[1].toLowerCase())) {
+          seen.add('medium_' + mediumMatch[1].toLowerCase());
+          handles.push({ username: mediumMatch[1], source: 'medium', url, snippet: desc.slice(0,200) });
+        }
+      }
+      fs.writeFileSync(process.env.WORK + '/handles.json', JSON.stringify(handles));
+      console.log(JSON.stringify(handles));
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 4: Search GitHub for developers in the niche with follower counts
+  - id: github_search
+    command: |
+      curl -s "https://api.github.com/search/users" \
+        -G \
+        --data-urlencode "q=${niche} followers:${follower_min}..${follower_max}" \
+        --data-urlencode "sort=followers" \
+        --data-urlencode "order=desc" \
+        --data-urlencode "per_page=15" \
+        -H "Authorization: token $GITHUB_PAT" \
+        -H "Accept: application/vnd.github.v3+json" > "$WORK/gh_search.json"
+      cat "$WORK/gh_search.json"
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 5: Enrich GitHub profiles with full user data (merge GitHub search + Brave handles)
+  - id: enrich_github
+    command: |
+      cat > "$WORK/enrich.js"
+      node "$WORK/enrich.js"
+    stdin: |
+      const https = require('https');
+      const fs = require('fs');
+      const WORK = process.env.WORK;
+      const ghSearch = JSON.parse(fs.readFileSync(WORK + '/gh_search.json', 'utf8'));
+      const handles = JSON.parse(fs.readFileSync(WORK + '/handles.json', 'utf8'));
+      const items = (ghSearch.items || []).slice(0, 10);
+      const ghFromBrave = handles.filter(h => h.source === 'github').map(h => h.username);
+      const allUsers = [...new Set([...items.map(i => i.login), ...ghFromBrave])].slice(0, 15);
+
+      function fetchUser(username) {
+        return new Promise((resolve) => {
+          const opts = {
+            hostname: 'api.github.com',
+            path: '/users/' + encodeURIComponent(username),
+            headers: {
+              'User-Agent': 'lobster-workflow',
+              'Authorization': 'token ' + process.env.GITHUB_PAT,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          https.get(opts, (res) => {
+            let body = '';
+            res.on('data', d => body += d);
+            res.on('end', () => {
+              try { resolve(JSON.parse(body)); } catch { resolve(null); }
+            });
+          }).on('error', () => resolve(null));
+        });
+      }
+
+      (async () => {
+        const profiles = [];
+        for (const u of allUsers) {
+          const p = await fetchUser(u);
+          if (p && p.login && !p.message) {
+            profiles.push({
+              username: p.login, name: p.name || p.login, bio: p.bio || '',
+              followers: p.followers || 0, following: p.following || 0,
+              public_repos: p.public_repos || 0, location: p.location || '',
+              blog: p.blog || '', twitter: p.twitter_username || '',
+              avatar: p.avatar_url || '', profile_url: p.html_url,
+              company: p.company || '', created_at: p.created_at
+            });
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
+        fs.writeFileSync(WORK + '/profiles.json', JSON.stringify(profiles));
+        console.log(JSON.stringify(profiles));
+      })();
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 6: Get recent repos/activity for each GitHub profile
+  - id: recent_activity
+    command: |
+      cat > "$WORK/activity.js"
+      node "$WORK/activity.js"
+    stdin: |
+      const https = require('https');
+      const fs = require('fs');
+      const WORK = process.env.WORK;
+      const profiles = JSON.parse(fs.readFileSync(WORK + '/profiles.json', 'utf8'));
+
+      function fetchRepos(username) {
+        return new Promise((resolve) => {
+          const opts = {
+            hostname: 'api.github.com',
+            path: '/users/' + encodeURIComponent(username) + '/repos?sort=updated&per_page=5',
+            headers: {
+              'User-Agent': 'lobster-workflow',
+              'Authorization': 'token ' + process.env.GITHUB_PAT,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          };
+          https.get(opts, (res) => {
+            let body = '';
+            res.on('data', d => body += d);
+            res.on('end', () => {
+              try {
+                const repos = JSON.parse(body);
+                resolve(Array.isArray(repos) ? repos.map(r => ({
+                  name: r.name, description: r.description || '',
+                  stars: r.stargazers_count, language: r.language || '',
+                  updated_at: r.updated_at, url: r.html_url
+                })) : []);
+              } catch { resolve([]); }
+            });
+          }).on('error', () => resolve([]));
+        });
+      }
+
+      (async () => {
+        const enriched = [];
+        for (const p of profiles.slice(0, 12)) {
+          const repos = await fetchRepos(p.username);
+          enriched.push({ ...p, recent_repos: repos });
+          await new Promise(r => setTimeout(r, 100));
+        }
+        fs.writeFileSync(WORK + '/activity.json', JSON.stringify(enriched));
+        console.log(JSON.stringify(enriched));
+      })();
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 7: Search Brave for additional social presence for top influencers
+  - id: brave_social
+    command: |
+      cat > "$WORK/social.js"
+      node "$WORK/social.js"
+    stdin: |
+      const https = require('https');
+      const fs = require('fs');
+      const WORK = process.env.WORK;
+      const profiles = JSON.parse(fs.readFileSync(WORK + '/activity.json', 'utf8'));
+      const top5 = profiles.slice(0, 5);
+
+      function searchBrave(query) {
+        return new Promise((resolve) => {
+          const params = new URLSearchParams({ q: query, count: '3' });
+          const opts = {
+            hostname: 'api.search.brave.com',
+            path: '/res/v1/web/search?' + params.toString(),
+            headers: {
+              'X-Subscription-Token': process.env.BRAVE_API_KEY,
+              'Accept': 'application/json'
+            }
+          };
+          https.get(opts, (res) => {
+            let body = '';
+            res.on('data', d => body += d);
+            res.on('end', () => {
+              try {
+                const data = JSON.parse(body);
+                const results = (data.web && data.web.results) || [];
+                resolve(results.map(r => ({ title: r.title, url: r.url, snippet: (r.description||'').slice(0,150) })));
+              } catch { resolve([]); }
+            });
+          }).on('error', () => resolve([]));
+        });
+      }
+
+      (async () => {
+        const social = {};
+        for (const p of top5) {
+          const query = (p.name || p.username) + ' ' + p.username + ' developer blog OR twitter OR linkedin';
+          social[p.username] = await searchBrave(query);
+          await new Promise(r => setTimeout(r, 400));
+        }
+        fs.writeFileSync(WORK + '/social.json', JSON.stringify(social));
+        console.log(JSON.stringify(social));
+      })();
+    env:
+      WORK: "$tmpdir.stdout"
+
+  # Step 8: Compile the final outreach-ready report
+  # NOTE: The "outreach_angles" field contains raw data for personalization.
+  # To generate actual outreach messages, pipe this JSON to an LLM with a prompt like:
+  #   "For each influencer, write a personalized outreach message referencing their
+  #    specific projects, bio, and recent activity. Be genuine, not templated."
+  - id: compile_report
+    command: |
+      cat > "$WORK/report.js"
+      NICHE="$NICHE" FMIN="$FMIN" FMAX="$FMAX" MAX_RESULTS="$MAX_RESULTS" node "$WORK/report.js"
+    stdin: |
+      const fs = require('fs');
+      const WORK = process.env.WORK;
+      const profiles = JSON.parse(fs.readFileSync(WORK + '/activity.json', 'utf8'));
+      const socialMap = JSON.parse(fs.readFileSync(WORK + '/social.json', 'utf8'));
+      const niche = process.env.NICHE;
+      const minF = parseInt(process.env.FMIN) || 500;
+      const maxF = parseInt(process.env.FMAX) || 50000;
+      const maxResults = parseInt(process.env.MAX_RESULTS) || 10;
+
+      const filtered = profiles
+        .filter(p => p.followers >= minF && p.followers <= maxF)
+        .sort((a, b) => b.followers - a.followers)
+        .slice(0, maxResults);
+
+      const report = {
+        meta: {
+          niche,
+          follower_range: { min: minF, max: maxF },
+          generated_at: new Date().toISOString(),
+          total_found: profiles.length,
+          total_qualified: filtered.length
+        },
+        influencers: filtered.map(p => {
+          const topRepos = (p.recent_repos || []).slice(0, 3);
+          const socialLinks = socialMap[p.username] || [];
+          return {
+            username: p.username,
+            name: p.name,
+            bio: p.bio,
+            followers: p.followers,
+            public_repos: p.public_repos,
+            location: p.location,
+            company: p.company,
+            profile_url: p.profile_url,
+            blog: p.blog,
+            twitter: p.twitter,
+            avatar: p.avatar,
+            recent_repos: topRepos,
+            web_presence: socialLinks,
+            outreach_angles: {
+              top_languages: [...new Set(topRepos.map(r => r.language).filter(Boolean))],
+              top_project: topRepos[0] ? topRepos[0].name + ': ' + topRepos[0].description : '',
+              total_stars: topRepos.reduce((s, r) => s + (r.stars || 0), 0),
+              recently_active: topRepos.some(r => {
+                const d = new Date(r.updated_at);
+                return (Date.now() - d.getTime()) < 30 * 24 * 60 * 60 * 1000;
+              })
+            }
+          };
+        })
+      };
+
+      // Clean up temp directory
+      fs.rmSync(WORK, { recursive: true, force: true });
+
+      console.log(JSON.stringify(report, null, 2));
+    env:
+      WORK: "$tmpdir.stdout"
+      NICHE: "${niche}"
+      FMIN: "${follower_min}"
+      FMAX: "${follower_max}"
+      MAX_RESULTS: "${max_results}"

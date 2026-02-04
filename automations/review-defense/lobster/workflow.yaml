@@ -1,0 +1,190 @@
+name: "Review Farm Defense System"
+description: >
+  Monitor online reviews and mentions for a product using Brave Search.
+  Applies keyword-based sentiment heuristics to classify results as
+  POSITIVE, NEUTRAL, or NEGATIVE. Produces a structured JSON report.
+  NOTE: In production, replace Brave Search with real platform APIs
+  (G2, Capterra, TrustPilot, ProductHunt) for direct review access.
+
+args:
+  product_name:
+    desc: "Product or company name to monitor reviews for"
+  platforms:
+    desc: "Comma-separated review platforms to search"
+    default: "G2,Capterra,Trustpilot,ProductHunt"
+  max_results:
+    desc: "Max search results per platform query"
+    default: "5"
+
+steps:
+  # Step 1: Search for reviews across platforms using Brave Search
+  - id: search_reviews
+    command: |
+      python3 << 'PYEOF'
+      import json, os, sys, urllib.request, urllib.parse
+
+      product = os.environ.get("PRODUCT_NAME", "")
+      platforms = os.environ.get("PLATFORMS", "").split(",")
+      max_results = os.environ.get("MAX_RESULTS", "5")
+      api_key = os.environ.get("BRAVE_API_KEY", "")
+
+      import time
+
+      all_results = []
+      for i, plat in enumerate(platforms):
+          plat = plat.strip()
+          if not plat:
+              continue
+          if i > 0:
+              time.sleep(1.5)  # Rate limit: avoid 429 from Brave API
+          query = urllib.parse.quote(f"{product} {plat} review")
+          url = f"https://api.search.brave.com/res/v1/web/search?q={query}&count={max_results}&text_decorations=false"
+          req = urllib.request.Request(url, headers={
+              "Accept": "application/json",
+              "Accept-Encoding": "identity",
+              "X-Subscription-Token": api_key
+          })
+          try:
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  data = json.loads(resp.read().decode())
+              for r in data.get("web", {}).get("results", []):
+                  all_results.append({
+                      "platform": plat,
+                      "title": r.get("title", ""),
+                      "url": r.get("url", ""),
+                      "snippet": r.get("description", ""),
+                      "source": "brave_search"
+                  })
+          except Exception as e:
+              print(f"Warning: search failed for {plat}: {e}", file=sys.stderr)
+
+      json.dump(all_results, sys.stdout, indent=2)
+      PYEOF
+    env:
+      PRODUCT_NAME: "${product_name}"
+      PLATFORMS: "${platforms}"
+      MAX_RESULTS: "${max_results}"
+
+  # Step 2: Sentiment analysis using keyword heuristics
+  # NOTE: In production, pipe to an LLM for nuanced sentiment classification
+  - id: classify_sentiment
+    command: |
+      cat > /tmp/sentiment_classify.py << 'PYEOF'
+      import json, sys, re
+
+      POSITIVE_WORDS = [
+        "great", "excellent", "amazing", "love", "fantastic", "awesome",
+        "wonderful", "perfect", "best", "recommend", "impressed", "outstanding",
+        "helpful", "easy to use", "intuitive", "powerful", "reliable", "fast",
+        "efficient", "beautiful", "clean", "solid", "superb", "brilliant",
+        "top-notch", "seamless", "delightful", "incredible", "must-have",
+        "game-changer", "innovative", "smooth", "responsive", "worth it",
+        "5 stars", "five stars", "highly recommend", "exceeded expectations"
+      ]
+
+      NEGATIVE_WORDS = [
+        "terrible", "awful", "horrible", "hate", "worst", "bad", "poor",
+        "disappointing", "broken", "buggy", "slow", "expensive", "overpriced",
+        "frustrating", "useless", "waste", "crash", "confusing", "clunky",
+        "unreliable", "lacking", "mediocre", "avoid", "nightmare", "regret",
+        "misleading", "downgrade", "unusable", "garbage", "failed",
+        "not worth", "1 star", "one star", "do not recommend", "stay away"
+      ]
+
+      def score_text(text):
+          text_lower = text.lower()
+          pos = sum(1 for w in POSITIVE_WORDS if w in text_lower)
+          neg = sum(1 for w in NEGATIVE_WORDS if w in text_lower)
+          return pos, neg
+
+      reviews = json.loads(sys.stdin.read())
+      classified = []
+      for r in reviews:
+          combined = f"{r.get('title', '')} {r.get('snippet', '')}"
+          pos, neg = score_text(combined)
+          score = pos - neg
+          if score > 0:
+              sentiment = "POSITIVE"
+          elif score < 0:
+              sentiment = "NEGATIVE"
+          else:
+              sentiment = "NEUTRAL"
+          classified.append({
+              **r,
+              "sentiment": sentiment,
+              "positive_hits": pos,
+              "negative_hits": neg,
+              "sentiment_score": score
+          })
+      json.dump(classified, sys.stdout, indent=2)
+      PYEOF
+      python3 /tmp/sentiment_classify.py
+    stdin: "$search_reviews.stdout"
+
+  # Step 3: Generate the structured report with sentiment breakdown
+  - id: generate_report
+    command: |
+      cat > /tmp/gen_report.py << 'PYEOF'
+      import json, sys
+      from datetime import datetime, timezone
+
+      classified = json.loads(sys.stdin.read())
+      positive = [r for r in classified if r["sentiment"] == "POSITIVE"]
+      negative = [r for r in classified if r["sentiment"] == "NEGATIVE"]
+      neutral = [r for r in classified if r["sentiment"] == "NEUTRAL"]
+
+      # Platform breakdown
+      platforms = {}
+      for r in classified:
+          p = r["platform"]
+          if p not in platforms:
+              platforms[p] = {"positive": 0, "negative": 0, "neutral": 0, "total": 0}
+          platforms[p][r["sentiment"].lower()] += 1
+          platforms[p]["total"] += 1
+
+      # Top positive (potential testimonials)
+      testimonials = sorted(positive, key=lambda x: x["sentiment_score"], reverse=True)[:3]
+
+      # Negative alerts requiring response
+      alerts = sorted(negative, key=lambda x: x["sentiment_score"])[:5]
+
+      report = {
+          "report_type": "review_defense",
+          "generated_at": datetime.now(timezone.utc).isoformat(),
+          "product": sys.argv[1] if len(sys.argv) > 1 else "unknown",
+          "summary": {
+              "total_results": len(classified),
+              "positive": len(positive),
+              "negative": len(negative),
+              "neutral": len(neutral),
+              "sentiment_ratio": round(len(positive) / max(len(classified), 1) * 100, 1)
+          },
+          "platform_breakdown": platforms,
+          "alerts": [{
+              "severity": "high" if r["sentiment_score"] <= -2 else "medium",
+              "platform": r["platform"],
+              "title": r["title"],
+              "url": r["url"],
+              "snippet": r["snippet"],
+              "sentiment_score": r["sentiment_score"],
+              "action_needed": "Draft empathetic response and escalate to team"
+          } for r in alerts],
+          "testimonials": [{
+              "platform": r["platform"],
+              "title": r["title"],
+              "url": r["url"],
+              "snippet": r["snippet"],
+              "sentiment_score": r["sentiment_score"],
+              "action": "Consider for social proof / thank reviewer"
+          } for r in testimonials],
+          "all_results": classified,
+          "notes": [
+              "Sentiment classified via keyword heuristics (not LLM)",
+              "For production use: integrate real platform APIs (G2, Capterra, etc.)",
+              "Pipe classified results to LLM for nuanced sentiment + draft responses"
+          ]
+      }
+      json.dump(report, sys.stdout, indent=2)
+      PYEOF
+      python3 /tmp/gen_report.py "${product_name}"
+    stdin: "$classify_sentiment.stdout"

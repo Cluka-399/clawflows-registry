@@ -1,0 +1,206 @@
+# Lobster workflow: audience-growth-report
+# Weekly report on audience growth — fetches follower/subscriber counts,
+# compares against saved state, calculates growth, and produces a report.
+#
+# Uses GitHub followers as a default proxy for "audience".
+# Configure api_url to point at any JSON API that returns a numeric count.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"username":"torvalds"}'
+#   lobster run --file workflow.yaml --args-json '{"username":"dannyshmueli","state_dir":"/tmp/audience-state"}'
+#
+# Requires: jq, curl, date
+
+name: audience-growth-report
+description: Weekly report on audience growth and demographics
+
+args:
+  username:
+    description: "GitHub username (or account identifier for custom API)"
+    default: "octocat"
+  api_url:
+    description: "API endpoint returning JSON with follower data. Use {username} as placeholder."
+    default: "https://api.github.com/users/{username}"
+  followers_jq:
+    description: "jq expression to extract follower count from API response"
+    default: ".followers"
+  extras_jq:
+    description: "jq expression to extract extra metrics (repos, etc.) as a JSON object"
+    default: "{public_repos: .public_repos, public_gists: .public_gists}"
+  state_dir:
+    description: "Directory to persist state between runs"
+    default: "/tmp/audience-growth-state"
+  report_weeks:
+    description: "Number of past data points to include in trend"
+    default: "4"
+
+steps:
+  # 1. Ensure state directory exists and build the API URL
+  - id: setup
+    command: |
+      mkdir -p "${state_dir}"
+      url=$(echo '${api_url}' | sed "s|{username}|${username}|g")
+      echo "$url"
+
+  # 2. Fetch current audience data from API
+  - id: fetch-audience
+    command: |
+      url="$setup.stdout"
+      url=$(echo "$url" | tr -d '\n')
+      curl -sf -H "User-Agent: lobster-audience-growth/1.0" \
+           -H "Accept: application/json" \
+           "$url" > /tmp/lb_audience_raw.json 2>/dev/null
+      if [ $? -ne 0 ] || [ ! -s /tmp/lb_audience_raw.json ]; then
+        echo '{"error":"Failed to fetch audience data"}' >&2
+        exit 1
+      fi
+      cat /tmp/lb_audience_raw.json
+
+  # 3. Extract current metrics
+  - id: extract-metrics
+    stdin: $fetch-audience.stdout
+    command: |
+      cat > /tmp/lb_audience_raw.json
+      followers=$(jq -r '${followers_jq}' /tmp/lb_audience_raw.json)
+      extras=$(jq -c '${extras_jq}' /tmp/lb_audience_raw.json)
+      now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      week=$(date -u +%Y-W%V)
+      jq -n \
+        --arg ts "$now" \
+        --arg week "$week" \
+        --argjson followers "$followers" \
+        --argjson extras "$extras" \
+        '{timestamp: $ts, week: $week, followers: $followers, extras: $extras}'
+
+  # 4. Load previous state (history of past snapshots)
+  - id: load-state
+    command: |
+      state_file="${state_dir}/${username}.json"
+      if [ -f "$state_file" ]; then
+        cat "$state_file"
+      else
+        echo '{"snapshots":[]}'
+      fi
+
+  # 5. Compute growth by comparing current vs previous snapshot
+  - id: compute-growth
+    command: |
+      current='$extract-metrics.json'
+      history='$load-state.json'
+
+      echo "$current" > /tmp/lb_agr_current.json
+      echo "$history" > /tmp/lb_agr_history.json
+
+      # Get the last snapshot from history
+      prev_followers=$(jq -r '.snapshots[-1].followers // 0' /tmp/lb_agr_history.json)
+      curr_followers=$(jq -r '.followers' /tmp/lb_agr_current.json)
+      snapshot_count=$(jq '.snapshots | length' /tmp/lb_agr_history.json)
+
+      # Calculate absolute and percentage change
+      abs_change=$((curr_followers - prev_followers))
+      if [ "$prev_followers" -gt 0 ] 2>/dev/null; then
+        pct_change=$(echo "scale=2; ($abs_change * 100) / $prev_followers" | bc 2>/dev/null || echo "0")
+      else
+        pct_change="N/A"
+      fi
+
+      # Determine trend direction
+      if [ "$abs_change" -gt 0 ]; then
+        trend="📈 Growing"
+      elif [ "$abs_change" -lt 0 ]; then
+        trend="📉 Declining"
+      else
+        trend="➡️ Stable"
+      fi
+
+      # Extract recent history for trend (last N data points)
+      max_trend=${report_weeks}
+      recent=$(jq -c --argjson n "$max_trend" '[.snapshots[-$n:][].followers] // []' /tmp/lb_agr_history.json)
+
+      jq -n \
+        --argjson curr "$curr_followers" \
+        --argjson prev "$prev_followers" \
+        --argjson abs "$abs_change" \
+        --arg pct "$pct_change" \
+        --arg trend "$trend" \
+        --argjson recent "$recent" \
+        --argjson snapshots "$snapshot_count" \
+        '{current: $curr, previous: $prev, absolute_change: $abs, percent_change: $pct, trend: $trend, recent_history: $recent, total_snapshots: $snapshots}'
+
+  # 6. Save updated state (append current snapshot to history)
+  - id: save-state
+    command: |
+      current='$extract-metrics.json'
+      history='$load-state.json'
+      state_file="${state_dir}/${username}.json"
+
+      echo "$history" > /tmp/lb_agr_hist.json
+      echo "$current" > /tmp/lb_agr_curr.json
+
+      # Append current snapshot and keep last 52 weeks (1 year)
+      jq -s '
+        .[0] as $hist | .[1] as $snap |
+        {snapshots: (($hist.snapshots + [$snap]) | .[-52:])}
+      ' /tmp/lb_agr_hist.json /tmp/lb_agr_curr.json > "$state_file"
+
+      echo "State saved to $state_file"
+
+  # 7. Generate formatted report
+  # NOTE: For richer narrative reports, pipe $compute-growth.json to an LLM
+  - id: report
+    command: |
+      growth='$compute-growth.json'
+      metrics='$extract-metrics.json'
+
+      echo "$growth" > /tmp/lb_agr_growth.json
+      echo "$metrics" > /tmp/lb_agr_metrics.json
+
+      week=$(jq -r '.week' /tmp/lb_agr_metrics.json)
+      ts=$(jq -r '.timestamp' /tmp/lb_agr_metrics.json)
+      curr=$(jq -r '.current' /tmp/lb_agr_growth.json)
+      prev=$(jq -r '.previous' /tmp/lb_agr_growth.json)
+      abs=$(jq -r '.absolute_change' /tmp/lb_agr_growth.json)
+      pct=$(jq -r '.percent_change' /tmp/lb_agr_growth.json)
+      trend=$(jq -r '.trend' /tmp/lb_agr_growth.json)
+      snaps=$(jq -r '.total_snapshots' /tmp/lb_agr_growth.json)
+      extras=$(jq -r '.extras | to_entries | map("  \(.key): \(.value)") | join(", ")' /tmp/lb_agr_metrics.json)
+
+      if [ "$abs" -gt 0 ] 2>/dev/null; then
+        abs_fmt="+${abs}"; pct_fmt="+${pct}%"
+      elif [ "$abs" -lt 0 ] 2>/dev/null; then
+        abs_fmt="${abs}"; pct_fmt="${pct}%"
+      else
+        abs_fmt="0"; pct_fmt="0%"
+      fi
+
+      jq -n \
+        --arg user "${username}" \
+        --arg week "$week" \
+        --arg ts "$ts" \
+        --arg trend "$trend" \
+        --arg abs_fmt "$abs_fmt" \
+        --arg pct_fmt "$pct_fmt" \
+        --argjson curr "$curr" \
+        --argjson prev "$prev" \
+        --argjson abs "$abs" \
+        --arg pct "$pct" \
+        --argjson snaps "$snaps" \
+        --arg extras "$extras" \
+        '{
+          report_type: "audience_growth",
+          username: $user,
+          week: $week,
+          generated_at: $ts,
+          summary: "\($trend) \($abs_fmt) followers (\($pct_fmt)) this period",
+          metrics: {
+            current_followers: $curr,
+            previous_followers: $prev,
+            change: $abs,
+            change_percent: $pct,
+            trend: $trend,
+            data_points_in_history: $snaps
+          },
+          formatted_report: "Audience Growth Report - \($user)\n━━━━━━━━━━━━━━━━━━━━━━━━━\nPeriod: \($week)\n\nFollowers: \($curr) (\($abs_fmt) | \($pct_fmt))\n\($trend)\n\nAdditional: \($extras)\n\nHistory: \($snaps) previous snapshots"
+        }'
+
+      rm -f /tmp/lb_agr_*.json /tmp/lb_audience_raw.json

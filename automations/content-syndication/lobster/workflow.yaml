@@ -1,0 +1,168 @@
+# Lobster workflow: content-syndication
+# Reads a blog post and prepares platform-optimized versions for syndication
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"source_post_path":"/path/to/post.md","canonical_url":"https://myblog.com/post"}'
+#
+# Requires: jq
+# NOTE: Platform-specific rewriting is best done by an LLM. This workflow
+# reads the source, extracts metadata, and produces structured output
+# ready for LLM transformation or manual editing per platform.
+
+name: content-syndication
+description: Write one blog post, get it published across multiple platforms - each version platform-optimized
+
+args:
+  source_post_path:
+    description: "Path to your original blog post (markdown)"
+  canonical_url:
+    description: "Your original blog URL for SEO"
+    default: ""
+  target_platforms:
+    description: "Comma-separated platforms to target"
+    default: "medium,devto,hashnode,linkedin,twitter,reddit"
+
+steps:
+  - id: read-source
+    command: |
+      if [ ! -f "${source_post_path}" ]; then
+        echo "Error: Source file not found: ${source_post_path}" >&2
+        exit 1
+      fi
+      cat "${source_post_path}"
+
+  - id: analyze-content
+    stdin: $read-source.stdout
+    command: |
+      cat > /tmp/lb_cs_source.md
+
+      # Extract metadata from markdown
+      title=$(head -10 /tmp/lb_cs_source.md | grep -m1 '^#\s' | sed 's/^#\s*//' || echo "Untitled")
+      word_count=$(wc -w < /tmp/lb_cs_source.md | tr -d ' ')
+      # Estimate reading time (avg 200 wpm)
+      read_min=$(( ($(wc -w < /tmp/lb_cs_source.md | tr -d ' ') + 199) / 200 ))
+      # Extract code blocks count
+      code_blocks=$(grep -c '```' /tmp/lb_cs_source.md 2>/dev/null || true)
+      code_blocks=${code_blocks:-0}
+      code_blocks=$(( code_blocks / 2 ))
+      # Extract headings for structure
+      headings=$(grep '^##' /tmp/lb_cs_source.md | sed 's/^##\+\s*//' | head -15)
+      # Check for images
+      images=$(grep -c '!\[' /tmp/lb_cs_source.md 2>/dev/null || true)
+      images=${images:-0}
+
+      jq -nc \
+        --arg title "$title" \
+        --argjson word_count "$word_count" \
+        --argjson read_min "$read_min" \
+        --argjson code_blocks "$code_blocks" \
+        --argjson images "$images" \
+        --arg headings "$headings" \
+        --arg canonical "${canonical_url}" \
+        --arg platforms "${target_platforms}" \
+        --rawfile content /tmp/lb_cs_source.md \
+        '{
+          title: $title,
+          word_count: $word_count,
+          read_min: $read_min,
+          code_blocks: $code_blocks,
+          images: $images,
+          sections: ($headings | split("\n") | map(select(length > 0))),
+          canonical_url: $canonical,
+          target_platforms: ($platforms | split(",") | map(gsub("^\\s+|\\s+$"; ""))),
+          content: $content,
+          is_technical: ($code_blocks > 0)
+        }'
+      rm -f /tmp/lb_cs_source.md
+
+  - id: generate-platform-specs
+    stdin: $analyze-content.stdout
+    command: |
+      # Generate platform-specific transformation specs
+      # NOTE: Each spec is a structured prompt. For actual rewriting,
+      # pipe each spec + content to an LLM (e.g., via clawd.invoke).
+      cat > /tmp/lb_cs_analyzed.json
+
+      jq '. as $root | {
+        source: {
+          title: .title,
+          word_count: .word_count,
+          read_min: .read_min,
+          canonical_url: .canonical_url,
+          is_technical: .is_technical
+        },
+        platform_specs: (
+          .target_platforms | map(. as $p |
+            if $p == "medium" then {
+              platform: "medium",
+              instructions: "Reformat for Medium: shorter paragraphs, pull quotes, Medium-style headers. Add subtitle.",
+              front_matter: null,
+              max_length: null,
+              canonical: $root.canonical_url
+            }
+            elif $p == "devto" then {
+              platform: "devto",
+              instructions: "Add DEV.to front matter (title, tags, canonical_url, cover_image). Ensure code blocks have syntax highlighting.",
+              front_matter: ("---\ntitle: " + $root.title + "\npublished: true\ntags: \ncanonical_url: " + $root.canonical_url + "\n---"),
+              max_length: null,
+              canonical: $root.canonical_url
+            }
+            elif $p == "hashnode" then {
+              platform: "hashnode",
+              instructions: "Add Hashnode front matter with canonical URL and tags. Keep technical depth.",
+              front_matter: null,
+              max_length: null,
+              canonical: $root.canonical_url
+            }
+            elif $p == "linkedin" then {
+              platform: "linkedin",
+              instructions: "Transform into LinkedIn article: professional angle, business value focus, shorter and punchier. Add engagement question at end.",
+              front_matter: null,
+              max_length: 3000,
+              canonical: $root.canonical_url
+            }
+            elif $p == "twitter" then {
+              platform: "twitter",
+              instructions: "Extract into Twitter thread: hook in tweet 1, key points as numbered tweets (max 280 chars each), CTA with link at end. Max 15 tweets.",
+              front_matter: null,
+              max_length: 4200,
+              canonical: $root.canonical_url
+            }
+            elif $p == "reddit" then {
+              platform: "reddit",
+              instructions: "Adapt for Reddit: informative title, no self-promo feel, conversational tone, include TLDR at top.",
+              front_matter: null,
+              max_length: 10000,
+              canonical: $root.canonical_url
+            }
+            else {
+              platform: $p,
+              instructions: ("Adapt content for " + $p + "."),
+              front_matter: null,
+              max_length: null,
+              canonical: $root.canonical_url
+            }
+            end
+          )
+        ),
+        content_preview: (.content | .[:500])
+      }' /tmp/lb_cs_analyzed.json
+      rm -f /tmp/lb_cs_analyzed.json
+
+  - id: report
+    stdin: $generate-platform-specs.stdout
+    command: |
+      jq -r '
+        "📢 **Content Syndication Plan**\n\n" +
+        "**Source:** \(.source.title) (\(.source.word_count) words, ~\(.source.read_min) min read)\n" +
+        (if .source.canonical_url != "" then "**Canonical:** \(.source.canonical_url)\n" else "" end) +
+        (if .source.is_technical then "**Type:** Technical (has code blocks)\n" else "" end) +
+        "\n**Platforms (\(.platform_specs | length)):**\n" +
+        (.platform_specs | map(
+          "  • **\(.platform)**" +
+          (if .max_length then " (max \(.max_length) chars)" else "" end) +
+          "\n    \(.instructions)"
+        ) | join("\n")) +
+        "\n\n💡 Pipe this output to an LLM to generate platform-specific versions.\n" +
+        "Each platform spec includes instructions for optimal formatting."
+      '

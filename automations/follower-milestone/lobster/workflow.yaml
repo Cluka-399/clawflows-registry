@@ -1,0 +1,106 @@
+# Lobster workflow: follower-milestone
+# Tracks social media follower counts and celebrates milestones
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"username":"dannyshmueli","platform":"github"}'
+#
+# Supported platforms: github, twitter (via public endpoints)
+# Requires: jq, curl
+
+name: follower-milestone
+description: Celebrate follower milestones with custom alerts
+
+args:
+  username:
+    description: "Social media username/handle to track"
+  platform:
+    description: "Platform to check: github or twitter"
+    default: "github"
+  state_file:
+    default: "/tmp/clawflows-follower-milestone-state.json"
+  milestones:
+    description: "Comma-separated milestone thresholds"
+    default: "10,25,50,100,250,500,1000,2500,5000,10000,25000,50000,100000"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{"last_count":0,"celebrated":[]}'
+
+  - id: fetch-followers
+    command: |
+      platform="${platform}"
+      username="${username}"
+      if [ "$platform" = "github" ]; then
+        curl -sf "https://api.github.com/users/$username" \
+          | jq '{count: .followers, display_name: (.name // .login), platform: "GitHub"}'
+      elif [ "$platform" = "twitter" ]; then
+        # Twitter API requires auth; output placeholder for manual/API-key usage
+        # Replace with: curl -sf -H "Authorization: Bearer $TWITTER_BEARER" "https://api.twitter.com/2/users/by/username/$username?user.fields=public_metrics"
+        echo '{"error":"Twitter API requires TWITTER_BEARER env var. Set it and update this step."}'
+        exit 1
+      else
+        echo '{"error":"Unsupported platform: '"$platform"'"}'
+        exit 1
+      fi
+
+  - id: check-milestones
+    stdin: $fetch-followers.stdout
+    command: |
+      cat > /tmp/lb_fm_current.json
+      count=$(jq -r '.count' /tmp/lb_fm_current.json)
+      state=$(cat "${state_file}" 2>/dev/null || echo '{"last_count":0,"celebrated":[]}')
+      last_count=$(echo "$state" | jq -r '.last_count // 0')
+
+      # Build milestones array from arg
+      milestones_json=$(echo "${milestones}" | tr ',' '\n' | jq -Rn '[inputs | tonumber]')
+
+      jq -nc \
+        --argjson count "$count" \
+        --argjson last "$last_count" \
+        --argjson milestones "$milestones_json" \
+        --argjson celebrated "$(echo "$state" | jq '.celebrated // []')" \
+        --argjson current "$(cat /tmp/lb_fm_current.json)" \
+        '{
+          count: $count,
+          last_count: $last,
+          change: ($count - $last),
+          display_name: $current.display_name,
+          platform: $current.platform,
+          new_milestones: [
+            $milestones[] |
+            select(. <= $count) |
+            select(. as $m | $celebrated | map(. == $m) | any | not)
+          ],
+          celebrated: $celebrated
+        }'
+      rm -f /tmp/lb_fm_current.json
+
+  - id: save-state
+    stdin: $check-milestones.stdout
+    command: |
+      cat > /tmp/lb_fm_result.json
+      # Update state with new count and celebrated milestones
+      jq '{
+        last_count: .count,
+        celebrated: (.celebrated + .new_milestones | unique | sort),
+        last_checked: (now | todate)
+      }' /tmp/lb_fm_result.json > "${state_file}"
+      cat /tmp/lb_fm_result.json
+      rm -f /tmp/lb_fm_result.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r '
+        if (.new_milestones | length) > 0 then
+          "🎉 **Follower Milestone Alert!**\n\n" +
+          "\(.display_name) on \(.platform): **\(.count)** followers" +
+          (if .change > 0 then " (+\(.change) since last check)" else "" end) +
+          "\n\n🏆 New milestones reached:\n" +
+          (.new_milestones | map("  • \(.) followers! 🎯") | join("\n"))
+        elif .change != 0 then
+          "📊 \(.display_name) on \(.platform): \(.count) followers (\(if .change > 0 then "+\(.change)" else "\(.change)" end) since last check). No new milestones."
+        else
+          "📊 \(.display_name) on \(.platform): \(.count) followers. No change."
+        end
+      '

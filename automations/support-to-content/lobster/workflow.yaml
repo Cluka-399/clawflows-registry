@@ -1,0 +1,283 @@
+name: "Support-to-Content Pipeline"
+description: >
+  Analyze support tickets (GitHub issues as proxy) for patterns,
+  identify common questions via word frequency and topic clustering,
+  and produce content briefs for help articles and blog posts.
+
+args:
+  repo:
+    desc: "GitHub repo in owner/repo format (issues used as support ticket proxy)"
+    default: "vercel/next.js"
+  label:
+    desc: "Issue label to filter (e.g. bug, question). Empty = all issues"
+    default: ""
+  max_issues:
+    desc: "Maximum number of issues to fetch"
+    default: "100"
+  min_occurrences:
+    desc: "Minimum times a topic must appear to be included"
+    default: "3"
+  output_dir:
+    desc: "Directory to write content briefs"
+    default: "/tmp/support-to-content"
+
+steps:
+  # ── Step 1: Fetch issues from GitHub ──────────────────────────────
+  - id: fetch_issues
+    command: |
+      LABEL_PARAM=""
+      if [ -n "${label}" ]; then
+        LABEL_PARAM="&labels=${label}"
+      fi
+      curl -sf \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/${repo}/issues?state=all&per_page=${max_issues}&sort=created&direction=desc${LABEL_PARAM}" \
+      | jq '[.[] | select(.pull_request == null) | {
+          number: .number,
+          title: .title,
+          body: ((.body // "") | .[0:500]),
+          labels: [.labels[].name],
+          created_at: .created_at,
+          comments: .comments,
+          state: .state
+        }]'
+
+  # ── Step 2: Save issues to temp file for multi-step processing ────
+  - id: save_issues
+    command: |
+      cat > /tmp/stc_issues.json
+      echo '{"saved":true,"count":'$(jq length /tmp/stc_issues.json)'}'
+    stdin: "$fetch_issues.json"
+
+  # ── Step 3: Extract text and compute word frequencies ─────────────
+  - id: word_frequencies
+    command: |
+      jq -r '.[].title' /tmp/stc_issues.json \
+      | tr '[:upper:]' '[:lower:]' \
+      | tr -cs '[:alpha:]' '\n' \
+      | grep -v -E '^(.{0,2}|the|and|for|with|this|that|from|not|are|but|have|has|was|were|been|will|would|could|should|can|does|did|its|you|your|our|when|how|what|why|who|which|into|also|just|than|then|them|they|their|there|here|some|any|all|each|about|after|before|between|such|only|other|more|most|very|much|over|like|use|using|used|get|set|next|new|error|issue|bug|feat|fix|add|work|working|make|need|try|file|page|app|https|com|www)$' \
+      | sort | uniq -c | sort -rn \
+      | head -80 \
+      | awk '{printf "{\"word\":\"%s\",\"count\":%d}\n",$2,$1}' \
+      | jq -s '.'
+
+  # ── Step 4: Extract bigrams (two-word phrases) for better topics ──
+  - id: bigram_frequencies
+    command: |
+      jq -r '.[].title' /tmp/stc_issues.json \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed 's/[^a-z ]/ /g' \
+      | awk '{
+          for (i=1; i<NF; i++) {
+            w1=$i; w2=$(i+1)
+            if (length(w1)>2 && length(w2)>2)
+              print w1" "w2
+          }
+        }' \
+      | sort | uniq -c | sort -rn \
+      | awk '$1 >= 2 {printf "{\"bigram\":\"%s %s\",\"count\":%d}\n",$2,$3,$1}' \
+      | head -40 \
+      | jq -s '.'
+
+  # ── Step 5: Label-based topic clustering ──────────────────────────
+  - id: label_clusters
+    command: |
+      python3 -c "
+      import json
+      with open('/tmp/stc_issues.json') as f:
+          issues = json.load(f)
+      from collections import Counter
+      label_counts = Counter()
+      label_samples = {}
+      for iss in issues:
+          lbl = iss['labels'][0] if iss['labels'] else 'unlabeled'
+          label_counts[lbl] += 1
+          if lbl not in label_samples:
+              label_samples[lbl] = []
+          if len(label_samples[lbl]) < 3:
+              label_samples[lbl].append(iss['title'])
+      result = [{'label': l, 'count': c, 'sample_titles': label_samples.get(l,[])}
+                for l, c in label_counts.most_common()]
+      print(json.dumps(result, indent=2))
+      "
+
+  # ── Step 6: Keyword-based topic detection and clustering ──────────
+  - id: topic_clusters
+    command: |
+      python3 -c "
+      import json, sys, re
+      from collections import Counter
+
+      with open('/tmp/stc_issues.json') as f:
+          issues = json.load(f)
+
+      # Extract title words
+      word_issues = {}
+      for issue in issues:
+          title = issue['title'].lower()
+          words = set(re.findall(r'[a-z]{3,}', title))
+          stopwords = {'the','and','for','with','this','that','from','not','are','but',
+                       'have','has','was','were','been','will','would','could','should',
+                       'can','does','did','its','you','your','when','how','what','why',
+                       'who','which','into','also','just','than','then','them','they',
+                       'their','there','here','some','any','all','each','about','after',
+                       'before','between','such','only','other','more','most','very',
+                       'much','over','like','use','using','used','get','set','next',
+                       'error','issue','bug','feat','fix','add','work','working','make',
+                       'need','try','file','page','app','https','com','www','new'}
+          words -= stopwords
+          for w in words:
+              word_issues.setdefault(w, []).append(issue['number'])
+
+      MIN_OCC = int(${min_occurrences})
+      topic_words = {w: nums for w, nums in word_issues.items() if len(nums) >= MIN_OCC}
+
+      # Group overlapping issue sets into clusters
+      clusters = []
+      for word, nums in sorted(topic_words.items(), key=lambda x: -len(x[1])):
+          num_set = set(nums)
+          merged = False
+          for cluster in clusters:
+              overlap = len(num_set & cluster['issue_nums']) / max(len(num_set), len(cluster['issue_nums']))
+              if overlap > 0.4:
+                  cluster['keywords'].append(word)
+                  cluster['issue_nums'] |= num_set
+                  merged = True
+                  break
+          if not merged:
+              clusters.append({'keywords': [word], 'issue_nums': num_set})
+
+      # Build output with sample titles
+      issue_map = {i['number']: i['title'] for i in issues}
+      result = []
+      for c in sorted(clusters, key=lambda x: -len(x['issue_nums'])):
+          nums = sorted(c['issue_nums'])
+          result.append({
+              'topic': ' / '.join(c['keywords'][:3]),
+              'keywords': c['keywords'][:5],
+              'issue_count': len(nums),
+              'sample_titles': [issue_map[n] for n in nums[:3] if n in issue_map],
+          })
+      print(json.dumps(result[:15], indent=2))
+      "
+
+  # ── Step 7: Build prioritized content opportunities ───────────────
+  # NOTE: In production, pipe this JSON to an LLM for richer semantic analysis,
+  # SEO scoring, and editorial prioritization.
+  - id: content_opportunities
+    command: |
+      echo '$topic_clusters.stdout' > /tmp/stc_topics.json
+      python3 -c "
+      import json
+
+      with open('/tmp/stc_topics.json') as f:
+          topics = json.load(f)
+      opportunities = []
+      for i, t in enumerate(topics):
+          score = t['issue_count'] * (1 + 0.2 * len(t.get('keywords', [])))
+          content_type = 'help_article'
+          kws = [k.lower() for k in t.get('keywords', [])]
+          if any(k in kws for k in ['concept','understand','why','explain','difference']):
+              content_type = 'blog_post'
+          elif any(k in kws for k in ['crash','broken','fail','regression']):
+              content_type = 'product_improvement'
+          opportunities.append({
+              'rank': i + 1,
+              'topic': t['topic'],
+              'keywords': t.get('keywords', []),
+              'issue_count': t['issue_count'],
+              'score': round(score, 1),
+              'content_type': content_type,
+              'sample_titles': t.get('sample_titles', []),
+          })
+      opportunities.sort(key=lambda x: -x['score'])
+      for i, o in enumerate(opportunities):
+          o['rank'] = i + 1
+      print(json.dumps(opportunities[:10], indent=2))
+      "
+
+  # ── Step 8: Generate content briefs as markdown files ─────────────
+  # NOTE: In production, each brief should be piped to an LLM for
+  # detailed outline generation and SEO keyword expansion.
+  - id: generate_briefs
+    command: |
+      mkdir -p ${output_dir}
+      echo '$content_opportunities.stdout' > /tmp/stc_opportunities.json
+      python3 << 'PYEOF'
+      import json, os, re
+
+      output_dir = os.environ.get('OUTPUT_DIR', '/tmp/support-to-content')
+      with open('/tmp/stc_opportunities.json') as f:
+          opps = json.load(f)
+
+      briefs = []
+      for opp in opps:
+          slug = re.sub(r'[^a-z0-9]+', '-', opp['topic'].lower()).strip('-')[:50]
+          filename = slug + '.md'
+          filepath = os.path.join(output_dir, filename)
+          kw_list = '\n'.join('- ' + k for k in opp['keywords'])
+          sample_list = '\n'.join('- ' + t for t in opp['sample_titles'])
+          primary_kw = opp['keywords'][0] if opp['keywords'] else opp['topic']
+          intent = 'informational' if opp['content_type'] == 'blog_post' else 'transactional'
+          ct = opp['content_type'].replace('_', ' ').title()
+
+          brief = f"""# Content Brief: {opp['topic'].title()}
+
+      ## Metadata
+      - **Rank:** {opp['rank']}
+      - **Content Type:** {ct}
+      - **Priority Score:** {opp['score']}
+      - **Based on:** {opp['issue_count']} support tickets
+
+      ## Keywords
+      {kw_list}
+
+      ## Sample Questions from Users
+      {sample_list}
+
+      ## Suggested Outline
+      <!-- TODO: Pipe to LLM for detailed outline generation -->
+      1. Introduction / Problem Statement
+      2. Root Cause or Explanation
+      3. Step-by-Step Solution
+      4. Common Pitfalls
+      5. Related Resources
+
+      ## SEO Notes
+      - Target keyword: "{primary_kw}"
+      - Search intent: {intent}
+      """
+          with open(filepath, 'w') as f:
+              f.write(brief)
+          briefs.append({'file': filename, 'topic': opp['topic'], 'type': opp['content_type']})
+
+      print(json.dumps(briefs, indent=2))
+      PYEOF
+    env:
+      OUTPUT_DIR: "${output_dir}"
+
+  # ── Step 9: Final summary report ─────────────────────────────────
+  - id: summary
+    command: |
+      ISSUE_COUNT=$(jq length /tmp/stc_issues.json)
+      echo '$content_opportunities.stdout' > /tmp/stc_final_opps.json
+      echo '$generate_briefs.stdout' > /tmp/stc_final_briefs.json
+      TOPIC_COUNT=$(echo '$topic_clusters.stdout' | python3 -c "import json,sys; print(len(json.loads(sys.stdin.read())))")
+      BRIEF_COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/stc_final_briefs.json'))))")
+      TOP5=$(python3 -c "
+      import json
+      opps = json.load(open('/tmp/stc_final_opps.json'))
+      print(json.dumps([{'topic':o['topic'],'issue_count':o['issue_count'],'score':o['score'],'content_type':o['content_type']} for o in opps[:5]], indent=2))
+      ")
+      python3 -c "
+      import json
+      print(json.dumps({
+          'status': 'complete',
+          'repo': '${repo}',
+          'total_issues_analyzed': $ISSUE_COUNT,
+          'topics_discovered': $TOPIC_COUNT,
+          'briefs_generated': $BRIEF_COUNT,
+          'top_content_opportunities': json.loads('''$TOP5'''),
+          'output_directory': '${output_dir}'
+      }, indent=2))
+      "

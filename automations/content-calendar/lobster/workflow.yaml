@@ -1,0 +1,75 @@
+# Lobster workflow: content-calendar
+# Reads a JSON content calendar, finds upcoming items, generates reminders
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"calendar_file":"/path/to/calendar.json","lookahead_days":"7"}'
+#
+# Calendar JSON format: array of objects with fields:
+#   { "title": "...", "platform": "twitter|blog|newsletter", "date": "YYYY-MM-DD", "status": "draft|scheduled|published", "notes": "..." }
+#
+# Requires: jq
+
+name: content-calendar
+description: Plan and schedule content across platforms with reminders for upcoming items
+
+args:
+  calendar_file:
+    description: "Path to JSON file with content calendar entries"
+    default: "/tmp/clawflows-content-calendar.json"
+  lookahead_days:
+    description: "Number of days ahead to check for upcoming content"
+    default: "7"
+
+steps:
+  - id: ensure-calendar
+    command: |
+      if [ ! -f "${calendar_file}" ]; then
+        echo '[]' > "${calendar_file}"
+      fi
+      cat "${calendar_file}"
+
+  - id: find-upcoming
+    stdin: $ensure-calendar.stdout
+    command: |
+      cat > /tmp/lb_cal_all.json
+      now=$(date +%s)
+      lookahead=$((${lookahead_days} * 86400))
+      cutoff=$((now + lookahead))
+      now_date=$(date -u +%Y-%m-%d)
+      cutoff_date=$(date -u -d "@$cutoff" +%Y-%m-%d 2>/dev/null || date -u -r "$cutoff" +%Y-%m-%d 2>/dev/null || echo "2099-12-31")
+      jq -c --arg now "$now_date" --arg cutoff "$cutoff_date" '
+        [.[] | select(.status != "published" and .date >= $now and .date <= $cutoff)]
+        | sort_by(.date)
+      ' /tmp/lb_cal_all.json
+      rm -f /tmp/lb_cal_all.json
+
+  - id: group-by-platform
+    stdin: $find-upcoming.stdout
+    command: |
+      cat > /tmp/lb_cal_upcoming.json
+      jq -c '
+        {
+          upcoming_count: length,
+          by_platform: (group_by(.platform) | map({platform: .[0].platform, count: length, items: .})),
+          by_status: (group_by(.status) | map({status: .[0].status, count: length})),
+          items: .
+        }
+      ' /tmp/lb_cal_upcoming.json
+      rm -f /tmp/lb_cal_upcoming.json
+
+  - id: report
+    stdin: $group-by-platform.stdout
+    command: |
+      jq -r '
+        if .upcoming_count == 0 then
+          "📅 No upcoming content in the next \(env.lookahead_days // "7") days."
+        else
+          "📅 Content Calendar — \(.upcoming_count) item(s) upcoming\n" +
+          "\nBy platform:\n" +
+          (.by_platform | map("  • \(.platform): \(.count) item(s)") | join("\n")) +
+          "\nBy status:\n" +
+          (.by_status | map("  • \(.status): \(.count)") | join("\n")) +
+          "\n\nUpcoming items:\n" +
+          (.items | map("  📝 [\(.date)] \(.platform) — \(.title) (\(.status))" + if .notes then "\n     Notes: \(.notes)" else "" end) | join("\n"))
+        end
+      '

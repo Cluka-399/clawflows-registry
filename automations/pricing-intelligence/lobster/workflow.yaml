@@ -1,0 +1,144 @@
+name: "Pricing Page Intelligence"
+description: "Monitor competitor pricing pages for changes, compute diffs, and produce structured change reports."
+
+args:
+  urls:
+    desc: "Comma-separated list of pricing page URLs to monitor"
+  state_dir:
+    desc: "Directory to store pricing page snapshots for comparison"
+    default: "/tmp/pricing-intel-state"
+
+steps:
+  - id: setup
+    command: |
+      mkdir -p "${state_dir}/snapshots"
+      echo '{"status":"ready","state_dir":"'"${state_dir}"'"}'
+
+  - id: fetch_and_compare
+    command: |
+      SCRIPT_DIR="$(cd "$(dirname "${state_dir}")" && pwd)"
+      H2T="/data/clawd/clawflows-registry/automations/pricing-intelligence/lobster/html2text.py"
+      STATE_DIR="${state_dir}/snapshots"
+      TMPRESULTS=$(mktemp)
+      echo '[]' > "$TMPRESULTS"
+
+      echo "${urls}" | tr ',' '\n' | while read -r raw_url; do
+        url=$(echo "$raw_url" | xargs)
+        [ -z "$url" ] && continue
+
+        slug=$(echo "$url" | sed 's|https\?://||;s|[^a-zA-Z0-9]|_|g')
+        snapshot_file="$STATE_DIR/${slug}.txt"
+        hash_file="$STATE_DIR/${slug}.hash"
+        ts_file="$STATE_DIR/${slug}.ts"
+
+        TMPHTML=$(mktemp)
+        curl -sL --max-time 30 -A "Mozilla/5.0 (compatible; PricingIntel/1.0)" "$url" > "$TMPHTML" 2>/dev/null || true
+
+        if [ ! -s "$TMPHTML" ]; then
+          entry=$(jq -n --arg u "$url" '{url:$u, status:"fetch_failed", changed:false}')
+          jq --argjson e "$entry" '. + [$e]' "$TMPRESULTS" > "${TMPRESULTS}.tmp" && mv "${TMPRESULTS}.tmp" "$TMPRESULTS"
+          rm -f "$TMPHTML"
+          continue
+        fi
+
+        TMPTXT=$(mktemp)
+        python3 "$H2T" "$TMPHTML" > "$TMPTXT" 2>/dev/null
+        rm -f "$TMPHTML"
+
+        current_hash=$(md5sum "$TMPTXT" | awk '{print $1}')
+        text_length=$(wc -c < "$TMPTXT")
+
+        changed=false
+        previous_hash=""
+        last_checked=""
+
+        if [ -f "$hash_file" ]; then
+          previous_hash=$(cat "$hash_file")
+          if [ "$current_hash" != "$previous_hash" ]; then
+            changed=true
+          fi
+        else
+          changed=true
+        fi
+
+        if [ -f "$ts_file" ]; then
+          last_checked=$(cat "$ts_file")
+        fi
+
+        now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+        entry=$(jq -n \
+          --arg u "$url" \
+          --arg ch "$current_hash" \
+          --arg ph "$previous_hash" \
+          --argjson changed "$changed" \
+          --arg now "$now" \
+          --arg last "${last_checked:-null}" \
+          --argjson tlen "$text_length" \
+          '{url:$u, current_hash:$ch, previous_hash:$ph, changed:$changed, checked_at:$now, last_checked:(if $last == "null" then null else $last end), text_length:$tlen, status:"ok"}')
+
+        jq --argjson e "$entry" '. + [$e]' "$TMPRESULTS" > "${TMPRESULTS}.tmp" && mv "${TMPRESULTS}.tmp" "$TMPRESULTS"
+
+        cp "$TMPTXT" "$snapshot_file"
+        echo "$current_hash" > "$hash_file"
+        echo "$now" > "$ts_file"
+        rm -f "$TMPTXT"
+      done
+
+      cat "$TMPRESULTS"
+      rm -f "$TMPRESULTS"
+
+  - id: build_report
+    command: |
+      TMPRESULTS=$(mktemp)
+      cat > "$TMPRESULTS" << 'HEREDOC'
+      $fetch_and_compare.stdout
+      HEREDOC
+
+      TOTAL=$(jq 'length' "$TMPRESULTS")
+      CHANGED=$(jq '[.[] | select(.changed==true)] | length' "$TMPRESULTS")
+      FAILED=$(jq '[.[] | select(.status=="fetch_failed")] | length' "$TMPRESULTS")
+
+      TMPCHANGES=$(mktemp)
+      echo '[]' > "$TMPCHANGES"
+      STATE_DIR="${state_dir}/snapshots"
+
+      jq -r '.[] | select(.changed==true) | .url' "$TMPRESULTS" | while read -r url; do
+        slug=$(echo "$url" | sed 's|https\?://||;s|[^a-zA-Z0-9]|_|g')
+        snapshot_file="$STATE_DIR/${slug}.txt"
+        excerpt=""
+        if [ -f "$snapshot_file" ]; then
+          excerpt=$(head -c 1000 "$snapshot_file")
+        fi
+
+        detail=$(jq -n --arg u "$url" --arg excerpt "$excerpt" '{url:$u, excerpt:$excerpt}')
+        jq --argjson d "$detail" '. + [$d]' "$TMPCHANGES" > "${TMPCHANGES}.tmp" && mv "${TMPCHANGES}.tmp" "$TMPCHANGES"
+      done
+
+      CHANGES=$(cat "$TMPCHANGES")
+
+      # NOTE: Pipe this JSON report to an LLM for:
+      # - Natural language analysis of pricing changes
+      # - Positioning shift detection
+      # - Response recommendations (adjust pricing, update messaging, create comparison content)
+      jq -n \
+        --argjson total "$TOTAL" \
+        --argjson changed "$CHANGED" \
+        --argjson failed "$FAILED" \
+        --argjson results "$(cat $TMPRESULTS)" \
+        --argjson changes "$CHANGES" \
+        --arg ts "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        '{
+          report: "Pricing Intelligence Report",
+          timestamp: $ts,
+          summary: {
+            total_urls: $total,
+            changed: $changed,
+            failed: $failed,
+            unchanged: ($total - $changed - $failed)
+          },
+          results: $results,
+          change_details: $changes
+        }'
+
+      rm -f "$TMPRESULTS" "$TMPCHANGES"

@@ -1,0 +1,148 @@
+# Lobster workflow: pr-newsjacking
+# Monitor breaking news, collect context, find journalists, produce pitch-ready data
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"industry_keywords":"AI developer tools","expert_bio":"CTO with 10 years in devtools","topics_of_expertise":"AI,developer experience,code generation"}'
+#
+# Requires: curl, jq
+# Env: BRAVE_API_KEY
+
+name: pr-newsjacking
+description: Monitor breaking news in your industry, collect context and journalist contacts for rapid newsjacking pitches
+
+args:
+  industry_keywords:
+    description: "Keywords to monitor for breaking news"
+  expert_bio:
+    description: "Your expert credentials for journalist pitches"
+    default: "Industry expert"
+  topics_of_expertise:
+    description: "Comma-separated areas of expertise"
+    default: "technology"
+  freshness:
+    description: "News freshness filter (pd=past day, pw=past week)"
+    default: "pd"
+  max_results:
+    description: "Max news results to process"
+    default: "5"
+
+steps:
+  - id: search-news
+    command: |
+      curl -s "https://api.search.brave.com/res/v1/news/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=${industry_keywords}" \
+        --data-urlencode "freshness=${freshness}" \
+        --data-urlencode "count=${max_results}" \
+        -G \
+      | jq --argjson maxr "${max_results}" '{
+          query: .query.original,
+          result_count: (.results | length),
+          articles: [.results[:$maxr] | .[] | {
+            title: .title,
+            url: .url,
+            description: .description,
+            source: .meta_url.hostname,
+            age: .age
+          }]
+        }'
+
+  - id: enrich-articles
+    stdin: $search-news.stdout
+    command: |
+      cat > /tmp/lb_nj_articles.json
+      count=$(jq '.result_count' /tmp/lb_nj_articles.json)
+      if [ "$count" = "0" ] || [ "$count" = "null" ]; then
+        echo '{"articles":[]}'
+        rm -f /tmp/lb_nj_articles.json
+        exit 0
+      fi
+      # Fetch page content snippets for top 3 articles
+      jq -c '.articles[:3][]' /tmp/lb_nj_articles.json | while IFS= read -r article; do
+        url=$(echo "$article" | jq -r '.url')
+        snippet=$(curl -s -L --max-time 8 "$url" 2>/dev/null \
+          | sed 's/<script[^>]*>.*<\/script>//g; s/<style[^>]*>.*<\/style>//g; s/<[^>]*>//g' \
+          | tr -s '[:space:]' ' ' \
+          | head -c 1200)
+        echo "$article" | jq --arg snippet "$snippet" '. + {snippet: $snippet}'
+      done > /tmp/lb_nj_enriched.json
+      # Append remaining non-enriched
+      jq -c '.articles[3:][]' /tmp/lb_nj_articles.json 2>/dev/null | while IFS= read -r article; do
+        echo "$article" | jq '. + {snippet: ""}'
+      done >> /tmp/lb_nj_enriched.json
+      jq -s '{articles: .}' /tmp/lb_nj_enriched.json
+      rm -f /tmp/lb_nj_articles.json /tmp/lb_nj_enriched.json
+
+  - id: search-journalists
+    command: |
+      # Save journalist data to temp file for compile-report, and also output it
+      curl -s "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=${industry_keywords} journalist OR reporter OR editor site:twitter.com OR site:linkedin.com" \
+        --data-urlencode "count=5" \
+        -G \
+      | jq '{
+          journalists: [(.web.results // [])[:5] | .[] | {
+            title: .title,
+            url: .url,
+            description: (.description // ""),
+            source: .meta_url.hostname
+          }]
+        }' | tee /tmp/lb_nj_journalists.json
+
+  - id: compile-report
+    stdin: $enrich-articles.stdout
+    command: |
+      # NOTE: In production, pipe this JSON output to an LLM to:
+      #   1. Rate each article HOT/WARM/PASS for newsjacking potential
+      #   2. Draft 2-3 quotable expert sound bites for HOT articles
+      #   3. Generate personalized journalist pitch emails
+      cat > /tmp/lb_nj_ctx.json
+      jq -n \
+        --arg keywords "${industry_keywords}" \
+        --arg bio "${expert_bio}" \
+        --arg expertise "${topics_of_expertise}" \
+        --slurpfile ctx /tmp/lb_nj_ctx.json \
+        --slurpfile journos /tmp/lb_nj_journalists.json \
+        '{
+          workflow: "pr-newsjacking",
+          keywords: $keywords,
+          expert_bio: $bio,
+          topics_of_expertise: ($expertise | split(",")),
+          news_articles: ($ctx[0].articles // []),
+          article_count: (($ctx[0].articles // []) | length),
+          journalist_leads: ($journos[0].journalists // []),
+          journalist_count: (($journos[0].journalists // []) | length),
+          llm_instructions: "For each article: (1) Rate HOT/WARM/PASS for newsjacking potential based on topics_of_expertise. (2) For HOT articles, draft 2-3 quotable sound bites using expert_bio. (3) For each journalist lead, draft a personalized pitch email referencing the HOT article and their beat.",
+          timestamp: (now | todate)
+        }'
+      rm -f /tmp/lb_nj_ctx.json /tmp/lb_nj_journalists.json
+
+  - id: summary
+    stdin: $compile-report.stdout
+    command: |
+      jq -r '
+        "📰 PR Newsjacking Report",
+        "━━━━━━━━━━━━━━━━━━━━━━━",
+        "🔍 Keywords: \(.keywords)",
+        "📊 Articles found: \(.article_count)",
+        "🎤 Journalist leads: \(.journalist_count)",
+        "",
+        "📰 Breaking News:",
+        (.news_articles | to_entries[] |
+          "  \(.key + 1). \(.value.title)",
+          "     🔗 \(.value.url)",
+          "     ⏰ \(.value.age // "recent")",
+          "     📝 \(.value.description[:120])...",
+          ""
+        ),
+        "👤 Journalist Leads:",
+        (.journalist_leads | to_entries[] |
+          "  \(.key + 1). \(.value.title[:80])",
+          "     🔗 \(.value.url)"
+        ),
+        "",
+        "💡 Next: Pipe compile-report output to an LLM for HOT/WARM/PASS ratings, commentary drafts, and personalized pitches."
+      '

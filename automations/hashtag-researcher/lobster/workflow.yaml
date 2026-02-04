@@ -1,0 +1,114 @@
+# Lobster workflow: hashtag-researcher
+# Researches trending and relevant hashtags for a given topic/niche
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"topic":"AI agents","platform":"twitter"}'
+#
+# Requires: jq, curl
+# Note: Uses public web sources; for production use, add platform API keys
+
+name: hashtag-researcher
+description: Research trending and relevant hashtags for your niche
+
+args:
+  topic:
+    description: "Topic or niche to research hashtags for"
+  platform:
+    description: "Target platform: twitter, instagram, linkedin, tiktok"
+    default: "twitter"
+  max_results:
+    description: "Maximum hashtags to return"
+    default: "30"
+
+steps:
+  - id: fetch-github-topics
+    command: |
+      # Use GitHub topic search as a proxy for tech-related hashtag discovery
+      topic_slug=$(echo "${topic}" | tr ' ' '+' | tr '[:upper:]' '[:lower:]')
+      curl -sf "https://api.github.com/search/topics?q=$topic_slug&per_page=10" \
+        | jq '[.items[]? | {name: .name, display_name: (.display_name // .name), score: .score, short_description: .short_description}]' \
+        2>/dev/null || echo '[]'
+
+  - id: generate-hashtags
+    stdin: $fetch-github-topics.stdout
+    command: |
+      cat > /tmp/lb_hr_topics.json
+      topic="${topic}"
+      platform="${platform}"
+      max="${max_results}"
+
+      # Generate hashtags from topic keywords + GitHub topic data
+      # Split topic into words for base hashtags
+      base_tags=$(echo "$topic" | tr ' ' '\n' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g' | jq -Rn '[inputs | select(length > 2)]')
+
+      # Extract related terms from GitHub topics
+      related=$(jq '[.[].name // empty]' /tmp/lb_hr_topics.json 2>/dev/null || echo '[]')
+
+      jq -nc \
+        --argjson base "$base_tags" \
+        --argjson related "$related" \
+        --arg topic "$topic" \
+        --arg platform "$platform" \
+        --argjson max "$max" \
+        '{
+          topic: $topic,
+          platform: $platform,
+          base_hashtags: [$base[] | "#\(.)"],
+          related_hashtags: [$related[] | "#\(gsub(" ";"-"))"],
+          compound_hashtag: ("#" + ($base | join(""))),
+          # Platform-specific common suffixes
+          extended: (
+            [$base[] | . as $b |
+              ["tips", "community", "dev", "tools", "news", "daily"] |
+              .[] | "#\($b)\(.)"] |
+            unique | .[:($max | tonumber)]
+          )
+        }'
+      rm -f /tmp/lb_hr_topics.json
+
+  - id: compile-results
+    stdin: $generate-hashtags.stdout
+    command: |
+      # NOTE: For richer results, pipe this data to an LLM step that:
+      # - Ranks hashtags by estimated popularity
+      # - Suggests hashtag groupings (high/medium/low competition)
+      # - Adds platform-specific recommendations
+      # For now, compile all discovered hashtags with deduplication
+      cat > /tmp/lb_hr_gen.json
+      max="${max_results}"
+
+      jq --argjson max "$max" '{
+        topic: .topic,
+        platform: .platform,
+        hashtags: (
+          [.base_hashtags[], .related_hashtags[], .compound_hashtag, .extended[]] |
+          map(ascii_downcase) | unique | .[:($max | tonumber)]
+        ),
+        count: (
+          [.base_hashtags[], .related_hashtags[], .compound_hashtag, .extended[]] |
+          map(ascii_downcase) | unique | length
+        ),
+        groups: {
+          primary: (.base_hashtags | .[:3]),
+          related: (.related_hashtags | .[:5]),
+          long_tail: (.extended | .[:5])
+        }
+      }' /tmp/lb_hr_gen.json
+      rm -f /tmp/lb_hr_gen.json
+
+  - id: report
+    stdin: $compile-results.stdout
+    command: |
+      jq -r '
+        "🏷️ **Hashtag Research: \(.topic)** (for \(.platform))\n\n" +
+        "**Primary (\(.groups.primary | length)):**\n" +
+        (.groups.primary | map("  \(.)") | join("\n")) + "\n\n" +
+        "**Related (\(.groups.related | length)):**\n" +
+        (.groups.related | map("  \(.)") | join("\n")) + "\n\n" +
+        "**Long-tail (\(.groups.long_tail | length)):**\n" +
+        (.groups.long_tail | map("  \(.)") | join("\n")) + "\n\n" +
+        "**All hashtags (\(.count)):**\n" +
+        (.hashtags | join(" ")) + "\n\n" +
+        "💡 Copy-paste set:\n```\n" +
+        (.hashtags | .[:15] | join(" ")) + "\n```"
+      '

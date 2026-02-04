@@ -1,0 +1,176 @@
+name: "Event Hijacker"
+description: >
+  Search for upcoming events, conferences, and CFPs matching industry keywords.
+  Produces a structured JSON report with relevance scoring.
+  Based on ClawFlows automation: event-hijacker v1.0.0
+
+args:
+  industry_keywords:
+    desc: "Keywords for your industry/niche (e.g. 'AI developer tools')"
+  location:
+    desc: "Preferred location or 'remote'"
+    default: "remote"
+  max_results:
+    desc: "Max results per search query"
+    default: "5"
+
+steps:
+  - id: find_events
+    command: |
+      curl -s "https://api.search.brave.com/res/v1/web/search" \
+        -G \
+        --data-urlencode "q=${industry_keywords} (site:eventbrite.com OR site:lu.ma OR site:meetup.com) 2025 2026" \
+        --data-urlencode "count=${max_results}" \
+        -H "X-Subscription-Token: $BRAVE_API_KEY" \
+        -H "Accept: application/json" \
+        -o /tmp/eh_events_raw.json \
+        -w "%{http_code}"
+      
+      node -e "
+        const fs = require('fs');
+        const raw = JSON.parse(fs.readFileSync('/tmp/eh_events_raw.json', 'utf8'));
+        const results = (raw.web && raw.web.results) || [];
+        const events = results.map((r, i) => ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || '').replace(/<[^>]+>/g, ''),
+          source: (r.meta_url && r.meta_url.hostname) || 'unknown',
+          platform: r.url.includes('eventbrite') ? 'eventbrite'
+                  : r.url.includes('lu.ma') ? 'luma'
+                  : r.url.includes('meetup.com') ? 'meetup'
+                  : 'other'
+        }));
+        const out = JSON.stringify({ query: '${industry_keywords} events', count: events.length, events }, null, 2);
+        fs.writeFileSync('/tmp/eh_events.json', out);
+        console.log(out);
+      "
+
+  - id: find_cfps
+    command: |
+      curl -s "https://api.search.brave.com/res/v1/web/search" \
+        -G \
+        --data-urlencode "q=${industry_keywords} CFP call for proposals speakers 2025 2026" \
+        --data-urlencode "count=${max_results}" \
+        -H "X-Subscription-Token: $BRAVE_API_KEY" \
+        -H "Accept: application/json" \
+        -o /tmp/eh_cfps_raw.json \
+        -w "%{http_code}"
+      
+      node -e "
+        const fs = require('fs');
+        const raw = JSON.parse(fs.readFileSync('/tmp/eh_cfps_raw.json', 'utf8'));
+        const results = (raw.web && raw.web.results) || [];
+        const cfps = results.map((r, i) => ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || '').replace(/<[^>]+>/g, ''),
+          source: (r.meta_url && r.meta_url.hostname) || 'unknown'
+        }));
+        const out = JSON.stringify({ query: '${industry_keywords} CFPs', count: cfps.length, cfps }, null, 2);
+        fs.writeFileSync('/tmp/eh_cfps.json', out);
+        console.log(out);
+      "
+
+  - id: find_location_events
+    command: |
+      if [ "${location}" = "remote" ]; then
+        QUERY="${industry_keywords} virtual online event conference 2025 2026"
+      else
+        QUERY="${industry_keywords} event conference ${location} 2025 2026"
+      fi
+      
+      curl -s "https://api.search.brave.com/res/v1/web/search" \
+        -G \
+        --data-urlencode "q=$QUERY" \
+        --data-urlencode "count=${max_results}" \
+        -H "X-Subscription-Token: $BRAVE_API_KEY" \
+        -H "Accept: application/json" \
+        -o /tmp/eh_location_raw.json \
+        -w "%{http_code}"
+      
+      node -e "
+        const fs = require('fs');
+        const raw = JSON.parse(fs.readFileSync('/tmp/eh_location_raw.json', 'utf8'));
+        const results = (raw.web && raw.web.results) || [];
+        const events = results.map((r, i) => ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || '').replace(/<[^>]+>/g, ''),
+          source: (r.meta_url && r.meta_url.hostname) || 'unknown'
+        }));
+        const out = JSON.stringify({ query: '${industry_keywords} in ${location}', count: events.length, events }, null, 2);
+        fs.writeFileSync('/tmp/eh_location.json', out);
+        console.log(out);
+      "
+
+  - id: build_report
+    command: |
+      node -e "
+        const fs = require('fs');
+        const events = JSON.parse(fs.readFileSync('/tmp/eh_events.json', 'utf8'));
+        const cfps = JSON.parse(fs.readFileSync('/tmp/eh_cfps.json', 'utf8'));
+        const location = JSON.parse(fs.readFileSync('/tmp/eh_location.json', 'utf8'));
+
+        // Deduplicate by URL across all sources
+        const seen = new Set();
+        const allEvents = [];
+        const addUnique = (items, type) => {
+          for (const item of items) {
+            if (!seen.has(item.url)) {
+              seen.add(item.url);
+              allEvents.push({ ...item, type });
+            }
+          }
+        };
+        addUnique(events.events || [], 'event');
+        addUnique(location.events || [], 'event');
+        addUnique(cfps.cfps || [], 'cfp');
+
+        // Simple relevance scoring based on keyword density
+        const keywords = '${industry_keywords}'.toLowerCase().split(/\s+/);
+        for (const ev of allEvents) {
+          const text = (ev.title + ' ' + ev.description).toLowerCase();
+          let score = 0;
+          for (const kw of keywords) {
+            if (text.includes(kw)) score += 2;
+          }
+          // Bonus for platform events (more likely real events)
+          if (ev.platform === 'eventbrite' || ev.platform === 'luma' || ev.platform === 'meetup') score += 1;
+          // Bonus for CFPs (high value)
+          if (ev.type === 'cfp') score += 1;
+          ev.relevance_score = score;
+          ev.relevance = score >= 4 ? 'HIGH' : score >= 2 ? 'MEDIUM' : 'LOW';
+        }
+
+        // Sort by relevance score descending
+        allEvents.sort((a, b) => b.relevance_score - a.relevance_score);
+
+        const report = {
+          generated_at: new Date().toISOString(),
+          industry_keywords: '${industry_keywords}',
+          location: '${location}',
+          summary: {
+            total_found: allEvents.length,
+            high_relevance: allEvents.filter(e => e.relevance === 'HIGH').length,
+            medium_relevance: allEvents.filter(e => e.relevance === 'MEDIUM').length,
+            low_relevance: allEvents.filter(e => e.relevance === 'LOW').length,
+            events: allEvents.filter(e => e.type === 'event').length,
+            cfps: allEvents.filter(e => e.type === 'cfp').length
+          },
+          // TODO: Pipe this to an LLM for deeper relevance analysis,
+          // networking intel, and personalized recommendations
+          events: allEvents,
+          todos: [
+            'AUTO_REGISTER: Browser automation needed to register for HIGH relevance virtual events',
+            'CFP_SUBMIT: Browser automation needed to submit speaker kit to open CFPs',
+            'NETWORKING_INTEL: Pipe event data to LLM to research speakers and generate talking points',
+            'SCHEDULE_FOLLOWUPS: Create calendar reminders for day-after-event follow-ups'
+          ]
+        };
+
+        fs.writeFileSync('/tmp/eh_report.json', JSON.stringify(report, null, 2));
+        console.log(JSON.stringify(report, null, 2));
+      "

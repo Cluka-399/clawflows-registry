@@ -1,0 +1,220 @@
+name: "100-Platform Launch Blitz"
+description: |
+  Submit your SaaS to 100+ launch directories. Initializes a directories database,
+  selects the next batch of pending platforms, generates platform-specific descriptions,
+  and produces submission-ready data packages with URLs and form details.
+  Tracks state between runs (pending, submitted, approved).
+  NOTE: Actual form submission requires browser automation — this workflow produces
+  the structured data packages needed for submission.
+
+args:
+  product_name:
+    desc: "Name of the product/SaaS to submit"
+  product_url:
+    desc: "URL of the product"
+  tagline:
+    desc: "Short tagline for the product"
+  description:
+    desc: "Full product description (will be adapted per platform)"
+  category:
+    desc: "Product category (e.g. developer-tools, productivity, marketing)"
+    default: "developer-tools"
+  submissions_per_run:
+    desc: "Number of directories to process per run"
+    default: "5"
+  state_dir:
+    desc: "Directory for persisting state between runs"
+    default: "/tmp/launch-blitz"
+
+steps:
+  # Step 1: Ensure state directory and initialize the directories database if needed
+  - id: init_db
+    command: |
+      mkdir -p "${state_dir}"
+      DB="${state_dir}/directories.json"
+      if [ ! -f "$DB" ]; then
+        cat > "$DB" << 'DIRECTORIES'
+      [
+        {"id":"product-hunt","name":"Product Hunt","url":"https://www.producthunt.com","submit_url":"https://www.producthunt.com/posts/new","max_chars":260,"style":"punchy, startup-friendly, emoji welcome","category_field":"topics","requires_account":true,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Best launched on Tuesday-Thursday. Needs maker account."},
+        {"id":"alternativeto","name":"AlternativeTo","url":"https://alternativeto.net","submit_url":"https://alternativeto.net/manage/add-app/","max_chars":500,"style":"factual, comparison-focused, mention alternatives","category_field":"tags","requires_account":true,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Include what product is alternative to. Takes 1-3 days for approval."},
+        {"id":"saashub","name":"SaaSHub","url":"https://www.saashub.com","submit_url":"https://www.saashub.com/submit","max_chars":300,"style":"professional, feature-list oriented","category_field":"category","requires_account":false,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Good for SEO backlinks. Approval in 1-5 days."},
+        {"id":"betalist","name":"BetaList","url":"https://betalist.com","submit_url":"https://betalist.com/submit","max_chars":200,"style":"early-adopter focused, beta/launch angle","category_field":"category","requires_account":true,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Best for pre-launch or just-launched products. Free tier has queue."},
+        {"id":"launching-next","name":"Launching Next","url":"https://www.launchingnext.com","submit_url":"https://www.launchingnext.com/submit/","max_chars":400,"style":"startup pitch style, problem-solution format","category_field":"category","requires_account":false,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Quick approval. Good for early traction."},
+        {"id":"capterra","name":"Capterra","url":"https://www.capterra.com","submit_url":"https://www.capterra.com/vendors/sign-up","max_chars":1000,"style":"enterprise-friendly, feature-rich, mention integrations","category_field":"software_category","requires_account":true,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Major directory. Verification process takes 1-2 weeks."},
+        {"id":"g2","name":"G2","url":"https://www.g2.com","submit_url":"https://www.g2.com/products/new","max_chars":800,"style":"professional, ROI-focused, enterprise language","category_field":"category","requires_account":true,"priority":1,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Top B2B review site. Needs vendor claim after listing."},
+        {"id":"getapp","name":"GetApp","url":"https://www.getapp.com","submit_url":"https://www.getapp.com/submit","max_chars":600,"style":"business-focused, emphasize pricing and features","category_field":"category","requires_account":true,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Part of Gartner Digital Markets. Good for B2B."},
+        {"id":"slant","name":"Slant","url":"https://www.slant.co","submit_url":"https://www.slant.co/improve","max_chars":300,"style":"pros/cons format, comparison-driven","category_field":"topic","requires_account":true,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Community-driven. Add to relevant recommendation questions."},
+        {"id":"stackshare","name":"StackShare","url":"https://stackshare.io","submit_url":"https://stackshare.io/submit","max_chars":400,"style":"developer-focused, tech stack emphasis","category_field":"category","requires_account":true,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Great for dev tools. Emphasize tech stack and integrations."},
+        {"id":"toolify-ai","name":"Toolify.ai","url":"https://www.toolify.ai","submit_url":"https://www.toolify.ai/submit","max_chars":500,"style":"AI-focused, emphasize AI/ML capabilities","category_field":"ai_category","requires_account":false,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Only for AI/ML products. Growing directory."},
+        {"id":"there-is-an-ai","name":"There is an AI for That","url":"https://theresanaiforthat.com","submit_url":"https://theresanaiforthat.com/submit/","max_chars":300,"style":"concise, task-oriented, what-it-does focus","category_field":"task","requires_account":false,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Popular AI directory. Quick approval for quality products."},
+        {"id":"futurepedia","name":"Futurepedia","url":"https://www.futurepedia.io","submit_url":"https://www.futurepedia.io/submit-tool","max_chars":400,"style":"AI tool showcase, feature highlights","category_field":"category","requires_account":false,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"AI tools directory. Good organic traffic."},
+        {"id":"microlaunch","name":"MicroLaunch","url":"https://microlaunch.net","submit_url":"https://microlaunch.net/submit","max_chars":280,"style":"indie hacker friendly, casual, authentic","category_field":"category","requires_account":false,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Indie hacker community. Good for bootstrapped products."},
+        {"id":"uneed","name":"Uneed","url":"https://www.uneed.best","submit_url":"https://www.uneed.best/submit","max_chars":300,"style":"clean, benefit-focused, modern","category_field":"category","requires_account":false,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Curated directory. Free submission with queue."},
+        {"id":"devhunt","name":"DevHunt","url":"https://devhunt.org","submit_url":"https://devhunt.org/submit","max_chars":250,"style":"developer-focused, GitHub integration, open-source friendly","category_field":"category","requires_account":true,"priority":2,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Product Hunt alternative for dev tools. GitHub login required."},
+        {"id":"saas-ai-tools","name":"SaaS AI Tools","url":"https://saasaitools.com","submit_url":"https://saasaitools.com/submit/","max_chars":500,"style":"SEO-optimized, keyword-rich, feature list","category_field":"category","requires_account":false,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"SEO-focused directory. Good for long-tail keywords."},
+        {"id":"pitchwall","name":"PitchWall","url":"https://pitchwall.co","submit_url":"https://pitchwall.co/submit","max_chars":300,"style":"startup pitch, problem-solution, traction metrics","category_field":"industry","requires_account":false,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Startup showcase. Good for fundraising visibility."},
+        {"id":"startupbase","name":"Startupbase","url":"https://startupbase.io","submit_url":"https://startupbase.io/startups/new","max_chars":500,"style":"startup community, growth metrics, team info","category_field":"category","requires_account":true,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Brazilian startup directory but global reach."},
+        {"id":"softwareworld","name":"SoftwareWorld","url":"https://www.softwareworld.co","submit_url":"https://www.softwareworld.co/get-listed","max_chars":600,"style":"professional review style, feature comparison","category_field":"category","requires_account":false,"priority":3,"status":"pending","submitted_at":null,"approved_at":null,"notes":"Software review directory. Takes 1-2 weeks for listing."}
+      ]
+      DIRECTORIES
+        echo "Initialized directories database with 20 platforms"
+      else
+        echo "Directories database already exists"
+      fi
+      echo '{"status":"ok"}'
+
+  # Step 2: Select the next batch of pending directories, sorted by priority
+  # Write batch to a temp file for other steps to read
+  - id: select_batch
+    command: |
+      DB="${state_dir}/directories.json"
+      LIMIT="${submissions_per_run}"
+      BATCH_FILE="${state_dir}/_current_batch.json"
+      cat "$DB" | jq --argjson limit "$LIMIT" '
+        [ .[] | select(.status == "pending") ]
+        | sort_by(.priority)
+        | .[:$limit]
+      ' > "$BATCH_FILE"
+      cat "$BATCH_FILE"
+
+  # Step 3: Count overall stats
+  - id: count_stats
+    command: |
+      DB="${state_dir}/directories.json"
+      cat "$DB" | jq '{
+        total: length,
+        pending: [ .[] | select(.status == "pending") ] | length,
+        submitted: [ .[] | select(.status == "submitted") ] | length,
+        approved: [ .[] | select(.status == "approved") ] | length,
+        rejected: [ .[] | select(.status == "rejected") ] | length
+      }'
+
+  # Step 4: Generate platform-specific descriptions for each selected directory
+  # NOTE: In production, pipe each platform's llm_prompt to an LLM API for tailored copy.
+  # This step produces structured data with descriptions truncated to each platform's char limit.
+  - id: generate_descriptions
+    command: |
+      BATCH_FILE="${state_dir}/_current_batch.json"
+      DESC_FILE="${state_dir}/_current_descriptions.json"
+
+      jq --arg name "${product_name}" \
+        --arg url "${product_url}" \
+        --arg tagline "${tagline}" \
+        --arg desc "${description}" \
+        --arg category "${category}" '
+        [.[] | {
+          platform_id: .id,
+          platform_name: .name,
+          submit_url: .submit_url,
+          requires_account: .requires_account,
+          notes: .notes,
+          style_guidance: .style,
+          max_chars: .max_chars,
+          product: {
+            name: $name,
+            url: $url,
+            tagline: $tagline,
+            category: $category,
+            description: (if (.max_chars // 500) < ($desc | length)
+              then ($desc | .[:(.max_chars // 500) - 3] + "...")
+              else $desc end)
+          },
+          llm_prompt: ("Generate a submission description for " + .name + " (max " + ((.max_chars // 500) | tostring) + " chars). Style: " + (.style // "professional") + ". Product: " + $name + " - " + $tagline + ". Base: " + $desc)
+        }]
+      ' < "$BATCH_FILE" > "$DESC_FILE"
+      cat "$DESC_FILE"
+
+  # Step 5: Build submission-ready data packages and save to file
+  - id: build_packages
+    command: |
+      DESC_FILE="${state_dir}/_current_descriptions.json"
+      TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      PACKAGES_FILE="${state_dir}/submission-packages-$(date -u +%Y%m%d-%H%M%S).json"
+
+      jq --arg ts "$TIMESTAMP" \
+        --arg product_url "${product_url}" \
+        --arg category "${category}" '
+        {
+          generated_at: $ts,
+          product_url: $product_url,
+          category: $category,
+          total_in_batch: length,
+          packages: [.[] | {
+            platform_id: .platform_id,
+            platform_name: .platform_name,
+            submit_url: .submit_url,
+            requires_account: .requires_account,
+            notes: .notes,
+            submission_data: {
+              name: .product.name,
+              url: .product.url,
+              tagline: .product.tagline,
+              description: .product.description,
+              category: $category
+            },
+            style_guidance: .style_guidance,
+            max_chars: .max_chars,
+            llm_prompt: .llm_prompt,
+            status: "ready_for_submission",
+            action_required: (if .requires_account then "Create account first, then submit" else "Submit directly" end)
+          }]
+        }
+      ' < "$DESC_FILE" | tee "$PACKAGES_FILE"
+
+  # Step 6: Update directory statuses to 'submitted' for processed batch
+  - id: update_state
+    command: |
+      DB="${state_dir}/directories.json"
+      BATCH_FILE="${state_dir}/_current_batch.json"
+      TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      BATCH_IDS=$(jq -r '.[].id' < "$BATCH_FILE")
+
+      TMP_DB=$(mktemp)
+      cp "$DB" "$TMP_DB"
+
+      for ID in $BATCH_IDS; do
+        jq --arg id "$ID" --arg ts "$TIMESTAMP" '
+          map(if .id == $id then .status = "submitted" | .submitted_at = $ts else . end)
+        ' < "$TMP_DB" > "${TMP_DB}.new"
+        mv "${TMP_DB}.new" "$TMP_DB"
+      done
+
+      mv "$TMP_DB" "$DB"
+      echo "Updated $(echo "$BATCH_IDS" | wc -w | tr -d ' ') directories to submitted status"
+
+  # Step 7: Generate final summary report
+  - id: summary
+    command: |
+      DB="${state_dir}/directories.json"
+      BATCH_FILE="${state_dir}/_current_batch.json"
+
+      STATS=$(jq '{
+        total: length,
+        pending: [.[] | select(.status == "pending")] | length,
+        submitted: [.[] | select(.status == "submitted")] | length,
+        approved: [.[] | select(.status == "approved")] | length
+      }' < "$DB")
+
+      SUBMITTED_NAMES=$(jq -r '.[].name' < "$BATCH_FILE")
+      BATCH_COUNT=$(echo "$SUBMITTED_NAMES" | grep -c . || true)
+
+      # Clean up temp files
+      rm -f "${state_dir}/_current_batch.json" "${state_dir}/_current_descriptions.json"
+
+      jq -n \
+        --arg product "${product_name}" \
+        --arg batch_count "$BATCH_COUNT" \
+        --arg submitted_names "$SUBMITTED_NAMES" \
+        --argjson stats "$STATS" '
+        {
+          report: "Launch Blitz Update",
+          product: $product,
+          batch_processed: ($batch_count | tonumber),
+          platforms_submitted: ($submitted_names | split("\n") | map(select(. != ""))),
+          queue_remaining: $stats.pending,
+          total_submitted: $stats.submitted,
+          total_approved: $stats.approved,
+          total_tracked: $stats.total,
+          next_action: (if $stats.pending > 0 then "Run again to process next batch" else "All directories processed!" end)
+        }
+      '

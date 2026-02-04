@@ -1,0 +1,140 @@
+# Lobster workflow: social-engagement-tracker
+# Tracks engagement metrics across social platforms over time using state
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"twitter_user":"claborators","data_file":"/path/to/metrics.json"}'
+#
+# On each run, appends current snapshot to the data file and compares to previous.
+# For Twitter/X: uses nitter instances or public profile pages.
+# For other platforms: reads from a metrics JSON file that can be updated externally.
+#
+# Metrics JSON format (for manual/external data):
+#   { "twitter": {"followers": N, "following": N}, "linkedin": {"connections": N}, ... }
+#
+# Requires: jq, curl
+
+name: social-engagement-tracker
+description: Track engagement metrics across social platforms, compare trends over time
+
+args:
+  twitter_user:
+    description: "Twitter/X username to track (without @)"
+    default: ""
+  metrics_file:
+    description: "Path to current metrics JSON (for platforms without API scraping)"
+    default: ""
+  state_file:
+    description: "Path to state file for historical tracking"
+    default: "/tmp/clawflows-social-tracker-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{"snapshots":[]}'
+
+  - id: collect-twitter
+    command: |
+      user="${twitter_user}"
+      if [ -z "$user" ]; then
+        echo '{"twitter": null, "message": "no twitter user configured"}'
+        exit 0
+      fi
+      # Try to fetch basic Twitter profile data via nitter or public endpoints
+      # Multiple nitter instances as fallbacks
+      for host in nitter.poast.org nitter.privacydev.net; do
+        data=$(curl -sf --max-time 10 "https://$host/$user" 2>/dev/null)
+        if [ -n "$data" ]; then
+          followers=$(echo "$data" | grep -oP 'followers.*?<span[^>]*>\K[0-9,]+' | head -1 | tr -d ',')
+          following=$(echo "$data" | grep -oP 'following.*?<span[^>]*>\K[0-9,]+' | head -1 | tr -d ',')
+          tweets=$(echo "$data" | grep -oP 'tweets.*?<span[^>]*>\K[0-9,]+' | head -1 | tr -d ',')
+          if [ -n "$followers" ]; then
+            echo "{\"twitter\":{\"user\":\"$user\",\"followers\":${followers:-0},\"following\":${following:-0},\"tweets\":${tweets:-0},\"source\":\"$host\"}}"
+            exit 0
+          fi
+        fi
+      done
+      # Fallback: no data available
+      echo "{\"twitter\":{\"user\":\"$user\",\"followers\":null,\"message\":\"could not fetch - nitter instances may be down\"}}"
+
+  - id: collect-external
+    command: |
+      mf="${metrics_file}"
+      if [ -z "$mf" ] || [ ! -f "$mf" ]; then
+        echo '{}'
+        exit 0
+      fi
+      cat "$mf"
+
+  - id: merge-snapshot
+    stdin: $collect-twitter.stdout
+    command: |
+      cat > /tmp/lb_st_twitter.json
+      ext='$collect-external.stdout'
+      # Build snapshot from all sources
+      now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      twitter_data=$(cat /tmp/lb_st_twitter.json)
+      ext_data=$(echo '$collect-external.stdout')
+      # Use jq to safely merge
+      jq -nc --arg ts "$now" \
+        --argjson tw "$(cat /tmp/lb_st_twitter.json)" \
+        --argjson ext "$(echo '$collect-external.stdout' | jq '.' 2>/dev/null || echo '{}')" \
+        '{timestamp: $ts} + $tw + $ext'
+      rm -f /tmp/lb_st_twitter.json
+
+  - id: compare-and-save
+    stdin: $merge-snapshot.stdout
+    command: |
+      cat > /tmp/lb_st_snapshot.json
+      state=$(cat "${state_file}" 2>/dev/null || echo '{"snapshots":[]}')
+      # Get previous snapshot for comparison
+      prev=$(echo "$state" | jq -c '.snapshots[-1] // {}')
+      current=$(cat /tmp/lb_st_snapshot.json)
+      # Append to state (keep last 100 snapshots)
+      echo "$state" | jq --argjson snap "$current" '
+        .snapshots = (.snapshots + [$snap] | .[-100:]) |
+        .last_updated = ($snap.timestamp)
+      ' > "${state_file}"
+      # Output comparison
+      jq -nc --argjson prev "$prev" --argjson curr "$current" '
+        {
+          current: $curr,
+          previous: $prev,
+          changes: (
+            if $prev == {} then {"note": "first run, no comparison available"}
+            else
+              {
+                twitter_followers_delta: (
+                  if ($curr.twitter.followers // null) != null and ($prev.twitter.followers // null) != null
+                  then ($curr.twitter.followers - $prev.twitter.followers)
+                  else null end
+                )
+              }
+            end
+          )
+        }
+      '
+      rm -f /tmp/lb_st_snapshot.json
+
+  - id: report
+    stdin: $compare-and-save.stdout
+    command: |
+      jq -r '
+        "📈 Social Engagement Tracker\n" +
+        "═══════════════════════════\n" +
+        "Snapshot: \(.current.timestamp // "unknown")\n\n" +
+        if .current.twitter != null then
+          if .current.twitter.followers != null then
+            "🐦 Twitter (@\(.current.twitter.user)):\n" +
+            "   Followers: \(.current.twitter.followers)" +
+            (if .changes.twitter_followers_delta != null and .changes.twitter_followers_delta != 0 then
+              " (\(if .changes.twitter_followers_delta > 0 then "+" else "" end)\(.changes.twitter_followers_delta) since last run)"
+            else "" end) + "\n" +
+            "   Following: \(.current.twitter.following)\n" +
+            "   Tweets: \(.current.twitter.tweets)\n"
+          else
+            "🐦 Twitter: ⚠️ \(.current.twitter.message // "no data")\n"
+          end
+        else "" end +
+        if .changes.note then
+          "\nℹ️  \(.changes.note)"
+        else "" end
+      '

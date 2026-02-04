@@ -1,0 +1,248 @@
+# Lobster workflow: backlink-hunter
+# Find broken links on resource pages in your niche. Produces structured
+# JSON of broken links + page info, ready to pipe to an LLM for outreach drafting.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"niche_keywords":"python tutorial resources","your_content_urls":"https://example.com/python-guide","max_pages":"3","max_links_per_page":"20"}'
+#
+# Requires: curl, jq, python3
+# Env: BRAVE_API_KEY (for web search)
+
+name: backlink-hunter
+description: Find broken links on high-DA resource pages and compile outreach opportunities
+
+args:
+  niche_keywords:
+    description: "Keywords describing your niche (used to find resource pages)"
+  your_content_urls:
+    description: "Comma-separated URLs of your content to pitch as replacements"
+  max_pages:
+    description: "Max resource pages to scan"
+    default: "5"
+  max_links_per_page:
+    description: "Max outbound links to check per page"
+    default: "15"
+  state_file:
+    description: "File to track previously found broken links"
+    default: "/tmp/clawflows-backlink-hunter-state.json"
+
+steps:
+  - id: search-resource-pages
+    command: |
+      query=$(python3 -c "import urllib.parse; print(urllib.parse.quote_plus('${niche_keywords} resources links'))")
+      max=${max_pages}
+
+      curl -sf "https://api.search.brave.com/res/v1/web/search?q=${query}&count=${max}" \
+        -H "Accept: application/json" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        2>/dev/null > /tmp/lb_bh_search.json
+
+      if [ ! -s /tmp/lb_bh_search.json ]; then
+        echo '{"pages":[],"count":0}'
+        exit 0
+      fi
+
+      jq -c '{
+        pages: [(.web.results // [])[] | {
+          title: .title,
+          url: .url,
+          domain: (.url | split("/")[2] // ""),
+          description: .description
+        }],
+        count: ((.web.results // []) | length)
+      }' /tmp/lb_bh_search.json 2>/dev/null || echo '{"pages":[],"count":0}'
+
+      rm -f /tmp/lb_bh_search.json
+
+  - id: extract-links
+    stdin: $search-resource-pages.stdout
+    command: |
+      cat > /tmp/lb_bh_pages.json
+
+      page_count=$(jq '.count' /tmp/lb_bh_pages.json)
+      if [ "$page_count" = "0" ]; then
+        echo '[]'
+        rm -f /tmp/lb_bh_pages.json
+        exit 0
+      fi
+
+      # Write Python script to temp file to avoid shell quoting issues
+      printf '%s\n' \
+        'import json, re, sys, subprocess, urllib.parse' \
+        '' \
+        'with open("/tmp/lb_bh_pages.json") as f:' \
+        '    data = json.load(f)' \
+        '' \
+        'max_links = int(sys.argv[1]) if len(sys.argv) > 1 else 15' \
+        'results = []' \
+        'skip_domains = {"google.com","facebook.com","twitter.com","youtube.com",' \
+        '               "instagram.com","linkedin.com","pinterest.com","amazon.com",' \
+        '               "w3.org","schema.org","fonts.googleapis.com","cdnjs.cloudflare.com",' \
+        '               "gstatic.com","cloudflare.com","jquery.com","bootstrapcdn.com"}' \
+        '' \
+        'for page in data.get("pages", []):' \
+        '    url = page["url"]' \
+        '    domain = page.get("domain", "")' \
+        '    try:' \
+        '        r = subprocess.run(' \
+        '            ["curl", "-sfL", "--max-time", "10", "-A",' \
+        '             "Mozilla/5.0 (compatible; BacklinkHunter/1.0)", url],' \
+        '            capture_output=True, text=True, timeout=15' \
+        '        )' \
+        '        html = r.stdout' \
+        '        if not html:' \
+        '            print(f"  SKIP (empty): {url}", file=sys.stderr)' \
+        '            continue' \
+        '        print(f"  Fetched {len(html)} bytes from {url}", file=sys.stderr)' \
+        '        links = re.findall(r'"'"'href=["\x27]?(https?://[^"\x27<>\s]+)'"'"', html, re.IGNORECASE)' \
+        '        seen = set()' \
+        '        outbound = []' \
+        '        for link in links:' \
+        '            link = link.rstrip("/")' \
+        '            if link in seen:' \
+        '                continue' \
+        '            seen.add(link)' \
+        '            link_domain = urllib.parse.urlparse(link).netloc.lower()' \
+        '            if domain and domain.lower() in link_domain:' \
+        '                continue' \
+        '            if any(sd in link_domain for sd in skip_domains):' \
+        '                continue' \
+        '            outbound.append(link)' \
+        '            if len(outbound) >= max_links:' \
+        '                break' \
+        '        print(f"  Found {len(outbound)} outbound links from {url}", file=sys.stderr)' \
+        '        if outbound:' \
+        '            results.append({' \
+        '                "source_url": url,' \
+        '                "source_title": page.get("title", ""),' \
+        '                "source_domain": domain,' \
+        '                "outbound_links": outbound' \
+        '            })' \
+        '    except Exception as e:' \
+        '        print(f"  ERROR: {url}: {e}", file=sys.stderr)' \
+        '        continue' \
+        '' \
+        'print(json.dumps(results))' \
+        > /tmp/lb_bh_extract.py
+
+      python3 /tmp/lb_bh_extract.py "${max_links_per_page}"
+      rm -f /tmp/lb_bh_extract.py /tmp/lb_bh_pages.json
+
+  - id: check-broken-links
+    stdin: $extract-links.stdout
+    command: |
+      cat > /tmp/lb_bh_links.json
+
+      link_count=$(jq 'map(.outbound_links | length) | add // 0' /tmp/lb_bh_links.json)
+      if [ "$link_count" = "0" ]; then
+        echo '{"broken_links":[],"total_checked":0,"total_broken":0}'
+        rm -f /tmp/lb_bh_links.json
+        exit 0
+      fi
+
+      printf '%s\n' \
+        'import json, subprocess, sys' \
+        '' \
+        'with open("/tmp/lb_bh_links.json") as f:' \
+        '    pages = json.load(f)' \
+        '' \
+        'broken = []' \
+        'total = 0' \
+        '' \
+        'for page in pages:' \
+        '    source_url = page["source_url"]' \
+        '    source_title = page.get("source_title", "")' \
+        '    source_domain = page.get("source_domain", "")' \
+        '' \
+        '    for link in page["outbound_links"]:' \
+        '        total += 1' \
+        '        try:' \
+        '            r = subprocess.run(' \
+        '                ["curl", "-sI", "-o", "/dev/null", "-w", "%{http_code}",' \
+        '                 "--max-time", "8", "-L", "-A",' \
+        '                 "Mozilla/5.0 (compatible; BacklinkHunter/1.0)", link],' \
+        '                capture_output=True, text=True, timeout=12' \
+        '            )' \
+        '            status = int(r.stdout.strip()) if r.stdout.strip().isdigit() else 0' \
+        '        except Exception:' \
+        '            status = 0' \
+        '' \
+        '        if status in (404, 410, 0):' \
+        '            broken.append({' \
+        '                "broken_url": link,' \
+        '                "http_status": status,' \
+        '                "source_url": source_url,' \
+        '                "source_title": source_title,' \
+        '                "source_domain": source_domain' \
+        '            })' \
+        '            print(f"  BROKEN ({status}): {link}", file=sys.stderr)' \
+        '        else:' \
+        '            print(f"  OK ({status}): {link}", file=sys.stderr)' \
+        '' \
+        'result = {' \
+        '    "broken_links": broken,' \
+        '    "total_checked": total,' \
+        '    "total_broken": len(broken)' \
+        '}' \
+        'print(json.dumps(result))' \
+        > /tmp/lb_bh_check.py
+
+      python3 /tmp/lb_bh_check.py
+      rm -f /tmp/lb_bh_check.py /tmp/lb_bh_links.json
+
+  - id: compile-report
+    stdin: $check-broken-links.stdout
+    command: |
+      cat > /tmp/lb_bh_broken.json
+
+      your_urls="${your_content_urls}"
+
+      jq -c --arg urls "$your_urls" '{
+        summary: {
+          total_links_checked: .total_checked,
+          broken_links_found: .total_broken,
+          your_content_urls: ($urls | split(",") | map(gsub("^\\s+|\\s+$"; ""))),
+        },
+        opportunities: [.broken_links[] | {
+          broken_url: .broken_url,
+          http_status: .http_status,
+          found_on_page: .source_url,
+          page_title: .source_title,
+          page_domain: .source_domain
+        }],
+        _llm_instructions: "Match broken_url topics to your_content_urls. Find contact info for each page_domain. Draft personalized outreach emails offering your content as replacement for the broken link."
+      }' /tmp/lb_bh_broken.json > /tmp/lb_bh_report.json
+
+      cat /tmp/lb_bh_report.json
+      rm -f /tmp/lb_bh_broken.json /tmp/lb_bh_report.json
+
+  # NOTE: The following steps from the original automation are LLM-dependent:
+  # - match_your_content: Semantic matching of broken URLs to your content
+  # - find_contact: Search for site owner contact info
+  # - draft_outreach: Generate personalized outreach emails
+  # - send_outreach: Send emails (requires email integration)
+  # - schedule_followup: Set follow-up reminders
+  # To implement: pipe compile-report output to an LLM (e.g. clawd.invoke)
+
+  - id: report
+    stdin: $compile-report.stdout
+    command: |
+      jq -r '
+        "🔗 Backlink Hunter Report\n" +
+        "========================\n" +
+        "Checked: \(.summary.total_links_checked) links\n" +
+        "Broken:  \(.summary.broken_links_found) links\n" +
+        "Your content: \(.summary.your_content_urls | join(", "))\n\n" +
+        if (.opportunities | length) == 0 then
+          "No broken links found in this scan. Try broader keywords or more pages."
+        else
+          "Opportunities:\n\n" +
+          (.opportunities | map(
+            "• \(.broken_url)\n" +
+            "  Status: \(.http_status) | Found on: \(.page_domain)\n" +
+            "  Page: \(.page_title)\n" +
+            "  Link: \(.found_on_page)"
+          ) | join("\n\n")) +
+          "\n\n💡 Next: pipe compile-report JSON to LLM for outreach email drafts"
+        end
+      '

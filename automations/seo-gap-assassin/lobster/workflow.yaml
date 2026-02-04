@@ -1,0 +1,190 @@
+# Lobster workflow: seo-gap-assassin
+# Analyze competitors' content vs yours, find topic gaps, produce structured briefs.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"your_domain":"example.com","competitors":"competitor1.com,competitor2.com"}'
+#
+# Requires: curl, jq, bash
+#
+# NOTE: Without Ahrefs/SEMrush APIs, we use Brave Search to discover what
+# pages/topics each domain covers, then compare to find gaps. The final
+# "brief generation" step produces structured JSON that can be piped to an LLM.
+
+name: seo-gap-assassin
+description: >
+  Analyze competitors, find content topics they cover that you don't,
+  and generate structured content gap reports.
+
+args:
+  your_domain:
+    description: "Your domain (e.g. example.com)"
+  competitors:
+    description: "Comma-separated competitor domains (e.g. comp1.com,comp2.com)"
+  top_gaps_count:
+    description: "Number of top gaps to report"
+    default: "20"
+
+steps:
+  # Step 1: Discover your domain's indexed pages/topics via Brave Search
+  - id: your-pages
+    command: |
+      domain="${your_domain}"
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      # Search for site pages across a few queries
+      for offset in 0 10; do
+        curl -sf "https://api.search.brave.com/res/v1/web/search?q=site%3A${domain}&count=10&offset=${offset}" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+          > /tmp/lb_seo_your_raw.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_seo_your_raw.json
+
+        jq -c '[.web.results[] // empty | {
+          title: .title,
+          url: .url,
+          description: (.description // "")
+        }]' /tmp/lb_seo_your_raw.json > /tmp/lb_seo_your_batch.json 2>/dev/null || echo '[]' > /tmp/lb_seo_your_batch.json
+
+        jq -sc '.[0] + .[1]' "$tmpout" /tmp/lb_seo_your_batch.json > /tmp/lb_seo_your_merged.json
+        mv /tmp/lb_seo_your_merged.json "$tmpout"
+        sleep 1
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_seo_your_raw.json /tmp/lb_seo_your_batch.json
+
+  # Step 2: Discover competitor pages/topics via Brave Search
+  - id: competitor-pages
+    command: |
+      tmpout=$(mktemp)
+      echo '[]' > "$tmpout"
+
+      for comp in $(echo "${competitors}" | tr ',' '\n'); do
+        comp=$(echo "$comp" | xargs)
+        [ -z "$comp" ] && continue
+
+        for offset in 0 10; do
+          curl -sf "https://api.search.brave.com/res/v1/web/search?q=site%3A${comp}&count=10&offset=${offset}" \
+            -H "Accept: application/json" \
+            -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+            > /tmp/lb_seo_comp_raw.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_seo_comp_raw.json
+
+          jq -c --arg comp "$comp" '[.web.results[] // empty | {
+            competitor: $comp,
+            title: .title,
+            url: .url,
+            description: (.description // "")
+          }]' /tmp/lb_seo_comp_raw.json > /tmp/lb_seo_comp_batch.json 2>/dev/null || echo '[]' > /tmp/lb_seo_comp_batch.json
+
+          jq -sc '.[0] + .[1]' "$tmpout" /tmp/lb_seo_comp_batch.json > /tmp/lb_seo_comp_merged.json
+          mv /tmp/lb_seo_comp_merged.json "$tmpout"
+          sleep 1
+        done
+      done
+
+      cat "$tmpout"
+      rm -f "$tmpout" /tmp/lb_seo_comp_raw.json /tmp/lb_seo_comp_batch.json
+
+  # Step 3: Save your-pages to temp file for use in gap analysis
+  - id: save-your-pages
+    stdin: $your-pages.stdout
+    command: |
+      cat > /tmp/lb_seo_gap_your.json
+      echo '{"saved":true}'
+
+  # Step 4: Find content gaps — competitor pages/titles not covered by your domain
+  - id: find-gaps
+    stdin: $competitor-pages.stdout
+    command: |
+      cat > /tmp/lb_seo_gap_comp.json
+
+      # Extract your title words as a "coverage" set
+      your_words=$(jq -r '
+        [.[] | .title // ""] | map(
+          gsub("[^a-zA-Z0-9 ]"; " ") | ascii_downcase | split(" ") | map(select(length > 3))
+        ) | flatten | unique | join(",")
+      ' /tmp/lb_seo_gap_your.json 2>/dev/null || echo "")
+
+      top_n="${top_gaps_count}"
+
+      # Find competitor pages whose title words have low overlap with yours
+      jq -c --arg your_words "$your_words" --arg your_domain "${your_domain}" --argjson top_n "$top_n" '
+        ($your_words | split(",") | map(select(length > 0)) | map({(.): true}) | add // {}) as $yours |
+        [.[] | 
+          ((.title // "") | gsub("[^a-zA-Z0-9 ]"; " ") | ascii_downcase | split(" ") | map(select(length > 3))) as $words |
+          ($words | map(select($yours[.] == true)) | length) as $overlap |
+          ($words | length) as $total |
+          select($total > 0) |
+          . + {
+            overlap_pct: (if $total > 0 then ($overlap * 100 / $total) else 100 end),
+            unique_words: [$words[] | select($yours[.] != true)]
+          } |
+          select(.overlap_pct < 40)
+        ] |
+        sort_by(.overlap_pct) |
+        .[0:$top_n] |
+        {
+          gap_count: length,
+          your_domain: $your_domain,
+          gaps: [.[] | {
+            competitor: .competitor,
+            title: .title,
+            url: .url,
+            description: .description,
+            overlap_pct: .overlap_pct,
+            unique_topics: (.unique_words | unique | .[0:10])
+          }]
+        }
+      ' /tmp/lb_seo_gap_comp.json
+      rm -f /tmp/lb_seo_gap_comp.json /tmp/lb_seo_gap_your.json
+
+  # Step 5: Generate content briefs for each gap (structured JSON — pipe to LLM for full briefs)
+  - id: briefs
+    stdin: $find-gaps.stdout
+    command: |
+      # NOTE: This step produces structured data for each gap.
+      # For full content briefs, pipe .briefs[] to an LLM with a prompt like:
+      #   "Generate a content brief for the topic: <title>. Include target keywords,
+      #    search intent, recommended format, H2/H3 outline, and unique angles."
+      cat > /tmp/lb_seo_gaps.json
+      jq -c '
+        .gaps as $gaps |
+        {
+          gap_count: .gap_count,
+          your_domain: .your_domain,
+          briefs: [
+            $gaps[] | {
+              target_topic: .title,
+              competitor: .competitor,
+              competitor_url: .url,
+              competitor_description: .description,
+              suggested_keywords: .unique_topics,
+              overlap_pct: .overlap_pct,
+              action: "Create content covering this topic to close the gap",
+              brief_status: "data_collected_needs_llm_expansion"
+            }
+          ]
+        }
+      ' /tmp/lb_seo_gaps.json
+      rm -f /tmp/lb_seo_gaps.json
+
+  # Step 6: Summary report
+  - id: report
+    stdin: $briefs.stdout
+    command: |
+      jq -r '
+        "🎯 **SEO Gap Analysis Complete**\n" +
+        "Domain: \(.your_domain)\n" +
+        "Found \(.gap_count) content gap(s)\n\n" +
+        if (.briefs | length) == 0 then
+          "No significant gaps found — your content covers competitor topics well!"
+        else
+          "**Top Opportunities:**\n\n" +
+          ([.briefs[:10][] |
+            "• **\(.target_topic)**\n" +
+            "  Competitor: \(.competitor) — \(.competitor_url)\n" +
+            "  Keywords: \(.suggested_keywords | join(", "))\n" +
+            "  Gap score: \(100 - .overlap_pct)%"
+          ] | join("\n\n"))
+        end
+      '

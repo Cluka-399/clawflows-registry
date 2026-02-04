@@ -1,0 +1,196 @@
+name: "Affiliate Army Builder"
+description: >
+  Find potential affiliates ranking for your keywords, analyze their content
+  and existing partnerships, produce structured prospect data for recruitment.
+
+args:
+  target_keywords:
+    desc: "Comma-separated keywords your affiliates should rank for"
+    default: "best project management tools"
+  your_product:
+    desc: "Your product name and one-liner"
+    default: "Acme PM - the fastest project management tool for startups"
+  commission_details:
+    desc: "Commission structure for affiliates"
+    default: "30% recurring commission, 90-day cookie"
+  max_results:
+    desc: "Max search results per keyword"
+    default: "5"
+
+steps:
+  # Step 1: Search for bloggers ranking for each keyword via Brave Search
+  # Requires BRAVE_API_KEY env var
+  - id: search_bloggers
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-XXXXXX)
+      KEYWORDS='${target_keywords}'
+      COUNT='${max_results}'
+      IDX=0
+      echo "$KEYWORDS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' > "$TMPDIR_AFF/keywords.txt"
+      while IFS= read -r kw; do
+        [ -z "$kw" ] && continue
+        QUERY=$(printf '%s' "$kw best tools guide review" | jq -Rr @uri)
+        curl -s "https://api.search.brave.com/res/v1/web/search?q=${QUERY}&count=${COUNT}" \
+          -H "Accept: application/json" \
+          -H "X-Subscription-Token: $BRAVE_API_KEY" \
+          | jq --arg kw "$kw" '[
+              .web.results[]? | {
+                keyword: $kw,
+                title: .title,
+                url: .url,
+                description: .description,
+                domain: (.url | split("/")[2] // "unknown")
+              }
+            ]' > "$TMPDIR_AFF/batch_${IDX}.json" 2>/dev/null || echo '[]' > "$TMPDIR_AFF/batch_${IDX}.json"
+        IDX=$((IDX + 1))
+      done < "$TMPDIR_AFF/keywords.txt"
+      if ls "$TMPDIR_AFF"/batch_*.json >/dev/null 2>&1; then
+        jq -s 'add // []' "$TMPDIR_AFF"/batch_*.json | jq '[group_by(.domain)[] | .[0]]'
+      else
+        echo '[]'
+      fi
+      rm -rf "$TMPDIR_AFF"
+
+  # Step 2: Fetch each prospect page and extract monetization signals
+  - id: fetch_pages
+    stdin: "$search_bloggers.json"
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-pages-XXXXXX)
+      cat > "$TMPDIR_AFF/search.json"
+      jq -r '.[].url' "$TMPDIR_AFF/search.json" > "$TMPDIR_AFF/urls.txt"
+      IDX=0
+      while IFS= read -r URL; do
+        [ -z "$URL" ] && continue
+        DOMAIN=$(echo "$URL" | sed 's|https\{0,1\}://\([^/]*\).*|\1|')
+        PAGEFILE="$TMPDIR_AFF/html_${IDX}.tmp"
+        # Fetch page (timeout 10s, max 500KB)
+        curl -sL --max-time 10 --max-filesize 500000 \
+          -H "User-Agent: Mozilla/5.0 (compatible; AffiliateResearch/1.0)" \
+          -o "$PAGEFILE" "$URL" 2>/dev/null || echo "empty" > "$PAGEFILE"
+        # Count monetization signals from file
+        HAS_AFFILIATE=$(grep -ciE 'affiliate|commission|partner.program|sponsored|referral.link|disclosure' "$PAGEFILE" || true)
+        HAS_ADS=$(grep -ciE 'adsense|ad-slot|sponsored-content|advertisement' "$PAGEFILE" || true)
+        OUTBOUND_LINKS=$(grep -coE 'href="https?://' "$PAGEFILE" || true)
+        WORD_COUNT=$(sed 's/<[^>]*>//g' "$PAGEFILE" | wc -w | tr -d ' ')
+        TITLE=$(sed -n 's/.*<title[^>]*>\([^<]*\)<\/title>.*/\1/p' "$PAGEFILE" | head -1 | head -c 200)
+        HAS_AFFILIATE=${HAS_AFFILIATE:-0}; HAS_ADS=${HAS_ADS:-0}; OUTBOUND_LINKS=${OUTBOUND_LINKS:-0}; WORD_COUNT=${WORD_COUNT:-0}
+        jq -n \
+          --arg url "$URL" \
+          --arg domain "$DOMAIN" \
+          --arg title "$TITLE" \
+          --argjson affiliate "$HAS_AFFILIATE" \
+          --argjson ads "$HAS_ADS" \
+          --argjson links "$OUTBOUND_LINKS" \
+          --argjson words "$WORD_COUNT" \
+          '{
+            url: $url,
+            domain: $domain,
+            page_title: $title,
+            affiliate_signals: $affiliate,
+            ad_signals: $ads,
+            outbound_links: $links,
+            word_count: $words,
+            monetization_likely: ($affiliate > 2 or $ads > 0)
+          }' > "$TMPDIR_AFF/page_${IDX}.json"
+        IDX=$((IDX + 1))
+      done < "$TMPDIR_AFF/urls.txt"
+      if ls "$TMPDIR_AFF"/page_*.json >/dev/null 2>&1; then
+        jq -s '.' "$TMPDIR_AFF"/page_*.json
+      else
+        echo '[]'
+      fi
+      rm -rf "$TMPDIR_AFF"
+
+  # Step 3: Merge search + page data, compute heuristic prospect score
+  # NOTE: For production, replace heuristic with LLM scoring.
+  # LLM prompt: "Score each affiliate prospect 1-10 based on traffic indicators,
+  #   existing affiliate relationships, content quality, and competitor mentions."
+  - id: score_prospects
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-score-XXXXXX)
+      cat > "$TMPDIR_AFF/search.json" << 'SEARCH_EOF'
+      $search_bloggers.stdout
+      SEARCH_EOF
+      cat > "$TMPDIR_AFF/pages.json" << 'PAGES_EOF'
+      $fetch_pages.stdout
+      PAGES_EOF
+      jq -n --slurpfile search "$TMPDIR_AFF/search.json" --slurpfile pages "$TMPDIR_AFF/pages.json" '
+        ($search[0] // []) as $s_arr |
+        ($pages[0] // []) as $p_arr |
+        [
+          $s_arr[] as $s |
+          ($p_arr | map(select(.url == $s.url)) | .[0] // {}) as $p |
+          {
+            url: $s.url,
+            domain: $s.domain,
+            keyword: $s.keyword,
+            title: ($p.page_title // $s.title),
+            description: $s.description,
+            affiliate_signals: ($p.affiliate_signals // 0),
+            ad_signals: ($p.ad_signals // 0),
+            outbound_links: ($p.outbound_links // 0),
+            word_count: ($p.word_count // 0),
+            monetization_likely: ($p.monetization_likely // false),
+            score: (
+              1
+              + (if ($p.monetization_likely // false) then 3 else 0 end)
+              + (if ($p.word_count // 0) > 1000 then 2 else 0 end)
+              + (if ($p.outbound_links // 0) > 10 then 2 else 0 end)
+              + (if ($p.affiliate_signals // 0) > 3 then 2 else 0 end)
+            )
+          }
+        ] | sort_by(-.score)
+      '
+      rm -rf "$TMPDIR_AFF"
+
+  # Step 4: Build recruitment data package with qualified prospects
+  # NOTE: For production, pipe each qualified prospect to an LLM to generate
+  # personalized recruitment emails including blogger URL, content summary,
+  # product details, and commission structure.
+  - id: build_prospect_report
+    stdin: "$score_prospects.json"
+    command: |
+      TMPFILE=$(mktemp /tmp/aff-report-XXXXXX.json)
+      cat > "$TMPFILE"
+      jq --arg product '${your_product}' --arg commission '${commission_details}' '
+        {
+          product: $product,
+          commission: $commission,
+          generated_at: (now | todate),
+          total_found: length,
+          qualified_prospects: [.[] | select(.score >= 5)],
+          all_prospects: .
+        }
+        | .qualified_count = (.qualified_prospects | length)
+        | .summary = "\(.qualified_count) of \(.total_found) prospects scored 5+ and are ready for outreach"
+      ' "$TMPFILE"
+      rm -f "$TMPFILE"
+
+  # Step 5: Final summary output
+  - id: final_output
+    stdin: "$build_prospect_report.json"
+    command: |
+      TMPFILE=$(mktemp /tmp/aff-final-XXXXXX.json)
+      cat > "$TMPFILE"
+      jq '{
+        status: "complete",
+        summary: .summary,
+        product: .product,
+        commission: .commission,
+        generated_at: .generated_at,
+        qualified_count: .qualified_count,
+        total_found: .total_found,
+        top_prospects: [.qualified_prospects[:5][] | {
+          domain: .domain,
+          url: .url,
+          score: .score,
+          keyword: .keyword,
+          monetization_likely: .monetization_likely
+        }],
+        next_steps: [
+          "Review qualified prospects and verify contact info",
+          "Generate personalized pitches (pipe prospect data to LLM)",
+          "Send outreach emails via your preferred email tool"
+        ]
+      }' "$TMPFILE"
+      rm -f "$TMPFILE"

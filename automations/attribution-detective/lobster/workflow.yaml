@@ -1,0 +1,242 @@
+name: "Full-Funnel Attribution Detective"
+# Traces customer journeys across touchpoints, correlates analytics/CRM/ads data,
+# builds journey maps and produces an attribution report.
+# Schedule: Weekly Monday 6am (upstream trigger)
+
+args:
+  crm_api:
+    desc: "CRM API base URL (e.g. https://crm.example.com/api)"
+    default: "https://jsonplaceholder.typicode.com"
+  analytics_api:
+    desc: "Analytics API base URL (e.g. https://analytics.example.com/api)"
+    default: "https://jsonplaceholder.typicode.com"
+  ad_platform_urls:
+    desc: "Comma-separated ad platform API URLs"
+    default: "https://jsonplaceholder.typicode.com/posts?_limit=3,https://jsonplaceholder.typicode.com/posts?_limit=2"
+  time_period:
+    desc: "Lookback period for data fetch"
+    default: "30d"
+  report_dir:
+    desc: "Directory for output report"
+    default: "/tmp"
+  work_dir:
+    desc: "Temp working directory for intermediate files"
+    default: "/tmp/lobster-attribution-work"
+
+steps:
+  - id: setup
+    command: |
+      rm -rf "${work_dir}" && mkdir -p "${work_dir}"
+      echo "Work dir ready: ${work_dir}"
+
+  - id: fetch_conversions
+    command: |
+      curl -sf "${crm_api}/posts?_limit=5" | jq '[.[] | {
+        id: .id,
+        customer_id: .userId,
+        conversion_event: .title,
+        channel: (if (.id % 3 == 0) then "organic" elif (.id % 3 == 1) then "paid_search" else "social" end),
+        value: (.id * 120),
+        timestamp: "2026-01-\(.id + 10)T10:00:00Z"
+      }]' > "${work_dir}/conversions.json"
+      echo "Fetched $(jq length ${work_dir}/conversions.json) conversions"
+
+  - id: fetch_analytics
+    command: |
+      curl -sf "${analytics_api}/comments?_limit=10" | jq '[.[] | {
+        session_id: .id,
+        customer_id: .postId,
+        page_path: ("/blog/\(.name | gsub(" "; "-") | .[0:20])"),
+        source: (if (.id % 4 == 0) then "google" elif (.id % 4 == 1) then "direct" elif (.id % 4 == 2) then "facebook" else "email" end),
+        duration_sec: ((.id * 37) % 300 + 15),
+        timestamp: "2026-01-\((.id % 28) + 1)T\((.id % 12) + 8):00:00Z"
+      }]' > "${work_dir}/analytics.json"
+      echo "Fetched $(jq length ${work_dir}/analytics.json) analytics sessions"
+
+  - id: fetch_ad_data
+    command: |
+      URLS="${ad_platform_urls}"
+      echo '[]' > "${work_dir}/ads_combined.json"
+      PLATFORM_NUM=0
+      PLATFORMS="google_ads facebook_ads linkedin_ads tiktok_ads"
+
+      OLD_IFS="$IFS"
+      IFS=','
+      set -- $URLS
+      IFS="$OLD_IFS"
+      for url in "$@"; do
+        PLATFORM_NUM=$((PLATFORM_NUM + 1))
+        PNAME=$(echo $PLATFORMS | cut -d' ' -f$PLATFORM_NUM)
+        [ -z "$PNAME" ] && PNAME="platform_${PLATFORM_NUM}"
+
+        curl -sf "$url" | jq --arg platform "$PNAME" '[.[] | {
+          ad_id: .id,
+          platform: $platform,
+          customer_id: .userId,
+          campaign: .title,
+          clicks: (.id * 23 % 100 + 5),
+          impressions: (.id * 234 % 5000 + 500),
+          spend: (.id * 12.5),
+          conversions: (.id % 4)
+        }]' > "${work_dir}/ads_platform_${PLATFORM_NUM}.json"
+
+        jq -s '.[0] + .[1]' "${work_dir}/ads_combined.json" "${work_dir}/ads_platform_${PLATFORM_NUM}.json" > "${work_dir}/ads_tmp.json"
+        mv "${work_dir}/ads_tmp.json" "${work_dir}/ads_combined.json"
+      done
+
+      echo "Fetched $(jq length ${work_dir}/ads_combined.json) ad records across $PLATFORM_NUM platforms"
+
+  - id: correlate_journeys
+    # NOTE: In production, pipe this output to an LLM for deeper correlation analysis
+    command: |
+      jq -n --slurpfile conv "${work_dir}/conversions.json" \
+            --slurpfile analytics "${work_dir}/analytics.json" \
+            --slurpfile ads "${work_dir}/ads_combined.json" '
+      {
+        journeys: [
+          $conv[0][] | . as $c |
+          {
+            customer_id: $c.customer_id,
+            conversion: {
+              event: $c.conversion_event,
+              channel: $c.channel,
+              value: $c.value,
+              date: $c.timestamp
+            },
+            touchpoints: {
+              analytics_sessions: [
+                $analytics[0][] | select(.customer_id == $c.customer_id)
+                | { page: .page_path, source: .source, duration: .duration_sec, time: .timestamp }
+              ],
+              ad_interactions: [
+                $ads[0][] | select(.customer_id == $c.customer_id)
+                | { platform: .platform, campaign: .campaign, clicks: .clicks }
+              ]
+            },
+            total_touchpoints: (
+              ([$analytics[0][] | select(.customer_id == $c.customer_id)] | length) +
+              ([$ads[0][] | select(.customer_id == $c.customer_id)] | length)
+            )
+          }
+        ]
+      }' > "${work_dir}/correlated.json"
+      echo "Correlated $(jq '.journeys | length' ${work_dir}/correlated.json) customer journeys"
+
+  - id: build_journey_maps
+    # NOTE: In production, pipe this output to an LLM for narrative insights
+    command: |
+      jq '{
+        summary: {
+          total_conversions: (.journeys | length),
+          avg_touchpoints: (if (.journeys | length) > 0 then ((.journeys | map(.total_touchpoints) | add) / (.journeys | length) | . * 100 | round / 100) else 0 end),
+          total_revenue: (.journeys | map(.conversion.value) | add)
+        },
+        first_touch_distribution: (
+          [.journeys[].touchpoints.analytics_sessions[0].source // "direct"]
+          | group_by(.) | map({source: .[0], count: length}) | sort_by(-.count)
+        ),
+        last_touch_distribution: (
+          [.journeys[].conversion.channel]
+          | group_by(.) | map({channel: .[0], count: length}) | sort_by(-.count)
+        ),
+        top_content: (
+          [.journeys[].touchpoints.analytics_sessions[].page]
+          | group_by(.) | map({page: .[0], views: length}) | sort_by(-.views) | .[0:5]
+        ),
+        ad_platform_performance: (
+          [.journeys[].touchpoints.ad_interactions[] | .platform]
+          | group_by(.) | map({platform: .[0], interactions: length}) | sort_by(-.interactions)
+        ),
+        journey_patterns: (
+          .journeys | map({
+            customer: .customer_id,
+            path: (
+              [.touchpoints.analytics_sessions[].source] + [.conversion.channel]
+              | join(" -> ")
+            ),
+            touchpoint_count: .total_touchpoints
+          })
+        )
+      }' "${work_dir}/correlated.json" > "${work_dir}/journey_maps.json"
+      cat "${work_dir}/journey_maps.json"
+
+  - id: generate_report
+    # NOTE: In production, pipe journey_maps.json to an LLM for narrative recommendations
+    command: |
+      DATE=$(date +%Y-%m-%d)
+      MAPS="${work_dir}/journey_maps.json"
+
+      TOTAL_CONV=$(jq '.summary.total_conversions' "$MAPS")
+      AVG_TOUCH=$(jq '.summary.avg_touchpoints' "$MAPS")
+      TOTAL_REV=$(jq '.summary.total_revenue' "$MAPS")
+      TOP_FIRST=$(jq -r '.first_touch_distribution[0] | "\(.source) (\(.count))"' "$MAPS")
+      TOP_LAST=$(jq -r '.last_touch_distribution[0] | "\(.channel) (\(.count))"' "$MAPS")
+      TOP_CONTENT=$(jq -r '.top_content[0:3][] | "  - \(.page) (\(.views) views)"' "$MAPS")
+      AD_PERF=$(jq -r '.ad_platform_performance[] | "  - \(.platform): \(.interactions) interactions"' "$MAPS")
+      JOURNEYS=$(jq -r '.journey_patterns[] | "  - Customer \(.customer): \(.path) (\(.touchpoint_count) touchpoints)"' "$MAPS")
+
+      REPORT_PATH="${report_dir}/attribution-report-${DATE}.md"
+      cat > "$REPORT_PATH" << ENDREPORT
+      # Attribution Report - ${DATE}
+      **Period:** ${time_period} lookback
+
+      ## Key Metrics
+      - **Total conversions:** ${TOTAL_CONV}
+      - **Avg touchpoints per conversion:** ${AVG_TOUCH}
+      - **Total revenue:** \$${TOTAL_REV}
+
+      ## First-Touch Attribution
+      Top entry point: **${TOP_FIRST}**
+
+      ## Last-Touch Attribution
+      Top closing channel: **${TOP_LAST}**
+
+      ## Top Content in Winning Journeys
+      ${TOP_CONTENT}
+
+      ## Ad Platform Performance
+      ${AD_PERF}
+
+      ## Journey Patterns
+      ${JOURNEYS}
+
+      ## Recommendations
+      1. Invest more in top first-touch content pages
+      2. Allocate ad budget toward platforms initiating journeys
+      3. Optimize funnel to reduce avg touchpoints (currently ${AVG_TOUCH})
+      ENDREPORT
+
+      echo "Report saved to $REPORT_PATH"
+
+  - id: cleanup
+    command: |
+      cp "${work_dir}/journey_maps.json" "/tmp/lobster-attr-maps-backup.json" 2>/dev/null || true
+      rm -rf "${work_dir}"
+      echo "Cleaned up temp files"
+
+  - id: alert_summary
+    command: |
+      MAPS="/tmp/lobster-attr-maps-backup.json"
+      TOTAL=$(jq '.summary.total_conversions' "$MAPS")
+      AVG=$(jq '.summary.avg_touchpoints' "$MAPS")
+      REV=$(jq '.summary.total_revenue' "$MAPS")
+      TOP_FIRST=$(jq -r '.first_touch_distribution[0].source' "$MAPS")
+      DATE=$(date +%Y-%m-%d)
+      rm -f "$MAPS"
+
+      jq -n \
+        --arg total "$TOTAL" \
+        --arg avg "$AVG" \
+        --arg rev "$REV" \
+        --arg top "$TOP_FIRST" \
+        --arg period "${time_period}" \
+        --arg report "${report_dir}/attribution-report-${DATE}.md" \
+        '{
+          title: "Attribution Analysis Complete",
+          conversions: ($total | tonumber),
+          avg_touchpoints: ($avg | tonumber),
+          total_revenue: ($rev | tonumber),
+          top_entry_channel: $top,
+          period: $period,
+          report_path: $report
+        }'

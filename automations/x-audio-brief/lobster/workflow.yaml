@@ -1,0 +1,274 @@
+# Lobster workflow: x-audio-brief
+# Search X/Twitter for a topic via Brave Search, collect posts and discussion,
+# produce a structured summary, and optionally convert to audio via ElevenLabs TTS.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"topic":"OpenAI","skip_tts":"true"}'
+#
+# Requires: curl, jq (at /home/node/bin/jq)
+# Env: BRAVE_API_KEY, ELEVENLABS_API_KEY (for TTS)
+#
+# Note: Brave Search returns a mix of X profile pages, archived tweets (archive.is),
+# and news articles discussing X/Twitter activity. The workflow extracts and combines
+# all sources to produce a comprehensive briefing.
+
+name: x-audio-brief
+description: Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing
+
+env:
+  PATH: "/home/node/bin:/usr/local/bin:/usr/bin:/bin"
+
+args:
+  topic:
+    description: "What to search for on X/Twitter"
+  days:
+    description: "How far back to search (1-30)"
+    default: "1"
+  max_tweets:
+    description: "Maximum posts/mentions to include in summary"
+    default: "15"
+  voice:
+    description: "TTS voice (adam or rachel)"
+    default: "adam"
+  skip_tts:
+    description: "Skip TTS generation (set to false to actually generate audio)"
+    default: "true"
+  output_dir:
+    description: "Directory for output files"
+    default: "/tmp/x-audio-brief"
+
+steps:
+  - id: setup
+    command: |
+      mkdir -p "${output_dir}"
+      echo '{"status":"ready"}'
+
+  - id: search-x-posts
+    command: |
+      # Determine freshness based on days arg
+      freshness="pd"
+      days_num="${days}"
+      if [ "$days_num" -gt 7 ] 2>/dev/null; then
+        freshness="pm"
+      elif [ "$days_num" -gt 1 ] 2>/dev/null; then
+        freshness="pw"
+      fi
+
+      # Query 1: Recent X/Twitter content (with freshness)
+      curl -sf "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=${topic} x.com" \
+        --data-urlencode "count=20" \
+        --data-urlencode "freshness=$freshness" \
+        -G \
+        -o "${output_dir}/brave_q1.json" 2>/dev/null || echo '{"web":{"results":[]}}' > "${output_dir}/brave_q1.json"
+
+      # Query 2: News + discussion about topic on X/Twitter
+      curl -sf "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=${topic} twitter reactions discussion" \
+        --data-urlencode "count=10" \
+        --data-urlencode "freshness=$freshness" \
+        -G \
+        -o "${output_dir}/brave_q2.json" 2>/dev/null || echo '{"web":{"results":[]}}' > "${output_dir}/brave_q2.json"
+
+      # Parse results into unified post format
+      # Handles: x.com profile pages, archive.is/ph cached tweets, news articles
+      cat > /tmp/xab_parse.jq << 'JQEOF'
+      [.web.results // [] | .[] |
+        # Detect archived X posts (archive.is/ph with "on X:" in title)
+        if ((.url | test("archive\\.(is|ph|org)")) and (.title | test("on X:"; "i"))) then
+          (.title | capture("^(?<author>[^@]+?)\\s+on X:\\s*\"?(?<text>.+?)\"?$") // {author: "unknown", text: (.title // "")}) as $parsed |
+          {
+            author: ($parsed.author | gsub("^\\s+|\\s+$"; "")),
+            content: ($parsed.text // .description // ""),
+            title: .title,
+            url: .url,
+            date: (.age // .page_age // "recent"),
+            source: "x_post"
+          }
+        # Detect x.com/twitter.com URLs
+        elif (.url | test("(x\\.com|twitter\\.com)")) then
+          (.url | capture("(?:x|twitter)\\.com/(?<handle>[^/?]+)") // {handle: "unknown"}) as $p |
+          {
+            author: $p.handle,
+            content: (.description // .title // ""),
+            title: (.title // ""),
+            url: .url,
+            date: (.age // .page_age // "recent"),
+            source: (if (.url | test("/status/")) then "x_post" else "x_profile" end)
+          }
+        # News/other articles
+        else
+          {
+            author: (.meta_url.hostname // .url | split("/") | .[2] // "unknown"),
+            content: (.description // .title // ""),
+            title: (.title // ""),
+            url: .url,
+            date: (.age // .page_age // "recent"),
+            source: "news"
+          }
+        end
+      ]
+      JQEOF
+
+      jq -f /tmp/xab_parse.jq "${output_dir}/brave_q1.json" > "${output_dir}/posts_q1.json" 2>/dev/null || echo '[]' > "${output_dir}/posts_q1.json"
+      jq -f /tmp/xab_parse.jq "${output_dir}/brave_q2.json" > "${output_dir}/posts_q2.json" 2>/dev/null || echo '[]' > "${output_dir}/posts_q2.json"
+
+      # Merge: prioritize x_post > x_profile > news, dedupe, cap at max
+      cat > /tmp/xab_merge.jq << 'JQEOF'
+      ($max | tonumber) as $limit |
+      flatten |
+      unique_by(.url) |
+      . as $all |
+      [
+        ($all[] | select(.source == "x_post")),
+        ($all[] | select(.source == "x_profile")),
+        ($all[] | select(.source == "news"))
+      ] |
+      unique_by(.url) |
+      .[0:$limit]
+      JQEOF
+
+      jq -s --arg max "${max_tweets}" -f /tmp/xab_merge.jq "${output_dir}/posts_q1.json" "${output_dir}/posts_q2.json" > "${output_dir}/tweets.json"
+      cat "${output_dir}/tweets.json"
+
+  - id: format-tweets
+    command: |
+      cat > /tmp/xab_format.jq << 'JQEOF'
+      {
+        count: length,
+        x_post_count: [.[] | select(.source == "x_post")] | length,
+        x_profile_count: [.[] | select(.source == "x_profile")] | length,
+        news_count: [.[] | select(.source == "news")] | length,
+        posts: [.[] | {
+          author: .author,
+          content: (.content | gsub("\\n"; " ") | .[0:500]),
+          title: (.title | .[0:200]),
+          url: .url,
+          date: .date,
+          source: .source
+        }],
+        authors: ([.[].author] | unique),
+        text_block: ([.[] | "- \(.author) (\(.source)): \(.content | gsub("\\n"; " ") | .[0:300])"] | join("\n"))
+      }
+      JQEOF
+
+      jq -c -f /tmp/xab_format.jq "${output_dir}/tweets.json" > "${output_dir}/formatted.json"
+      cat "${output_dir}/formatted.json"
+
+  - id: generate-script
+    command: |
+      # Generate an audio briefing script from collected posts.
+      #
+      # NOTE (LLM integration point): For richer output, pipe formatted.json
+      # to an LLM with a prompt like:
+      #   "Create a 3-minute conversational audio briefing about [topic] based on
+      #    these X/Twitter posts and related discussions. Write for text-to-speech:
+      #    no URLs, hashtags, or @ symbols. Use natural spoken language. Start with
+      #    a greeting, cover each notable post with attribution, end with overall
+      #    sentiment summary and key takeaways."
+      #
+      # Current: deterministic script generation from structured data.
+
+      cat > /tmp/xab_script.jq << 'JQEOF'
+      def clean: gsub("[#@]"; "") | gsub("https?://[^ ]+"; "") | gsub("&amp;"; "and") | gsub("&lt;"; "") | gsub("&gt;"; "") | gsub("&#x27;"; "'") | gsub("\\s+"; " ");
+
+      "Here is your audio brief on " + $topic + " from X and the web. " +
+      (
+        if (.x_post_count + .x_profile_count) > 0 then
+          "I found " + (.x_post_count | tostring) + " X posts and " + (.news_count | tostring) + " news mentions. "
+        else
+          "I found " + (.count | tostring) + " recent mentions and discussions. "
+        end
+      ) +
+      "Let me walk you through what people are saying. " +
+      (
+        if .count == 0 then
+          "Unfortunately, I did not find any recent posts about " + $topic + ". You might want to try a different search term or check back later."
+        else
+          ([.posts[:12][] |
+            (if .source == "x_post" then
+              .author + " posted on X: " + (.content | clean | .[0:280]) + ". "
+            elif .source == "x_profile" then
+              "The X account " + .author + " shows: " + (.content | clean | .[0:200]) + ". "
+            else
+              "From " + .author + ": " + (.title | clean | .[0:150]) + ". " +
+              (.content | clean | .[0:200]) + ". "
+            end)
+          ] | join(" ")) +
+          " That wraps up the main highlights. " +
+          "In total, " + (.count | tostring) + " sources from " + (.authors | length | tostring) + " different accounts and outlets are discussing " + $topic + ". " +
+          "That is your audio brief. Stay informed!"
+        end
+      )
+      JQEOF
+
+      jq -r --arg topic "${topic}" -f /tmp/xab_script.jq "${output_dir}/formatted.json" > "${output_dir}/script.txt"
+
+      wc_words=$(wc -w < "${output_dir}/script.txt" | tr -d ' ')
+      wc_chars=$(wc -c < "${output_dir}/script.txt" | tr -d ' ')
+      printf '{"script_file":"%s","word_count":%s,"char_count":%s}' "${output_dir}/script.txt" "$wc_words" "$wc_chars"
+
+  - id: tts
+    command: |
+      if [ "${skip_tts}" = "true" ]; then
+        echo '{"status":"skipped","reason":"skip_tts=true","audio_file":null}'
+        exit 0
+      fi
+
+      case "${voice}" in
+        rachel) voice_id="21m00Tcm4TlvDq8ikWAM" ;;
+        adam|*) voice_id="pNInz6obpgDQGcFmaJgB" ;;
+      esac
+
+      script_text=$(cat "${output_dir}/script.txt")
+      audio_file="${output_dir}/brief.mp3"
+
+      jq -n --arg text "$script_text" '{"text": $text, "model_id": "eleven_multilingual_v2"}' > "${output_dir}/tts_request.json"
+
+      http_code=$(curl -s -w '%{http_code}' \
+        -X POST "https://api.elevenlabs.io/v1/text-to-speech/${voice_id}" \
+        -H "xi-api-key: ${ELEVENLABS_API_KEY}" \
+        -H "Content-Type: application/json" \
+        -d @"${output_dir}/tts_request.json" \
+        -o "$audio_file")
+
+      if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ] && [ -s "$audio_file" ]; then
+        size=$(stat -c%s "$audio_file" 2>/dev/null || stat -f%z "$audio_file" 2>/dev/null || echo 0)
+        printf '{"status":"ok","audio_file":"%s","size_bytes":%s,"voice":"%s","voice_id":"%s"}' "$audio_file" "$size" "${voice}" "$voice_id"
+      else
+        printf '{"status":"error","http_code":%s,"audio_file":null}' "$http_code"
+        exit 1
+      fi
+
+  - id: report
+    command: |
+      cat > /tmp/xab_report.jq << 'JQEOF'
+      {
+        topic: $topic,
+        total_posts: .count,
+        x_posts: .x_post_count,
+        x_profiles: .x_profile_count,
+        news_mentions: .news_count,
+        unique_sources: (.authors | length),
+        sources: .authors,
+        script_preview: ($script | .[0:300]),
+        tts_skipped: ($skip == "true"),
+        summary: (
+          "X Audio Brief: " + $topic + "\n" +
+          "Found " + (.count | tostring) + " items (" +
+          (.x_post_count | tostring) + " X posts, " +
+          (.x_profile_count | tostring) + " X profiles, " +
+          (.news_count | tostring) + " news) from " +
+          (.authors | length | tostring) + " sources.\n" +
+          if $skip == "true" then "TTS skipped (skip_tts=true)"
+          else "Audio generated" end
+        )
+      }
+      JQEOF
+
+      script_text=$(cat "${output_dir}/script.txt" 2>/dev/null || echo "")
+      jq --arg topic "${topic}" --arg skip "${skip_tts}" --arg script "$script_text" -f /tmp/xab_report.jq "${output_dir}/formatted.json"

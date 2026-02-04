@@ -1,0 +1,159 @@
+# Lobster workflow: bookmark-organizer
+# Reads a markdown bookmarks file, checks for dead links, and produces
+# a categorized report
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"bookmarks_path":"/data/clawd/bookmarks.md"}'
+#
+# Requires: jq, curl
+# NOTE: Auto-categorization of uncategorized bookmarks benefits from an LLM.
+# This workflow collects data and flags items; pipe output to LLM for categorization.
+
+name: bookmark-organizer
+description: Periodically organize and summarize your saved bookmarks/links
+
+args:
+  bookmarks_path:
+    description: "Path to bookmarks file (markdown with ## categories and [title](url) links)"
+    default: "/data/clawd/bookmarks.md"
+  max_process:
+    description: "Max bookmarks to process per run"
+    default: "20"
+  check_dead_links:
+    description: "Check for dead/moved links (true/false)"
+    default: "true"
+
+steps:
+  - id: read-bookmarks
+    command: |
+      if [ ! -f "${bookmarks_path}" ]; then
+        echo "No bookmarks file found at ${bookmarks_path}. Creating empty template." >&2
+        echo '{"bookmarks":[],"categories":[],"total":0}'
+        exit 0
+      fi
+      cat "${bookmarks_path}"
+
+  - id: parse-bookmarks
+    stdin: $read-bookmarks.stdout
+    command: |
+      cat > /tmp/lb_bo_raw.md
+      max="${max_process}"
+
+      # Check if input is already JSON (empty file case)
+      if head -1 /tmp/lb_bo_raw.md | grep -q '^{'; then
+        cat /tmp/lb_bo_raw.md
+        rm -f /tmp/lb_bo_raw.md
+        exit 0
+      fi
+
+      # Parse markdown bookmarks: extract categories and links
+      python3 -c "
+      import json, re, sys
+
+      content = open('/tmp/lb_bo_raw.md').read()
+      lines = content.split('\n')
+      bookmarks = []
+      category = 'Uncategorized'
+      for line in lines:
+          if line.startswith('## '):
+              category = line[3:].strip()
+          else:
+              m = re.search(r'\[([^\]]+)\]\((https?://[^)]+)\)', line)
+              if m:
+                  bookmarks.append({'title': m.group(1), 'url': m.group(2), 'category': category})
+
+      max_n = int('${max_process}') if '${max_process}'.isdigit() else 20
+      bookmarks = bookmarks[:max_n]
+      cats = list(set(b['category'] for b in bookmarks))
+      print(json.dumps({'bookmarks': bookmarks, 'categories': sorted(cats), 'total': len(bookmarks)}))
+      " 2>/dev/null || echo '{"bookmarks":[],"categories":[],"total":0}'
+      rm -f /tmp/lb_bo_raw.md
+
+  - id: check-links
+    stdin: $parse-bookmarks.stdout
+    command: |
+      cat > /tmp/lb_bo_parsed.json
+      check="${check_dead_links}"
+
+      if [ "$check" != "true" ]; then
+        jq '{bookmarks: .bookmarks, categories: .categories, total: .total, dead_links: [], checked: false}' /tmp/lb_bo_parsed.json
+        rm -f /tmp/lb_bo_parsed.json
+        exit 0
+      fi
+
+      # Check each URL with a HEAD request (timeout 5s)
+      dead="[]"
+      urls=$(jq -r '.bookmarks[].url' /tmp/lb_bo_parsed.json)
+      tmpd=/tmp/lb_bo_dead.json
+      echo '[]' > "$tmpd"
+
+      for url in $urls; do
+        status=$(curl -o /dev/null -s -w '%{http_code}' --max-time 5 -L "$url" 2>/dev/null)
+        status=${status:-000}
+        if [ "$status" = "000" ] || [ "$status" -ge 400 ] 2>/dev/null; then
+          title=$(jq -r --arg u "$url" '.bookmarks[] | select(.url==$u) | .title' /tmp/lb_bo_parsed.json | head -1)
+          jq --arg u "$url" --arg t "$title" --argjson s "$status" '. + [{url:$u, title:$t, status:$s}]' "$tmpd" > /tmp/lb_bo_dead2.json
+          mv /tmp/lb_bo_dead2.json "$tmpd"
+        fi
+      done
+
+      jq --slurpfile dead "$tmpd" '{
+        bookmarks: .bookmarks,
+        categories: .categories,
+        total: .total,
+        dead_links: $dead[0],
+        checked: true
+      }' /tmp/lb_bo_parsed.json
+      rm -f /tmp/lb_bo_parsed.json "$tmpd"
+
+  - id: generate-summary
+    stdin: $check-links.stdout
+    command: |
+      # Produce summary stats and categorization data
+      # NOTE: For auto-categorization of "Uncategorized" bookmarks,
+      # pipe this output to an LLM with prompt:
+      #   "Categorize these bookmarks based on titles and URLs.
+      #    Suggest categories: Development, Design, AI/ML, Business, etc."
+      cat > /tmp/lb_bo_checked.json
+
+      jq '{
+        total: .total,
+        categories: (
+          [.bookmarks | group_by(.category)[] |
+            {category: .[0].category, count: length, items: [.[].title]}]
+        ),
+        uncategorized: [.bookmarks[] | select(.category == "Uncategorized") | {title, url}],
+        dead_links: .dead_links,
+        checked: .checked,
+        needs_categorization: ([.bookmarks[] | select(.category == "Uncategorized")] | length),
+        health: {
+          total_checked: .total,
+          dead: (.dead_links | length),
+          alive: (.total - (.dead_links | length))
+        }
+      }' /tmp/lb_bo_checked.json
+      rm -f /tmp/lb_bo_checked.json
+
+  - id: report
+    stdin: $generate-summary.stdout
+    command: |
+      jq -r '
+        "🔖 **Bookmark Organizer Report**\n\n" +
+        "📊 **Summary:** \(.total) bookmarks in \(.categories | length) categories\n\n" +
+        "**Categories:**\n" +
+        (.categories | map("  • \(.category): \(.count) bookmark(s)") | join("\n")) +
+        "\n\n" +
+        (if .checked then
+          "**🔗 Link Health:** \(.health.alive)/\(.health.total_checked) alive" +
+          (if (.dead_links | length) > 0 then
+            "\n\n⚠️ **Dead Links (\(.dead_links | length)):**\n" +
+            (.dead_links | .[:10] | map("  • \(.title) → HTTP \(.status)\n    \(.url)") | join("\n"))
+          else "\n✅ All links healthy!" end)
+        else "🔗 Link checking disabled." end) +
+        "\n\n" +
+        (if .needs_categorization > 0 then
+          "🏷️ **\(.needs_categorization) uncategorized bookmark(s):**\n" +
+          (.uncategorized | .[:10] | map("  • \(.title)") | join("\n")) +
+          "\n💡 Pipe this to an LLM for auto-categorization suggestions."
+        else "✅ All bookmarks categorized." end)
+      '

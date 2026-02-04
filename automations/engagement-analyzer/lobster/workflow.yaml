@@ -1,0 +1,104 @@
+# Lobster workflow: engagement-analyzer
+# Analyzes engagement data from a JSON file to find best-performing content types
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"data_file":"/path/to/engagement.json"}'
+#
+# Engagement JSON format: array of objects:
+#   { "id": "...", "type": "thread|image|link|poll|video", "platform": "twitter|linkedin",
+#     "date": "YYYY-MM-DD", "likes": N, "shares": N, "comments": N, "impressions": N, "clicks": N }
+#
+# Requires: jq
+
+name: engagement-analyzer
+description: Analyze which content types and patterns get the best engagement
+
+args:
+  data_file:
+    description: "Path to JSON file with engagement data"
+    default: "/tmp/clawflows-engagement-data.json"
+  min_impressions:
+    description: "Minimum impressions to include in analysis"
+    default: "10"
+
+steps:
+  - id: load-data
+    command: |
+      if [ ! -f "${data_file}" ]; then
+        echo '[]' > "${data_file}"
+      fi
+      cat "${data_file}"
+
+  - id: analyze-by-type
+    stdin: $load-data.stdout
+    command: |
+      cat > /tmp/lb_eng_all.json
+      min_imp=${min_impressions}
+      jq -c --argjson min "$min_imp" '
+        [.[] | select(.impressions >= $min)] |
+        if length == 0 then
+          {total: 0, by_type: [], by_platform: [], message: "No data meets minimum impressions threshold"}
+        else
+          {
+            total: length,
+            by_type: (
+              group_by(.type) | map({
+                type: .[0].type,
+                count: length,
+                avg_likes: ([.[].likes] | add / length | . * 100 | round / 100),
+                avg_shares: ([.[].shares] | add / length | . * 100 | round / 100),
+                avg_comments: ([.[].comments] | add / length | . * 100 | round / 100),
+                avg_impressions: ([.[].impressions] | add / length | round),
+                engagement_rate: (
+                  ([.[].likes, .[].shares, .[].comments] | add) /
+                  ([.[].impressions] | add) * 100 | . * 100 | round / 100
+                )
+              }) | sort_by(-.engagement_rate)
+            ),
+            by_platform: (
+              group_by(.platform) | map({
+                platform: .[0].platform,
+                count: length,
+                total_impressions: ([.[].impressions] | add),
+                total_engagement: ([.[].likes, .[].shares, .[].comments] | add),
+                engagement_rate: (
+                  ([.[].likes, .[].shares, .[].comments] | add) /
+                  ([.[].impressions] | add) * 100 | . * 100 | round / 100
+                )
+              }) | sort_by(-.engagement_rate)
+            ),
+            top_posts: (sort_by(-(.likes + .shares + .comments)) | .[:5]),
+            date_range: {
+              earliest: (sort_by(.date) | .[0].date),
+              latest: (sort_by(.date) | .[-1].date)
+            }
+          }
+        end
+      ' /tmp/lb_eng_all.json
+      rm -f /tmp/lb_eng_all.json
+
+  - id: report
+    stdin: $analyze-by-type.stdout
+    command: |
+      jq -r '
+        if .total == 0 then
+          "📊 Engagement Analyzer — No data available.\nAdd engagement data to the data file and re-run."
+        else
+          "📊 Engagement Analysis (\(.date_range.earliest) → \(.date_range.latest))\n" +
+          "═══════════════════════════════════════════\n" +
+          "Total posts analyzed: \(.total)\n\n" +
+          "🏆 By Content Type (ranked by engagement rate):\n" +
+          (.by_type | map(
+            "  \(.type) — \(.engagement_rate)% eng rate (\(.count) posts)\n" +
+            "    Avg: \(.avg_likes) likes, \(.avg_shares) shares, \(.avg_comments) comments, \(.avg_impressions) impressions"
+          ) | join("\n")) +
+          "\n\n📱 By Platform:\n" +
+          (.by_platform | map(
+            "  \(.platform) — \(.engagement_rate)% eng rate (\(.count) posts, \(.total_impressions) total impressions)"
+          ) | join("\n")) +
+          "\n\n⭐ Top 5 Posts:\n" +
+          (.top_posts | to_entries | map(
+            "  \(.key + 1). [\(.value.type)/\(.value.platform)] \(.value.date) — \(.value.likes)❤️ \(.value.shares)🔄 \(.value.comments)💬"
+          ) | join("\n"))
+        end
+      '

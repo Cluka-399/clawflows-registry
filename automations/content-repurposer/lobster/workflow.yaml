@@ -1,0 +1,125 @@
+# Lobster workflow: content-repurposer
+# Takes source content (blog post, article) and extracts structured data
+# for multi-platform repurposing
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"source_file":"/path/to/post.md"}'
+#
+# Requires: jq
+# NOTE: The actual repurposing (rewriting for each platform) benefits from
+# an LLM step. This workflow extracts and structures the content; pipe the
+# output to an LLM for platform-specific transformations.
+
+name: content-repurposer
+description: Generate multi-platform content from single source
+
+args:
+  source_file:
+    description: "Path to source content file (markdown)"
+  platforms:
+    description: "Comma-separated target platforms"
+    default: "twitter,linkedin,blog-summary"
+  max_tweet_chars:
+    description: "Max characters per tweet"
+    default: "280"
+
+steps:
+  - id: read-source
+    command: |
+      if [ ! -f "${source_file}" ]; then
+        echo '{"error":"Source file not found: ${source_file}"}' >&2
+        exit 1
+      fi
+      cat "${source_file}"
+
+  - id: extract-structure
+    stdin: $read-source.stdout
+    command: |
+      # Extract title, headings, word count, key sentences from markdown
+      cat > /tmp/lb_cr_source.md
+
+      # Use a heredoc-safe approach: process with shell tools
+      title=$(head -5 /tmp/lb_cr_source.md | grep -m1 '^#\s' | sed 's/^#\s*//' || echo "Untitled")
+      word_count=$(wc -w < /tmp/lb_cr_source.md | tr -d ' ')
+      headings=$(grep '^##' /tmp/lb_cr_source.md | sed 's/^##\s*//' | head -10)
+      # First non-empty, non-heading paragraph as summary
+      first_para=$(awk '/^[^#\[]/ && NF > 3 {print; exit}' /tmp/lb_cr_source.md)
+      # Extract links
+      links=$(grep -oP '\[([^\]]+)\]\(([^)]+)\)' /tmp/lb_cr_source.md | head -10)
+
+      jq -nc \
+        --arg title "$title" \
+        --argjson word_count "$word_count" \
+        --arg headings "$headings" \
+        --arg first_para "$first_para" \
+        --arg links "$links" \
+        --arg platforms "${platforms}" \
+        --rawfile content /tmp/lb_cr_source.md \
+        '{
+          title: $title,
+          word_count: $word_count,
+          sections: ($headings | split("\n") | map(select(length > 0))),
+          summary: $first_para,
+          links: ($links | split("\n") | map(select(length > 0))),
+          target_platforms: ($platforms | split(",") | map(gsub("^\\s+|\\s+$"; ""))),
+          content: $content
+        }'
+      rm -f /tmp/lb_cr_source.md
+
+  - id: generate-variants
+    stdin: $extract-structure.stdout
+    command: |
+      # Generate platform-specific content skeletons
+      # NOTE: For best results, pipe this output to an LLM that rewrites
+      # each variant in the platform's native tone and format.
+      cat > /tmp/lb_cr_struct.json
+      max_tweet="${max_tweet_chars}"
+
+      jq --argjson max_tweet "$max_tweet" '. as $root | {
+        source: {title: .title, word_count: .word_count},
+        variants: (
+          .target_platforms | map(. as $p |
+            if $p == "twitter" then {
+              platform: "twitter",
+              format: "thread",
+              hook: ("🧵 Thread: " + ($root.title // "New post")),
+              notes: ("Break into numbered tweets, max " + ($max_tweet|tostring) + " chars each. End with CTA."),
+              key_points: ($root.sections // [] | .[:5])
+            }
+            elif $p == "linkedin" then {
+              platform: "linkedin",
+              format: "article",
+              hook: (($root.title // "New insight") + "\n\n" + ($root.summary // "Read more...")),
+              notes: "Professional tone, add line breaks, emoji bullets, end with question for engagement."
+            }
+            elif $p == "blog-summary" then {
+              platform: "blog-summary",
+              format: "short-post",
+              hook: ("TL;DR of: " + ($root.title // "post")),
+              notes: "3-5 bullet point summary with link to full post."
+            }
+            else {
+              platform: $p,
+              format: "generic",
+              hook: $root.title,
+              notes: ("Adapt content for " + $p + ".")
+            }
+            end
+          )
+        )
+      }' /tmp/lb_cr_struct.json
+      rm -f /tmp/lb_cr_struct.json
+
+  - id: report
+    stdin: $generate-variants.stdout
+    command: |
+      jq -r '
+        "📝 **Content Repurposer**\n" +
+        "Source: \(.source.title) (\(.source.word_count) words)\n\n" +
+        "Generated \(.variants | length) platform variant(s):\n\n" +
+        (.variants | map(
+          "**\(.platform)** (\(.format)):\n" +
+          "  Hook: \(.hook)\n" +
+          "  Notes: \(.notes)\n"
+        ) | join("\n"))
+      '

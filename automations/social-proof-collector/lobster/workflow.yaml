@@ -1,0 +1,248 @@
+# Lobster workflow: social-proof-collector
+# Finds positive mentions of your brand across Reddit, Hacker News, LinkedIn,
+# and the general web. Collects them into a structured testimonial library.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"brand_name":"OpenClaw"}'
+#   lobster run --file workflow.yaml --args-json '{"brand_name":"OpenClaw","brand_aliases":"Openclaw,Open Claw","exclude_terms":"-job -hiring"}'
+#
+# Requires: curl, jq
+# External APIs: Brave Search (BRAVE_API_KEY), HN Algolia (free)
+
+name: social-proof-collector
+description: Collect positive brand mentions across Reddit, HN, LinkedIn, and the web
+
+args:
+  brand_name:
+    desc: "Your brand/product name to search for"
+  brand_aliases:
+    desc: "Comma-separated alternative names or misspellings"
+    default: ""
+  exclude_terms:
+    desc: "Space-separated terms to exclude (e.g. -job -hiring)"
+    default: ""
+  output_file:
+    desc: "Where to save collected testimonials (JSON)"
+    default: "/tmp/social-proof-results.json"
+
+steps:
+  # ---------- Step 1: Search Reddit via Brave ----------
+  - id: search_reddit
+    command: |
+      query="site:reddit.com \"${brand_name}\" ${exclude_terms}"
+      tmpf=$(mktemp)
+      curl -sf "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=$query" \
+        --data-urlencode "count=10" \
+        -G -o "$tmpf" 2>/dev/null
+      if [ ! -s "$tmpf" ]; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+      jq -c '[(.web.results // [])[] | {
+        platform: "reddit",
+        title: (.title // ""),
+        snippet: (.description // ""),
+        url: (.url // ""),
+        age: (.age // "")
+      }]' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  # ---------- Step 2: Search Hacker News via Algolia ----------
+  - id: search_hn
+    command: |
+      encoded=$(printf '%s' "${brand_name}" | jq -sRr @uri)
+      tmpf=$(mktemp)
+      curl -sf "https://hn.algolia.com/api/v1/search?query=${encoded}&tags=comment&hitsPerPage=15" \
+        -o "$tmpf" 2>/dev/null
+      if [ ! -s "$tmpf" ]; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+      jq -c '[(.hits // [])[] | {
+        platform: "hackernews",
+        title: ("HN comment by " + (.author // "unknown")),
+        snippet: ((.comment_text // "" | gsub("<[^>]*>"; " ") | gsub("&amp;"; "&") | gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&#x27;"; "\u0027") | gsub("&quot;"; "\""))[:300]),
+        url: ("https://news.ycombinator.com/item?id=" + (.objectID // "")),
+        age: (.created_at // "")
+      }]' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  # ---------- Step 3: Search LinkedIn via Brave ----------
+  - id: search_linkedin
+    command: |
+      query="site:linkedin.com \"${brand_name}\" recommend OR love OR great ${exclude_terms}"
+      tmpf=$(mktemp)
+      curl -sf "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=$query" \
+        --data-urlencode "count=10" \
+        -G -o "$tmpf" 2>/dev/null
+      if [ ! -s "$tmpf" ]; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+      jq -c '[(.web.results // [])[] | {
+        platform: "linkedin",
+        title: (.title // ""),
+        snippet: (.description // ""),
+        url: (.url // ""),
+        age: (.age // "")
+      }]' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  # ---------- Step 4: General web + Twitter/X mentions via Brave ----------
+  - id: search_web
+    command: |
+      # Build query with aliases
+      alias_part=""
+      if [ -n "${brand_aliases}" ]; then
+        oldIFS="$IFS"
+        IFS=','
+        for a in ${brand_aliases}; do
+          a=$(echo "$a" | sed 's/^ *//;s/ *$//')
+          if [ -n "$a" ]; then
+            alias_part="$alias_part OR \"$a\""
+          fi
+        done
+        IFS="$oldIFS"
+      fi
+      query="(\"${brand_name}\"${alias_part}) (love OR amazing OR great OR awesome OR recommend) ${exclude_terms}"
+      tmpf=$(mktemp)
+      curl -sf "https://api.search.brave.com/res/v1/web/search" \
+        -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        -H "Accept: application/json" \
+        --data-urlencode "q=$query" \
+        --data-urlencode "count=10" \
+        -G -o "$tmpf" 2>/dev/null
+      if [ ! -s "$tmpf" ]; then
+        echo '[]'
+        rm -f "$tmpf"
+        exit 0
+      fi
+      jq -c '[(.web.results // [])[] | {
+        platform: (if (.url // "" | test("twitter\\.com|x\\.com")) then "twitter"
+                   elif (.url // "" | test("reddit\\.com")) then "reddit"
+                   elif (.url // "" | test("linkedin\\.com")) then "linkedin"
+                   else "web" end),
+        title: (.title // ""),
+        snippet: (.description // ""),
+        url: (.url // ""),
+        age: (.age // "")
+      }]' "$tmpf" 2>/dev/null || echo '[]'
+      rm -f "$tmpf"
+
+  # ---------- Step 5: Merge all results & deduplicate ----------
+  - id: merge_results
+    command: |
+      tmpf=$(mktemp)
+      cat > "$tmpf"
+      jq -sc '
+        [.[][] | select(.url != null and .url != "")] |
+        group_by(.url) |
+        map(first) |
+        sort_by(.platform)
+      ' "$tmpf"
+      rm -f "$tmpf"
+    stdin: |
+      $search_reddit.stdout
+      $search_hn.stdout
+      $search_linkedin.stdout
+      $search_web.stdout
+
+  # ---------- Step 6: Score sentiment with keyword matching ----------
+  # NOTE: For production use, pipe each mention through an LLM for accurate
+  # sentiment classification (STRONG_POSITIVE / POSITIVE / NEUTRAL / NEGATIVE).
+  # This step uses keyword-based scoring as a concrete baseline.
+  - id: score_sentiment
+    stdin: $merge_results.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat > "$tmpf"
+      jq -c '
+        def score_text(t):
+          (t | ascii_downcase) as $low |
+          ([$low | scan("\\b(love|amazing|awesome|fantastic|incredible|excellent|outstanding|brilliant|perfect|wonderful|great|best|recommend|impressive|powerful|solid|smooth|fast|easy|elegant|intuitive|delightful|beautiful|helpful|useful|favorite|favourite|better|good|nice|cool|neat|handy|clever|well|enjoy|happy|glad|pleased|satisfied|thank)\\b")] | length) as $pos |
+          ([$low | scan("\\b(hate|terrible|awful|worst|broken|bug|crash|sucks|disappointing|useless|waste|horrible|annoying|frustrating|slow|ugly|confusing|overpriced|scam|avoid|garbage|trash|bad|poor|mediocre|meh|lacking|difficult|clunky|painful)\\b")] | length) as $neg |
+          {pos: $pos, neg: $neg, net: ($pos - $neg)};
+
+        [.[] | . as $item |
+          score_text(.title + " " + .snippet) as $s |
+          . + {
+            sentiment_score: $s.net,
+            positive_hits: $s.pos,
+            negative_hits: $s.neg,
+            sentiment: (
+              if $s.net >= 3 then "STRONG_POSITIVE"
+              elif $s.net >= 1 then "POSITIVE"
+              elif $s.neg > $s.pos then "NEGATIVE"
+              else "NEUTRAL"
+              end
+            )
+          }
+        ] | sort_by(-.sentiment_score)
+      ' "$tmpf"
+      rm -f "$tmpf"
+
+  # ---------- Step 7: Generate report & save ----------
+  - id: report
+    stdin: $score_sentiment.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat > "$tmpf"
+
+      # Save full JSON to output file
+      jq '.' "$tmpf" > "${output_file}"
+
+      # Generate human-readable report
+      jq -r '
+        (map(select(.sentiment == "STRONG_POSITIVE"))) as $strong |
+        (map(select(.sentiment == "POSITIVE"))) as $pos |
+        (map(select(.sentiment == "NEUTRAL"))) as $neutral |
+        (map(select(.sentiment == "NEGATIVE"))) as $neg |
+
+        "Social Proof Report for: ${brand_name}\n" +
+        "===========================================\n\n" +
+        "Found \(length) total mentions:\n" +
+        "  STRONG_POSITIVE: \($strong | length)\n" +
+        "  POSITIVE: \($pos | length)\n" +
+        "  NEUTRAL: \($neutral | length)\n" +
+        "  NEGATIVE: \($neg | length)\n\n" +
+
+        if ($strong | length) > 0 then
+          "## Best Testimonials\n\n" +
+          ($strong | to_entries | map(
+            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
+            "     \"\(.value.snippet[:200])\"\n" +
+            "     Link: \(.value.url)\n" +
+            "     Score: +\(.value.positive_hits) positive keywords\n"
+          ) | join("\n")) + "\n"
+        else "" end +
+
+        if ($pos | length) > 0 then
+          "## Positive Mentions\n\n" +
+          ($pos | to_entries | map(
+            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
+            "     \"\(.value.snippet[:150])...\"\n" +
+            "     Link: \(.value.url)\n"
+          ) | join("\n")) + "\n"
+        else "" end +
+
+        if ($neg | length) > 0 then
+          "## Negative Mentions (review these)\n\n" +
+          ($neg | to_entries | map(
+            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
+            "     \"\(.value.snippet[:150])...\"\n" +
+            "     Link: \(.value.url)\n"
+          ) | join("\n")) + "\n"
+        else "" end +
+
+        "\nFull JSON saved to: ${output_file}"
+      ' "$tmpf"
+      rm -f "$tmpf"

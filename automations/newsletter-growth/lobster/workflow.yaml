@@ -1,0 +1,130 @@
+# Lobster workflow: newsletter-growth
+# Collects data for newsletter cross-promotion analysis and churn tracking
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"your_newsletter":"My Newsletter","your_niche":"AI agents","subscriber_count":"5000"}'
+#
+# This workflow collects raw data. Steps requiring LLM analysis are marked with
+# "# LLM-STEP" comments — the consumer (agent/human) should process those outputs.
+#
+# Requires: jq, curl
+
+name: newsletter-growth
+description: Find cross-promotion opportunities, collect newsletter data, track churn patterns
+
+args:
+  your_newsletter:
+    description: "Your newsletter name"
+  your_niche:
+    description: "Your niche/topic area"
+  subscriber_count:
+    description: "Your subscriber count"
+  unsubscribe_csv:
+    description: "Path to unsubscribe CSV (date,email,reason) — optional"
+    default: ""
+  state_file:
+    description: "Path to state file for tracking seen newsletters"
+    default: "/tmp/clawflows-newsletter-growth-state.json"
+
+steps:
+  - id: load-state
+    command: cat "${state_file}" 2>/dev/null || echo '{"seen_newsletters":[],"proposals_sent":[]}'
+
+  - id: search-newsletters
+    command: |
+      # Search for newsletters in the niche using web search patterns
+      # We fetch from multiple sources to find potential swap partners
+      tmpf=$(mktemp)
+      echo '[]' > "$tmpf"
+
+      # Search Substack discover
+      curl -sf "https://substack.com/api/v1/search?query=$(echo "${your_niche}" | tr ' ' '+')+newsletter&type=publication&page=0&limit=10" \
+        | jq -c '[.results[]? | {name: .name, url: .url, description: (.description // ""), subscriber_count: (.subscriberCount // null), platform: "substack"}]' \
+        > /tmp/lb_nl_sub.json 2>/dev/null || echo '[]' > /tmp/lb_nl_sub.json
+
+      jq -sc '.[0] + .[1]' "$tmpf" /tmp/lb_nl_sub.json > /tmp/lb_nl_merged.json
+      mv /tmp/lb_nl_merged.json "$tmpf"
+
+      cat "$tmpf"
+      rm -f "$tmpf" /tmp/lb_nl_sub.json
+
+  - id: collect-newsletter-data
+    stdin: $search-newsletters.stdout
+    command: |
+      cat > /tmp/lb_nl_found.json
+      # Enrich with our metadata for analysis
+      # LLM-STEP: The consumer should analyze each newsletter for:
+      #   - Audience overlap (complementary to our niche?)
+      #   - Subscriber count similarity
+      #   - Content style match
+      #   - Cross-promotion history
+      jq -c --arg our_name "${your_newsletter}" --arg our_niche "${your_niche}" --arg our_subs "${subscriber_count}" '
+        {
+          our_newsletter: $our_name,
+          our_niche: $our_niche,
+          our_subscribers: ($our_subs | tonumber),
+          candidates: .,
+          candidate_count: length,
+          analysis_needed: "LLM should evaluate each candidate for swap potential (HIGH/MEDIUM/LOW)"
+        }
+      ' /tmp/lb_nl_found.json
+      rm -f /tmp/lb_nl_found.json
+
+  - id: analyze-churn
+    command: |
+      csv="${unsubscribe_csv}"
+      if [ -z "$csv" ] || [ ! -f "$csv" ]; then
+        echo '{"churn_analysis": "no_data", "message": "No unsubscribe CSV provided"}'
+        exit 0
+      fi
+      # Parse CSV and compute basic churn stats
+      # Expected format: date,email,reason (with header)
+      tmpf=$(mktemp)
+      tail -n +2 "$csv" | awk -F',' '
+        { dates[$1]++; reasons[$3]++; total++ }
+        END {
+          printf "{\"total_unsubscribes\":%d,\"by_date\":{", total
+          first=1; for (d in dates) { if(!first) printf ","; printf "\"%s\":%d", d, dates[d]; first=0 }
+          printf "},\"by_reason\":{"
+          first=1; for (r in reasons) { if(!first) printf ","; printf "\"%s\":%d", r, reasons[r]; first=0 }
+          printf "}}"
+        }
+      ' > "$tmpf"
+      # LLM-STEP: Consumer should analyze churn patterns:
+      #   - Which time periods have highest churn?
+      #   - What are the top reasons?
+      #   - Recommendations for reducing churn
+      cat "$tmpf"
+      rm -f "$tmpf"
+
+  - id: save-state
+    stdin: $collect-newsletter-data.stdout
+    command: |
+      cat > /tmp/lb_nl_data.json
+      # Update state with newly seen newsletters
+      prev=$(cat "${state_file}" 2>/dev/null || echo '{"seen_newsletters":[],"proposals_sent":[]}')
+      new_names=$(jq -r '.candidates[]?.name // empty' /tmp/lb_nl_data.json 2>/dev/null)
+      echo "$prev" | jq --arg date "$(date -u +%Y-%m-%d)" --argjson data "$(cat /tmp/lb_nl_data.json)" '
+        .last_run = $date |
+        .seen_newsletters = (.seen_newsletters + [$data.candidates[]?.name // empty] | unique)
+      ' > "${state_file}"
+      cat /tmp/lb_nl_data.json
+      rm -f /tmp/lb_nl_data.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      churn=$(echo '$analyze-churn.stdout')
+      cat > /tmp/lb_nl_report.json
+      jq -r --argjson churn "$(cat /tmp/lb_nl_report_churn.json 2>/dev/null || echo '{"churn_analysis":"skipped"}')" '
+        "📰 Newsletter Growth Report\n" +
+        "═══════════════════════════\n" +
+        "Newsletter: \(.our_newsletter) (\(.our_subscribers) subs)\n" +
+        "Niche: \(.our_niche)\n\n" +
+        "🔍 Found \(.candidate_count) potential swap partners:\n" +
+        (.candidates[:10] | map("  • \(.name // "unknown") (\(.platform // "unknown"))" + if .subscriber_count then " ~\(.subscriber_count) subs" else "" end) | join("\n")) +
+        "\n\n⚠️  Note: Candidate evaluation requires LLM analysis.\n" +
+        "Feed the JSON output to an LLM to rate swap potential (HIGH/MEDIUM/LOW)\n" +
+        "and generate personalized outreach proposals."
+      ' /tmp/lb_nl_report.json
+      rm -f /tmp/lb_nl_report.json /tmp/lb_nl_report_churn.json

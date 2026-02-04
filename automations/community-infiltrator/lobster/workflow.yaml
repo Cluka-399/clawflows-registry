@@ -1,0 +1,354 @@
+# Lobster workflow: community-infiltrator
+# Find community discussions where your product could be recommended.
+# Uses Brave Search API + HN Algolia to find questions, recommendations,
+# and competitor complaints in public communities.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{
+#     "product_category": "design tool",
+#     "keywords": "UI design,prototyping,design handoff",
+#     "competitor_names": "Figma,Sketch,Adobe XD"
+#   }'
+#
+# Requires: curl, node (for JSON processing — jq not available)
+
+name: community-infiltrator
+description: Monitor public communities for product recommendation opportunities via Brave Search and HN
+
+args:
+  product_category:
+    description: "What category is your product (e.g. 'design tool', 'CI/CD platform')"
+  keywords:
+    description: "Comma-separated keywords to search for"
+    default: ""
+  competitor_names:
+    description: "Comma-separated competitor names to watch"
+    default: ""
+  max_results:
+    description: "Max results per search query"
+    default: "5"
+  state_file:
+    description: "File to track previously seen opportunities"
+    default: "/tmp/clawflows-community-infiltrator-state.json"
+
+steps:
+  - id: build-queries
+    command: |
+      node -e '
+        const category = process.env.CATEGORY;
+        const keywords = process.env.KEYWORDS.split(",").map(s=>s.trim()).filter(Boolean);
+        const competitors = process.env.COMPETITORS.split(",").map(s=>s.trim()).filter(Boolean);
+
+        const patterns = [
+          `best ${category} recommendation`,
+          `what ${category} do you use`,
+          `${category} alternative`,
+          `recommend ${category}`,
+        ];
+
+        keywords.forEach(kw => {
+          patterns.push(`"${kw}" recommendation`);
+          patterns.push(`"what tool" "${kw}"`);
+        });
+
+        competitors.forEach(comp => {
+          patterns.push(`${comp} alternative`);
+          patterns.push(`${comp} vs`);
+          patterns.push(`frustrated with ${comp}`);
+          patterns.push(`switching from ${comp}`);
+        });
+
+        console.log(JSON.stringify({ queries: patterns, category, keywords, competitors }));
+      '
+    env:
+      CATEGORY: "${product_category}"
+      KEYWORDS: "${keywords}"
+      COMPETITORS: "${competitor_names}"
+
+  - id: search-brave
+    command: |
+      node -e '
+        const fs = require("fs");
+        const https = require("https");
+        const queries = JSON.parse(process.env.QUERIES_JSON);
+        const maxResults = parseInt(process.env.MAX_RESULTS) || 5;
+        const apiKey = process.env.BRAVE_API_KEY;
+
+        if (!apiKey) {
+          console.log(JSON.stringify({ results: [], error: "BRAVE_API_KEY not set" }));
+          process.exit(0);
+        }
+
+        function searchBrave(query) {
+          return new Promise((resolve, reject) => {
+            const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query + " site:reddit.com OR site:news.ycombinator.com OR site:community OR forum")}&count=${maxResults}&freshness=pm`;
+            const options = {
+              headers: { "X-Subscription-Token": apiKey, "Accept": "application/json" }
+            };
+            https.get(url, options, (res) => {
+              let data = "";
+              res.on("data", d => data += d);
+              res.on("end", () => {
+                try { resolve(JSON.parse(data)); }
+                catch(e) { resolve({ web: { results: [] } }); }
+              });
+            }).on("error", () => resolve({ web: { results: [] } }));
+          });
+        }
+
+        async function run() {
+          const all = [];
+          const seen = new Set();
+          // Limit to first 6 queries to avoid rate limits
+          const limited = queries.queries.slice(0, 6);
+
+          for (const q of limited) {
+            const resp = await searchBrave(q);
+            const results = (resp.web && resp.web.results) || [];
+            for (const r of results) {
+              if (seen.has(r.url)) continue;
+              seen.add(r.url);
+              all.push({
+                source: "brave",
+                query: q,
+                title: r.title || "",
+                url: r.url || "",
+                snippet: r.description || "",
+                age: r.age || "",
+                platform: r.url.includes("reddit.com") ? "Reddit"
+                  : r.url.includes("ycombinator") ? "HN"
+                  : r.url.includes("discord") ? "Discord"
+                  : "Web"
+              });
+            }
+            // Small delay between requests
+            await new Promise(r => setTimeout(r, 300));
+          }
+          console.log(JSON.stringify({ results: all, query_count: limited.length }));
+        }
+        run();
+      '
+    env:
+      QUERIES_JSON: "$build-queries.stdout"
+      MAX_RESULTS: "${max_results}"
+
+  - id: search-hn
+    command: |
+      node -e '
+        const https = require("https");
+        const queries = JSON.parse(process.env.QUERIES_JSON);
+        const category = queries.category;
+        const keywords = queries.keywords || [];
+        const competitors = queries.competitors || [];
+
+        function searchHN(query) {
+          return new Promise((resolve, reject) => {
+            const ts24h = Math.floor(Date.now()/1000) - 7*86400;
+            const url = `https://hn.algolia.com/api/v1/search_by_date?query=${encodeURIComponent(query)}&tags=(story,comment)&numericFilters=created_at_i>${ts24h}&hitsPerPage=5`;
+            https.get(url, (res) => {
+              let data = "";
+              res.on("data", d => data += d);
+              res.on("end", () => {
+                try { resolve(JSON.parse(data)); }
+                catch(e) { resolve({ hits: [] }); }
+              });
+            }).on("error", () => resolve({ hits: [] }));
+          });
+        }
+
+        async function run() {
+          const all = [];
+          const seen = new Set();
+          const searchTerms = [category, ...keywords.slice(0,2), ...competitors.slice(0,2)];
+
+          for (const term of searchTerms) {
+            if (!term) continue;
+            const resp = await searchHN(term);
+            for (const hit of (resp.hits || [])) {
+              const id = hit.objectID;
+              if (seen.has(id)) continue;
+              seen.add(id);
+              all.push({
+                source: "hn",
+                platform: "HN",
+                title: hit.title || (hit.comment_text || "").substring(0, 120),
+                url: "https://news.ycombinator.com/item?id=" + id,
+                snippet: hit.comment_text ? hit.comment_text.substring(0, 300) : (hit.title || ""),
+                author: hit.author || "",
+                points: hit.points || 0,
+                created: hit.created_at || ""
+              });
+            }
+            await new Promise(r => setTimeout(r, 200));
+          }
+          console.log(JSON.stringify({ results: all }));
+        }
+        run();
+      '
+    env:
+      QUERIES_JSON: "$build-queries.stdout"
+
+  - id: detect-opportunities
+    command: |
+      node -e '
+        const brave = JSON.parse(process.env.BRAVE_JSON);
+        const hn = JSON.parse(process.env.HN_JSON);
+        const meta = JSON.parse(process.env.QUERIES_JSON);
+        const competitors = (meta.competitors || []).map(c => c.toLowerCase());
+        const keywords = (meta.keywords || []).map(k => k.toLowerCase());
+        const category = (meta.category || "").toLowerCase();
+
+        const allResults = [...(brave.results || []), ...(hn.results || [])];
+
+        // Question patterns that signal buying intent
+        const hotPatterns = [
+          /\bwhat.*(?:best|recommend|suggest|use)\b/i,
+          /\balternative(?:s)?\s+to\b/i,
+          /\bswitch(?:ing|ed)?\s+from\b/i,
+          /\breplace(?:ment)?\s+for\b/i,
+          /\bfrustrat(?:ed|ing)\b/i,
+          /\bhate\b/i,
+          /\bdisappoint/i,
+          /\blooking\s+for\b/i,
+        ];
+        const warmPatterns = [
+          /\brecommend/i,
+          /\bcompare|comparison|vs\b/i,
+          /\bbetter\s+than\b/i,
+          /\bexperience\s+with\b/i,
+          /\bopinion(?:s)?\s+on\b/i,
+          /\bpros?\s+(?:and|&)\s+cons?\b/i,
+          /\bworth\s+(?:it|trying|using)\b/i,
+        ];
+
+        const opportunities = allResults.map(item => {
+          const text = (item.title + " " + item.snippet).toLowerCase();
+          let rating = "COLD";
+          let signals = [];
+
+          // Check for competitor mentions
+          const mentionedCompetitors = competitors.filter(c => text.includes(c));
+          if (mentionedCompetitors.length > 0) {
+            signals.push("competitor_mention: " + mentionedCompetitors.join(", "));
+            rating = "WARM";
+          }
+
+          // Check for hot patterns
+          for (const pat of hotPatterns) {
+            if (pat.test(text)) {
+              signals.push("hot_pattern");
+              rating = "HOT";
+              break;
+            }
+          }
+
+          // Check for warm patterns (only upgrade from COLD)
+          if (rating === "COLD") {
+            for (const pat of warmPatterns) {
+              if (pat.test(text)) {
+                signals.push("warm_pattern");
+                rating = "WARM";
+                break;
+              }
+            }
+          }
+
+          // Keyword relevance boost
+          const matchedKw = keywords.filter(k => text.includes(k));
+          if (matchedKw.length > 0) {
+            signals.push("keyword_match: " + matchedKw.join(", "));
+            if (rating === "COLD") rating = "WARM";
+          }
+
+          return { ...item, rating, signals, matchedKeywords: matchedKw, mentionedCompetitors };
+        });
+
+        // Filter out COLD, sort by rating
+        const ratingOrder = { HOT: 0, WARM: 1, COLD: 2 };
+        const filtered = opportunities
+          .filter(o => o.rating !== "COLD")
+          .sort((a, b) => ratingOrder[a.rating] - ratingOrder[b.rating]);
+
+        console.log(JSON.stringify({
+          opportunities: filtered,
+          total_found: allResults.length,
+          hot: filtered.filter(o => o.rating === "HOT").length,
+          warm: filtered.filter(o => o.rating === "WARM").length,
+          cold: opportunities.filter(o => o.rating === "COLD").length
+        }));
+      '
+    env:
+      BRAVE_JSON: "$search-brave.stdout"
+      HN_JSON: "$search-hn.stdout"
+      QUERIES_JSON: "$build-queries.stdout"
+
+  - id: filter-new
+    command: |
+      node -e '
+        const fs = require("fs");
+        const stateFile = process.env.STATE_FILE;
+        const data = JSON.parse(process.env.OPP_JSON);
+
+        let seen = [];
+        try { seen = JSON.parse(fs.readFileSync(stateFile, "utf8")); } catch {}
+        const seenSet = new Set(Array.isArray(seen) ? seen : []);
+
+        const newOpps = (data.opportunities || []).filter(o => !seenSet.has(o.url));
+        const allSeen = [...seenSet, ...newOpps.map(o => o.url)].slice(-500);
+
+        fs.writeFileSync(stateFile, JSON.stringify(allSeen));
+
+        console.log(JSON.stringify({
+          new_opportunities: newOpps,
+          count: newOpps.length,
+          hot: newOpps.filter(o => o.rating === "HOT").length,
+          warm: newOpps.filter(o => o.rating === "WARM").length,
+          total_scanned: data.total_found || 0
+        }));
+      '
+    env:
+      OPP_JSON: "$detect-opportunities.stdout"
+      STATE_FILE: "${state_file}"
+
+  - id: report
+    command: |
+      node -e '
+        const data = JSON.parse(process.env.REPORT_JSON);
+        const opps = data.new_opportunities || [];
+
+        if (opps.length === 0) {
+          console.log(JSON.stringify({
+            summary: "No new community opportunities found.",
+            scanned: data.total_scanned,
+            opportunities: []
+          }));
+          process.exit(0);
+        }
+
+        // Build readable report
+        // NOTE: For LLM-powered response drafting, pipe each opportunity to an LLM
+        // with product context to generate suggested community responses
+        const lines = [];
+        lines.push(`💬 **Community Infiltrator Report**`);
+        lines.push(`Scanned ${data.total_scanned} discussions | Found ${data.count} new opportunities (🔥 ${data.hot} hot, 🟡 ${data.warm} warm)\n`);
+
+        for (const opp of opps) {
+          const icon = opp.rating === "HOT" ? "🔥" : "🟡";
+          lines.push(`${icon} **[${opp.rating}]** ${opp.platform}`);
+          lines.push(`   ${opp.title}`);
+          if (opp.snippet) lines.push(`   > ${opp.snippet.substring(0, 200)}`);
+          lines.push(`   Signals: ${opp.signals.join(", ")}`);
+          lines.push(`   ${opp.url}\n`);
+        }
+
+        console.log(JSON.stringify({
+          summary: lines.join("\n"),
+          scanned: data.total_scanned,
+          count: data.count,
+          hot: data.hot,
+          warm: data.warm,
+          opportunities: opps
+        }));
+      '
+    env:
+      REPORT_JSON: "$filter-new.stdout"

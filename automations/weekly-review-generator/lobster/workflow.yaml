@@ -1,0 +1,343 @@
+name: "Weekly Review Generator"
+description: "Generate a metrics-focused weekly review: task completion stats, git activity metrics (lines changed, files touched, commit frequency), and structured summary report"
+
+args:
+  task_file:
+    desc: "Path to a TODO/task markdown file (lines starting with - [x] are completed)"
+    default: "/data/clawd/memory"
+  repo_paths:
+    desc: "Comma-separated list of git repo paths to collect metrics from"
+    default: "/data/clawd"
+  days_back:
+    desc: "Number of days to look back"
+    default: "7"
+  output_dir:
+    desc: "Directory to save the review file"
+    default: "/data/clawd/memory/reviews"
+
+steps:
+  - id: collect_tasks
+    command: |
+      python3 << 'PYEOF'
+      import os, sys, json, glob, re
+      from datetime import datetime, timedelta
+
+      task_path = "${task_file}"
+      days_back = int("${days_back}")
+      cutoff = datetime.now() - timedelta(days=days_back)
+      cutoff_str = cutoff.strftime("%Y-%m-%d")
+
+      completed = []
+      pending = []
+      counters = {"files_scanned": 0}
+
+      def scan_file(fpath, date_label):
+          counters["files_scanned"] += 1
+          try:
+              with open(fpath) as f:
+                  content = f.read()
+          except Exception:
+              return
+          for line in content.splitlines():
+              stripped = line.strip()
+              # Match completed tasks: - [x] or * [x]
+              if re.match(r'^[-*]\s*\[x\]\s+', stripped, re.IGNORECASE):
+                  task_text = re.sub(r'^[-*]\s*\[x\]\s+', '', stripped, flags=re.IGNORECASE)
+                  completed.append({"task": task_text, "source": os.path.basename(fpath), "date": date_label})
+              # Match pending tasks: - [ ] or * [ ]
+              elif re.match(r'^[-*]\s*\[\s\]\s+', stripped):
+                  task_text = re.sub(r'^[-*]\s*\[\s\]\s+', '', stripped)
+                  pending.append({"task": task_text, "source": os.path.basename(fpath), "date": date_label})
+
+      if os.path.isfile(task_path):
+          scan_file(task_path, "file")
+      elif os.path.isdir(task_path):
+          # Scan dated markdown files in the directory
+          for f in sorted(glob.glob(os.path.join(task_path, "*.md"))):
+              basename = os.path.basename(f)
+              if len(basename) == 13 and basename[:4].isdigit() and basename.endswith(".md"):
+                  date_str = basename[:-3]
+                  if date_str >= cutoff_str:
+                      scan_file(f, date_str)
+              elif basename.lower() in ("todo.md", "tasks.md", "session-state.md"):
+                  scan_file(f, "current")
+
+      output = {
+          "completed_count": len(completed),
+          "pending_count": len(pending),
+          "files_scanned": counters["files_scanned"],
+          "completed": completed,
+          "pending": pending
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/review_tasks.json", "w") as fout:
+          json.dump(output, fout, indent=2)
+      PYEOF
+
+  - id: collect_git_metrics
+    command: |
+      python3 << 'PYEOF'
+      import subprocess, json, sys, os
+      from datetime import datetime, timedelta
+      from collections import Counter, defaultdict
+
+      repo_paths_raw = "${repo_paths}"
+      days_back = int("${days_back}")
+
+      repos = [r.strip() for r in repo_paths_raw.split(",") if r.strip()]
+      since_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+
+      all_metrics = []
+
+      for repo_path in repos:
+          if not os.path.isdir(os.path.join(repo_path, ".git")):
+              continue
+          repo_name = os.path.basename(os.path.abspath(repo_path))
+
+          # Get commit log with stats
+          try:
+              result = subprocess.run(
+                  ["git", "log", f"--since={since_date}", "--pretty=format:%H|%ai|%an|%s", "--numstat"],
+                  cwd=repo_path, capture_output=True, text=True, timeout=30
+              )
+              raw = result.stdout
+          except Exception:
+              continue
+
+          commits = []
+          current_commit = None
+          files_touched = Counter()
+          lines_added_total = 0
+          lines_deleted_total = 0
+          daily_commits = Counter()
+          author_commits = Counter()
+          file_types = Counter()
+
+          for line in raw.splitlines():
+              if "|" in line and len(line.split("|")) >= 4 and not line.startswith(" "):
+                  parts = line.split("|", 3)
+                  if len(parts[0]) == 40:
+                      current_commit = {
+                          "hash": parts[0][:8],
+                          "date": parts[1].strip(),
+                          "author": parts[2].strip(),
+                          "message": parts[3].strip(),
+                          "files": [],
+                          "additions": 0,
+                          "deletions": 0
+                      }
+                      commits.append(current_commit)
+                      day = parts[1].strip()[:10]
+                      daily_commits[day] += 1
+                      author_commits[parts[2].strip()] += 1
+              elif line.strip() and current_commit is not None:
+                  # numstat line: additions\tdeletions\tfilename
+                  num_parts = line.split("\t")
+                  if len(num_parts) == 3:
+                      added = int(num_parts[0]) if num_parts[0] != "-" else 0
+                      deleted = int(num_parts[1]) if num_parts[1] != "-" else 0
+                      fname = num_parts[2]
+                      current_commit["files"].append(fname)
+                      current_commit["additions"] += added
+                      current_commit["deletions"] += deleted
+                      lines_added_total += added
+                      lines_deleted_total += deleted
+                      files_touched[fname] += 1
+                      ext = os.path.splitext(fname)[1] or "(no ext)"
+                      file_types[ext] += 1
+
+          # Top changed files
+          top_files = [{"file": f, "changes": c} for f, c in files_touched.most_common(10)]
+
+          all_metrics.append({
+              "repo": repo_name,
+              "repo_path": repo_path,
+              "commit_count": len(commits),
+              "lines_added": lines_added_total,
+              "lines_deleted": lines_deleted_total,
+              "lines_net": lines_added_total - lines_deleted_total,
+              "unique_files_touched": len(files_touched),
+              "top_changed_files": top_files,
+              "file_types": dict(file_types.most_common(10)),
+              "daily_commits": dict(sorted(daily_commits.items())),
+              "authors": dict(author_commits.most_common(5)),
+              "commits": [
+                  {"hash": c["hash"], "message": c["message"], "date": c["date"],
+                   "additions": c["additions"], "deletions": c["deletions"],
+                   "file_count": len(c["files"])}
+                  for c in commits[:30]
+              ]
+          })
+
+      output = {
+          "repos_analyzed": len(all_metrics),
+          "total_commits": sum(m["commit_count"] for m in all_metrics),
+          "total_lines_added": sum(m["lines_added"] for m in all_metrics),
+          "total_lines_deleted": sum(m["lines_deleted"] for m in all_metrics),
+          "total_files_touched": sum(m["unique_files_touched"] for m in all_metrics),
+          "repos": all_metrics
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/review_git_metrics.json", "w") as fout:
+          json.dump(output, fout, indent=2)
+      PYEOF
+
+  - id: build_review_data
+    # Assembles tasks + git metrics into a single structured JSON document.
+    # NOTE: Pipe /tmp/review_assembled.json to an LLM for narrative summary generation.
+    command: |
+      python3 << 'PYEOF'
+      import json, sys, os
+      from datetime import datetime
+
+      with open("/tmp/review_tasks.json") as f:
+          tasks = json.load(f)
+      with open("/tmp/review_git_metrics.json") as f:
+          git = json.load(f)
+
+      days_back = int("${days_back}")
+
+      # Compute productivity score (simple heuristic)
+      task_score = min(tasks["completed_count"] * 10, 50)
+      commit_score = min(git["total_commits"] * 2, 30)
+      code_score = min(git["total_lines_added"] // 50, 20)
+      productivity_score = task_score + commit_score + code_score
+
+      assembled = {
+          "meta": {
+              "generated_at": datetime.now().isoformat(),
+              "days_back": days_back,
+              "type": "weekly_review"
+          },
+          "summary_stats": {
+              "tasks_completed": tasks["completed_count"],
+              "tasks_pending": tasks["pending_count"],
+              "task_completion_rate": round(
+                  tasks["completed_count"] / max(tasks["completed_count"] + tasks["pending_count"], 1) * 100, 1
+              ),
+              "total_commits": git["total_commits"],
+              "total_lines_added": git["total_lines_added"],
+              "total_lines_deleted": git["total_lines_deleted"],
+              "net_lines": git["total_lines_added"] - git["total_lines_deleted"],
+              "files_touched": git["total_files_touched"],
+              "repos_active": git["repos_analyzed"],
+              "productivity_score": min(productivity_score, 100)
+          },
+          "tasks": tasks,
+          "git": git
+      }
+
+      json.dump(assembled, sys.stdout, indent=2)
+      with open("/tmp/review_assembled.json", "w") as fout:
+          json.dump(assembled, fout, indent=2)
+      PYEOF
+
+  - id: format_review
+    # Formats assembled data into a metrics-focused weekly review report.
+    # For richer narrative, pipe /tmp/review_assembled.json to an LLM.
+    command: |
+      python3 << 'PYEOF'
+      import json, sys
+
+      with open("/tmp/review_assembled.json") as f:
+          data = json.load(f)
+
+      stats = data["summary_stats"]
+      tasks = data["tasks"]
+      git = data["git"]
+      meta = data["meta"]
+
+      lines = []
+      lines.append("# 📋 Weekly Review")
+      lines.append(f"_Period: last {meta['days_back']} days | Generated: {meta['generated_at'][:10]}_")
+      lines.append("")
+
+      # Scorecard
+      lines.append("## 📊 Scorecard")
+      score = stats["productivity_score"]
+      bar_filled = score // 5
+      bar_empty = 20 - bar_filled
+      bar = "█" * bar_filled + "░" * bar_empty
+      lines.append(f"  Productivity: [{bar}] {score}/100")
+      lines.append("")
+      lines.append(f"  | Metric               | Value |")
+      lines.append(f"  |----------------------|-------|")
+      lines.append(f"  | Tasks completed      | {stats['tasks_completed']} |")
+      lines.append(f"  | Tasks pending        | {stats['tasks_pending']} |")
+      lines.append(f"  | Completion rate      | {stats['task_completion_rate']}% |")
+      lines.append(f"  | Git commits          | {stats['total_commits']} |")
+      lines.append(f"  | Lines added          | +{stats['total_lines_added']} |")
+      lines.append(f"  | Lines deleted        | -{stats['total_lines_deleted']} |")
+      lines.append(f"  | Net lines            | {'+' if stats['net_lines'] >= 0 else ''}{stats['net_lines']} |")
+      lines.append(f"  | Files touched        | {stats['files_touched']} |")
+      lines.append(f"  | Active repos         | {stats['repos_active']} |")
+      lines.append("")
+
+      # Completed tasks
+      if tasks.get("completed"):
+          lines.append(f"## ✅ Completed Tasks ({stats['tasks_completed']})")
+          for t in tasks["completed"][:15]:
+              src = f" ({t['date']})" if t.get("date") else ""
+              lines.append(f"  - {t['task']}{src}")
+          lines.append("")
+
+      # Pending tasks
+      if tasks.get("pending"):
+          lines.append(f"## ⏳ Pending Tasks ({stats['tasks_pending']})")
+          for t in tasks["pending"][:10]:
+              lines.append(f"  - {t['task']}")
+          lines.append("")
+
+      # Git activity per repo
+      for repo in git.get("repos", []):
+          lines.append(f"## 🔨 {repo['repo']} ({repo['commit_count']} commits)")
+          lines.append(f"  +{repo['lines_added']} / -{repo['lines_deleted']} lines | {repo['unique_files_touched']} files")
+          lines.append("")
+
+          # Daily commit frequency
+          if repo.get("daily_commits"):
+              lines.append("  **Daily activity:**")
+              for day, count in sorted(repo["daily_commits"].items()):
+                  bar = "▓" * count
+                  lines.append(f"    {day}: {bar} ({count})")
+              lines.append("")
+
+          # File types
+          if repo.get("file_types"):
+              types_str = ", ".join(f"{ext}: {c}" for ext, c in list(repo["file_types"].items())[:6])
+              lines.append(f"  **File types:** {types_str}")
+              lines.append("")
+
+          # Top files
+          if repo.get("top_changed_files"):
+              lines.append("  **Most changed files:**")
+              for tf in repo["top_changed_files"][:5]:
+                  lines.append(f"    - {tf['file']} ({tf['changes']}x)")
+              lines.append("")
+
+          # Recent commits
+          if repo.get("commits"):
+              lines.append("  **Recent commits:**")
+              for c in repo["commits"][:8]:
+                  lines.append(f"    - `{c['hash']}` {c['message']} (+{c['additions']}/-{c['deletions']}, {c['file_count']} files)")
+              lines.append("")
+
+      lines.append("---")
+      lines.append(f"_Data: {stats['tasks_completed']} tasks, {stats['total_commits']} commits across {stats['repos_active']} repos_")
+      lines.append("_💬 For narrative analysis, pipe /tmp/review_assembled.json to an LLM_")
+
+      report = "\n".join(lines)
+      print(report)
+      with open("/tmp/review_formatted.md", "w") as fout:
+          fout.write(report)
+      PYEOF
+
+  - id: save_review
+    command: |
+      OUTPUT_DIR="${output_dir}"
+      mkdir -p "$OUTPUT_DIR"
+      TODAY=$(date +%Y-%m-%d)
+      OUTFILE="${OUTPUT_DIR}/review-${TODAY}.md"
+      cp /tmp/review_formatted.md "$OUTFILE"
+      echo "Saved to: ${OUTFILE}"
+      cat "$OUTFILE"

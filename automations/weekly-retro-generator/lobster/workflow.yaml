@@ -1,0 +1,375 @@
+name: "Weekly Retro Generator"
+description: "Generate a weekly retrospective from agent activity logs, git commits, and calendar events"
+
+args:
+  memory_path:
+    desc: "Path to agent memory/logs directory"
+    default: "/data/clawd/memory"
+  repo_path:
+    desc: "Path to a git repo to include commits from (empty to skip)"
+    default: "/data/clawd/clawflows-registry"
+  include_calendar:
+    desc: "Include calendar events (true/false)"
+    default: "true"
+  days_back:
+    desc: "Number of days to look back"
+    default: "7"
+  output_dir:
+    desc: "Directory to save the retro file"
+    default: "/data/clawd/memory/retros"
+  format:
+    desc: "Output format: summary, detailed, or standup"
+    default: "summary"
+
+steps:
+  - id: collect_logs
+    command: |
+      cat > /tmp/retro_collect_logs.py << 'PYEOF'
+      import os, json, glob, sys
+      from datetime import datetime, timedelta
+
+      memory_path = sys.argv[1]
+      days_back = int(sys.argv[2])
+
+      cutoff = datetime.now() - timedelta(days=days_back)
+      cutoff_str = cutoff.strftime("%Y-%m-%d")
+
+      logs = []
+      pattern = os.path.join(memory_path, "*.md")
+      for f in sorted(glob.glob(pattern)):
+          basename = os.path.basename(f)
+          # Match YYYY-MM-DD.md files
+          if len(basename) == 13 and basename[:4].isdigit() and basename.endswith(".md"):
+              date_str = basename[:-3]
+              if date_str >= cutoff_str:
+                  with open(f) as fh:
+                      content = fh.read()
+                  logs.append({
+                      "date": date_str,
+                      "file": f,
+                      "content": content,
+                      "lines": len(content.splitlines()),
+                      "chars": len(content)
+                  })
+
+      output = {
+          "count": len(logs),
+          "date_range": {
+              "from": logs[0]["date"] if logs else cutoff_str,
+              "to": logs[-1]["date"] if logs else datetime.now().strftime("%Y-%m-%d")
+          },
+          "logs": logs
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/retro_logs.json", "w") as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      python3 /tmp/retro_collect_logs.py "${memory_path}" "${days_back}"
+
+  - id: collect_commits
+    command: |
+      cat > /tmp/retro_collect_commits.sh << 'BASH'
+      #!/usr/bin/env bash
+      set -e
+      REPO_PATH="${1}"
+      DAYS_BACK="${2}"
+
+      if [ -z "$REPO_PATH" ] || [ ! -d "$REPO_PATH/.git" ]; then
+        echo '{"count":0,"commits":[]}'
+        echo '{"count":0,"commits":[]}' > /tmp/retro_commits.json
+        exit 0
+      fi
+
+      cd "$REPO_PATH"
+      SINCE_DATE=$(date -d "-${DAYS_BACK} days" +%Y-%m-%d 2>/dev/null || date -v-${DAYS_BACK}d +%Y-%m-%d)
+
+      # Use JSON output from git directly for reliable parsing
+      git log --since="$SINCE_DATE" --pretty=format:'{"hash":"%H","date":"%ai","author":"%an","message":"%s"},' > /tmp/retro_raw_commits.txt
+
+      python3 << 'PYEOF'
+      import json, re
+
+      commits = []
+      try:
+          with open("/tmp/retro_raw_commits.txt") as f:
+              raw = f.read().strip().rstrip(",")
+          if raw:
+              # Wrap in array and parse
+              items = json.loads("[" + raw + "]")
+              for item in items:
+                  commits.append({
+                      "hash": item["hash"][:8],
+                      "date": item["date"],
+                      "author": item["author"],
+                      "message": item["message"]
+                  })
+      except (FileNotFoundError, json.JSONDecodeError) as e:
+          pass
+
+      output = {"count": len(commits), "commits": commits}
+      json.dump(output, open("/tmp/retro_commits.json", "w"), indent=2)
+      print(json.dumps(output, indent=2))
+      PYEOF
+      BASH
+      chmod +x /tmp/retro_collect_commits.sh
+      bash /tmp/retro_collect_commits.sh "${repo_path}" "${days_back}"
+
+  - id: collect_calendar
+    command: |
+      if [ "${include_calendar}" != "true" ]; then
+        echo '{"count":0,"events":[],"source":"skipped"}'
+        echo '{"count":0,"events":[],"source":"skipped"}' > /tmp/retro_calendar.json
+        exit 0
+      fi
+      cat > /tmp/retro_collect_cal.sh << 'BASH'
+      #!/usr/bin/env bash
+      set -e
+      DAYS_BACK="${1}"
+
+      GCAL="/data/clawd/.venv-gcal/bin/gcalcli"
+      UV="/data/clawd/.local/bin/uv"
+      KHAL_CFG="/data/clawd/.config/khal/config"
+      VDIR_CFG="/data/clawd/.config/vdirsyncer/config"
+
+      events=""
+
+      # Try iCloud calendar via khal
+      if [ -f "$UV" ] && [ -f "$KHAL_CFG" ]; then
+        # Sync first
+        $UV run --with vdirsyncer -- vdirsyncer -c "$VDIR_CFG" sync 2>/dev/null || true
+        events=$($UV run --with khal -- khal -c "$KHAL_CFG" list "today -${DAYS_BACK}d" "${DAYS_BACK}d" 2>/dev/null || echo "")
+      fi
+
+      # Try gcalcli as fallback/addition
+      if [ -f "$GCAL" ] && [ -f ~/.local/share/gcalcli/oauth ]; then
+        gcal_events=$(TZ=Asia/Jerusalem $GCAL agenda --nocolor --tsv \
+          "$(date -d "-${DAYS_BACK} days" +%Y-%m-%d 2>/dev/null || date -v-${DAYS_BACK}d +%Y-%m-%d)" \
+          "$(date +%Y-%m-%d)" 2>/dev/null || echo "")
+        if [ -n "$gcal_events" ]; then
+          events="${events}
+      ${gcal_events}"
+        fi
+      fi
+
+      python3 << PYEOF
+      import json, sys
+
+      raw_events = """${events}"""
+
+      event_lines = [l.strip() for l in raw_events.strip().splitlines() if l.strip()]
+      parsed = []
+      for line in event_lines:
+          parsed.append({"raw": line})
+
+      output = {
+          "count": len(parsed),
+          "events": parsed,
+          "source": "icloud+gcal"
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open("/tmp/retro_calendar.json", "w") as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      BASH
+      chmod +x /tmp/retro_collect_cal.sh
+      bash /tmp/retro_collect_cal.sh "${days_back}"
+
+  - id: build_retro_data
+    # Assembles all collected data into a single structured JSON document.
+    # NOTE: Pipe /tmp/retro_assembled.json to an LLM to generate a narrative retrospective.
+    # The LLM should extract: Accomplishments, Progress, Blockers, Learnings, Next Week priorities.
+    command: |
+      cat > /tmp/retro_assemble.py << 'PYEOF'
+      import json, os, re, sys
+      from datetime import datetime
+      from collections import Counter
+
+      # Load collected data
+      with open("/tmp/retro_logs.json") as f:
+          logs_data = json.load(f)
+
+      commits_data = {"count": 0, "commits": []}
+      if os.path.exists("/tmp/retro_commits.json"):
+          with open("/tmp/retro_commits.json") as f:
+              commits_data = json.load(f)
+
+      calendar_data = {"count": 0, "events": []}
+      if os.path.exists("/tmp/retro_calendar.json"):
+          with open("/tmp/retro_calendar.json") as f:
+              calendar_data = json.load(f)
+
+      # Extract key themes/topics from logs
+      all_content = "\n".join(log["content"] for log in logs_data.get("logs", []))
+
+      # Extract headers (## lines) as activity topics
+      headers = re.findall(r'^##\s+(.+)$', all_content, re.MULTILINE)
+
+      # Extract items that look like accomplishments (lines with checkmarks, "done", "shipped", "fixed", "added")
+      accomplishment_patterns = re.findall(
+          r'^[-*]\s+.*(?:✅|done|shipped|fixed|added|completed|deployed|created|built|launched|resolved).*$',
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Extract items that look like blockers/issues
+      blocker_patterns = re.findall(
+          r'^[-*]\s+.*(?:❌|blocked|stuck|failed|broken|issue|bug|problem|can\'t|missing|error).*$',
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Extract items that look like learnings
+      learning_patterns = re.findall(
+          r'^[-*]\s+.*(?:💡|learned|discovered|realized|key lesson|insight|TIL|note to self).*$',
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Categorize commit messages
+      commit_categories = Counter()
+      for c in commits_data.get("commits", []):
+          msg = c.get("message", "")
+          if msg.startswith("feat"): commit_categories["features"] += 1
+          elif msg.startswith("fix"): commit_categories["fixes"] += 1
+          elif msg.startswith("chore") or msg.startswith("update"): commit_categories["maintenance"] += 1
+          elif msg.startswith("docs"): commit_categories["docs"] += 1
+          else: commit_categories["other"] += 1
+
+      output_format = sys.argv[1] if len(sys.argv) > 1 else "summary"
+
+      assembled = {
+          "meta": {
+              "generated_at": datetime.now().isoformat(),
+              "date_range": logs_data.get("date_range", {}),
+              "format": output_format
+          },
+          "stats": {
+              "daily_logs": logs_data["count"],
+              "total_log_lines": sum(l["lines"] for l in logs_data.get("logs", [])),
+              "git_commits": commits_data["count"],
+              "commit_categories": dict(commit_categories),
+              "calendar_events": calendar_data["count"]
+          },
+          "activity_topics": headers[:30],
+          "extracted": {
+              "accomplishments": accomplishment_patterns[:20],
+              "blockers": blocker_patterns[:10],
+              "learnings": learning_patterns[:10]
+          },
+          "commits_summary": [
+              {"hash": c["hash"], "message": c["message"], "date": c.get("date", "")}
+              for c in commits_data.get("commits", [])[:20]
+          ],
+          "calendar_summary": calendar_data.get("events", [])[:20],
+          "raw_log_dates": [l["date"] for l in logs_data.get("logs", [])]
+      }
+
+      json.dump(assembled, sys.stdout, indent=2)
+      with open("/tmp/retro_assembled.json", "w") as f:
+          json.dump(assembled, f, indent=2)
+      PYEOF
+      python3 /tmp/retro_assemble.py "${format}"
+
+  - id: format_retro
+    # Formats the assembled data into a readable retrospective.
+    # In production, replace this with LLM-generated narrative from /tmp/retro_assembled.json.
+    # The structured data in retro_assembled.json contains all context needed for LLM summarization.
+    command: |
+      cat > /tmp/retro_format.py << 'PYEOF'
+      import json, sys
+      from datetime import datetime
+
+      with open("/tmp/retro_assembled.json") as f:
+          data = json.load(f)
+
+      meta = data["meta"]
+      stats = data["stats"]
+      extracted = data["extracted"]
+      topics = data["activity_topics"]
+      commits = data["commits_summary"]
+
+      date_from = meta["date_range"].get("from", "?")
+      date_to = meta["date_range"].get("to", "?")
+
+      lines = []
+      lines.append(f"📆 **Weekly Retrospective**")
+      lines.append(f"_Week of {date_from} → {date_to}_")
+      lines.append("")
+
+      # Stats overview
+      lines.append(f"📊 **Activity Summary**")
+      lines.append(f"  • {stats['daily_logs']} daily logs ({stats['total_log_lines']} total lines)")
+      lines.append(f"  • {stats['git_commits']} git commits")
+      if stats.get("commit_categories"):
+          cats = stats["commit_categories"]
+          cat_str = ", ".join(f"{v} {k}" for k, v in sorted(cats.items(), key=lambda x: -x[1]))
+          lines.append(f"    ({cat_str})")
+      lines.append(f"  • {stats['calendar_events']} calendar events")
+      lines.append("")
+
+      # Key topics
+      if topics:
+          lines.append(f"🔄 **Key Topics This Week**")
+          for t in topics[:10]:
+              lines.append(f"  • {t}")
+          lines.append("")
+
+      # Accomplishments
+      if extracted["accomplishments"]:
+          lines.append(f"✅ **Accomplishments**")
+          for a in extracted["accomplishments"][:10]:
+              item = a.strip().lstrip("-* ").strip()
+              lines.append(f"  • {item}")
+          lines.append("")
+
+      # Blockers
+      if extracted["blockers"]:
+          lines.append(f"🚧 **Blockers & Issues**")
+          for b in extracted["blockers"][:5]:
+              item = b.strip().lstrip("-* ").strip()
+              lines.append(f"  • {item}")
+          lines.append("")
+
+      # Learnings
+      if extracted["learnings"]:
+          lines.append(f"💡 **Learnings**")
+          for l in extracted["learnings"][:5]:
+              item = l.strip().lstrip("-* ").strip()
+              lines.append(f"  • {item}")
+          lines.append("")
+
+      # Recent commits
+      if commits:
+          lines.append(f"🔨 **Notable Commits**")
+          for c in commits[:8]:
+              lines.append(f"  • `{c['hash']}` {c['message']}")
+          lines.append("")
+
+      lines.append("---")
+      lines.append(f"_Generated from {stats['daily_logs']} daily logs, {stats['git_commits']} commits, {stats['calendar_events']} calendar events_")
+      lines.append(f"_💬 For richer analysis, pipe /tmp/retro_assembled.json to an LLM_")
+
+      report = "\n".join(lines)
+      print(report)
+
+      with open("/tmp/retro_formatted.md", "w") as f:
+          f.write(report)
+      PYEOF
+      python3 /tmp/retro_format.py
+
+  - id: save_retro
+    command: |
+      OUTPUT_DIR="${output_dir}"
+      mkdir -p "$OUTPUT_DIR"
+      TODAY=$(date +%Y-%m-%d)
+      OUTFILE="${OUTPUT_DIR}/week-${TODAY}.md"
+
+      # Add markdown header
+      cat > "$OUTFILE" << EOF
+      # Weekly Retro — ${TODAY}
+
+      $(cat /tmp/retro_formatted.md)
+      EOF
+
+      # Clean up leading whitespace from heredoc
+      sed -i 's/^      //' "$OUTFILE"
+
+      echo "Saved to: ${OUTFILE}"
+      cat "$OUTFILE"
