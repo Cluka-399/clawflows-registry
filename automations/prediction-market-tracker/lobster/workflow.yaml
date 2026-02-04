@@ -5,7 +5,7 @@
 #   lobster run --file workflow.yaml
 #   lobster run --file workflow.yaml --args-json '{"keywords":"iran,strike","alert_threshold":"3"}'
 #
-# Requires: jq, curl
+# Requires: curl, node
 #
 # APIs used:
 #   - gamma-api.polymarket.com (Polymarket markets, no auth needed)
@@ -26,22 +26,30 @@ args:
   state_file:
     description: "Path to state file for tracking last known probabilities"
     default: "/tmp/clawflows-prediction-market-state.json"
+  chart_output:
+    description: "Path for generated chart image"
+    default: "/tmp/prediction-market-chart.png"
+  chart_title:
+    description: "Title for the chart"
+    default: "Prediction Markets — Polymarket"
   osint_query:
     description: "Optional X/Twitter search query for cross-referencing (empty = skip)"
     default: ""
   osint_script:
     description: "Path to X search script"
     default: "/data/skills/search-x/scripts/search.js"
+  chart_script:
+    description: "Path to chart-image script"
+    default: "/data/clawd/skills/chart-image/scripts/chart.mjs"
 
 steps:
   - id: fetch-markets
     command: |
-      export PATH="/home/node/bin:$PATH"
       tmpf=$(mktemp)
       curl -sf --max-time 20 \
         "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=200&order=volume24hr&ascending=false" \
         -o "$tmpf" 2>/dev/null
-      if [ -s "$tmpf" ] && jq -e 'type == "array"' "$tmpf" >/dev/null 2>&1; then
+      if [ -s "$tmpf" ]; then
         cat "$tmpf"
       else
         echo '[]'
@@ -51,39 +59,34 @@ steps:
   - id: filter-markets
     stdin: $fetch-markets.stdout
     command: |
-      export PATH="/home/node/bin:$PATH"
       cat > /tmp/lb_pm_raw.json
-      keywords="${keywords}"
-      exclude="${exclude_keywords}"
+      KW="${keywords}"
+      EX="${exclude_keywords}"
+      
+      node -e "
+        const fs = require('fs');
+        const data = JSON.parse(fs.readFileSync('/tmp/lb_pm_raw.json', 'utf8'));
+        const include = '$KW'.toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+        const exclude = '$EX' ? '$EX'.toLowerCase().split(',').map(s => s.trim()).filter(Boolean) : [];
 
-      jq -c --arg kw "$keywords" --arg ex "$exclude" '
-        ($kw | ascii_downcase | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $include |
-        ($ex | if . == "" then [] else ascii_downcase | split(",") | map(gsub("^\\s+|\\s+$"; "")) end) as $exclude |
+        const results = data.filter(m => {
+          const q = (m.question || '').toLowerCase();
+          const matchesInclude = include.some(kw => new RegExp('\\\\b' + kw + '\\\\b').test(q));
+          const matchesExclude = exclude.length > 0 && exclude.some(kw => new RegExp('\\\\b' + kw + '\\\\b').test(q));
+          return matchesInclude && !matchesExclude;
+        }).map(m => {
+          const prices = JSON.parse(m.outcomePrices || '[]');
+          const yesPct = Math.round(parseFloat(prices[0] || 0) * 10000) / 100;
+          return {
+            question: m.question,
+            yes_pct: yesPct,
+            volume: m.volumeNum || 0,
+            slug: m.slug
+          };
+        }).sort((a, b) => b.yes_pct - a.yes_pct);
 
-        [.[] |
-          (.question // "") as $q |
-          ($q | ascii_downcase) as $ql |
-          ((.outcomePrices // "[\"0\",\"0\"]") | if type == "string" then fromjson else . end) as $prices |
-          (($prices[0] // "0") | tonumber * 100) as $yes_pct |
-          (.volumeNum // 0) as $vol |
-          (.slug // "") as $slug |
-
-          # Check keyword match (any keyword must appear as word boundary)
-          ([$include[] | . as $kword | if ($ql | test("\\b" + $kword + "\\b")) then 1 else empty end] | length > 0) as $matches |
-          (if ($exclude | length) > 0 then
-            [$exclude[] | . as $exword | if ($ql | test("\\b" + $exword + "\\b")) then 1 else empty end] | length > 0
-          else false end) as $excluded |
-
-          select($matches and ($excluded | not)) |
-          {
-            question: $q,
-            yes_pct: ($yes_pct * 100 | round / 100),
-            volume: $vol,
-            slug: $slug
-          }
-        ] |
-        sort_by(.yes_pct) | reverse
-      ' /tmp/lb_pm_raw.json
+        console.log(JSON.stringify(results));
+      "
       rm -f /tmp/lb_pm_raw.json
 
   - id: load-state
@@ -92,104 +95,201 @@ steps:
 
   - id: analyze
     command: |
-      export PATH="/home/node/bin:$PATH"
-      markets_file=$(mktemp)
-      state_tmp=$(mktemp)
-      printf '%s' '$filter-markets.stdout' > "$markets_file"
-      printf '%s' '$load-state.stdout' > "$state_tmp"
+      cat > /tmp/lb_markets.json << 'MARKETS_EOF'
+      $filter-markets.stdout
+      MARKETS_EOF
+      
+      cat > /tmp/lb_state.json << 'STATE_EOF'
+      $load-state.stdout
+      STATE_EOF
+      
+      THRESH="${alert_threshold}"
 
-      jq -n \
-        --slurpfile markets "$markets_file" \
-        --slurpfile state "$state_tmp" \
-        --arg threshold "${alert_threshold}" \
-      '
-        ($threshold | tonumber) as $thresh |
-        ($state[0] // {}) as $prev |
-        ($markets[0] // []) as $mkts |
-        [
-          $mkts[] |
-          . as $m |
-          ($prev[$m.slug].yes_pct // null) as $last_pct |
-          (if $last_pct then ($m.yes_pct - $last_pct) else null end) as $delta |
-          {
-            question: $m.question,
-            yes_pct: $m.yes_pct,
-            volume: $m.volume,
-            slug: $m.slug,
-            last_pct: ($last_pct // 0),
-            delta: ($delta // 0),
-            significant: (if $delta then
-              ($delta > $thresh or $delta < (0 - $thresh))
-            else false end),
-            first_run: ($last_pct == null)
-          }
-        ] as $analyzed |
-        {
-          markets: $analyzed,
-          any_significant: ($analyzed | any(.significant)),
-          significant_count: ([$analyzed[] | select(.significant)] | length),
-          total_count: ($analyzed | length),
-          threshold: $thresh
-        }
-      '
-      rm -f "$markets_file" "$state_tmp"
+      node -e "
+        const fs = require('fs');
+        const markets = JSON.parse(fs.readFileSync('/tmp/lb_markets.json', 'utf8').trim());
+        const state = JSON.parse(fs.readFileSync('/tmp/lb_state.json', 'utf8').trim());
+        const thresh = parseFloat('$THRESH' || '3');
+
+        const analyzed = markets.map(m => {
+          const lastPct = state[m.slug]?.yes_pct;
+          const delta = lastPct != null ? m.yes_pct - lastPct : null;
+          return {
+            ...m,
+            last_pct: lastPct || 0,
+            delta: delta || 0,
+            significant: delta != null && Math.abs(delta) >= thresh,
+            first_run: lastPct == null
+          };
+        });
+
+        const result = {
+          markets: analyzed,
+          any_significant: analyzed.some(m => m.significant),
+          significant_count: analyzed.filter(m => m.significant).length,
+          total_count: analyzed.length,
+          threshold: thresh
+        };
+        console.log(JSON.stringify(result));
+      "
+      rm -f /tmp/lb_markets.json /tmp/lb_state.json
 
   - id: save-state
     command: |
-      export PATH="/home/node/bin:$PATH"
-      analysis_file=$(mktemp)
-      printf '%s' '$analyze.stdout' > "$analysis_file"
-      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-      jq --arg t "$now" '
-        [.markets[] | {key: .slug, value: {yes_pct: .yes_pct, updated: $t}}] | from_entries
-      ' "$analysis_file" > "${state_file}"
-      cat "$analysis_file"
-      rm -f "$analysis_file"
+      cat > /tmp/lb_analysis.json << 'ANALYSIS_EOF'
+      $analyze.stdout
+      ANALYSIS_EOF
+      
+      STATE_FILE="${state_file}"
+
+      node -e "
+        const fs = require('fs');
+        const analysis = JSON.parse(fs.readFileSync('/tmp/lb_analysis.json', 'utf8').trim());
+        const now = new Date().toISOString();
+        const state = {};
+        (analysis.markets || []).forEach(m => {
+          state[m.slug] = { yes_pct: m.yes_pct, updated: now };
+        });
+        fs.writeFileSync('$STATE_FILE', JSON.stringify(state, null, 2));
+        console.log(JSON.stringify(analysis));
+      "
+      rm -f /tmp/lb_analysis.json
+
+  - id: generate-chart
+    command: |
+      cat > /tmp/lb_chart_analysis.json << 'ANALYSIS_EOF'
+      $save-state.stdout
+      ANALYSIS_EOF
+      
+      CHART_SCRIPT="${chart_script}"
+      CHART_OUTPUT="${chart_output}"
+      CHART_TITLE="${chart_title}"
+
+      if [ ! -f "$CHART_SCRIPT" ]; then
+        echo "CHART_SKIP: chart script not found"
+        exit 0
+      fi
+
+      node -e "
+        const fs = require('fs');
+        const analysis = JSON.parse(fs.readFileSync('/tmp/lb_chart_analysis.json', 'utf8').trim());
+        const markets = analysis.markets || [];
+        
+        const chartData = markets.slice(0, 10).map(m => {
+          let label = m.question.replace(/\\?$/, '');
+          if (label.length > 25) {
+            const dateMatch = label.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2}/i);
+            const actionMatch = label.match(/^(US strikes|Israel strikes|US x Iran|Khamenei)/i);
+            if (dateMatch && actionMatch) {
+              label = actionMatch[1].replace('strikes', 'strike') + '\\n' + dateMatch[0];
+            } else if (label.length > 30) {
+              label = label.slice(0, 27) + '...';
+            }
+          }
+          return { x: label, y: m.yes_pct };
+        });
+        console.log(JSON.stringify(chartData));
+      " > /tmp/pm_chart_data.json
+      
+      rm -f /tmp/lb_chart_analysis.json
+      
+      if [ "$(cat /tmp/pm_chart_data.json)" = "[]" ]; then
+        echo "CHART_SKIP: no data"
+        rm -f /tmp/pm_chart_data.json
+        exit 0
+      fi
+
+      hour=$(date -u +%H)
+      israel_hour=$((hour + 2))
+      [ $israel_hour -ge 24 ] && israel_hour=$((israel_hour - 24))
+      dark_flag=""
+      if [ $israel_hour -ge 20 ] || [ $israel_hour -lt 7 ]; then
+        dark_flag="--dark"
+      fi
+
+      node "$CHART_SCRIPT" \
+        --type bar \
+        --data "$(cat /tmp/pm_chart_data.json)" \
+        --title "$CHART_TITLE" \
+        --y-title "% Probability" \
+        --y-domain "0,100" \
+        --show-values \
+        $dark_flag \
+        --width 850 --height 420 \
+        --output "$CHART_OUTPUT" 2>&1
+
+      rm -f /tmp/pm_chart_data.json
+      echo "CHART_FILE:$CHART_OUTPUT"
 
   - id: osint-check
     command: |
-      export PATH="/home/node/bin:$PATH"
       query="${osint_query}"
       script="${osint_script}"
       if [ -n "$query" ] && [ -f "$script" ]; then
-        node "$script" --days 1 --compact "$query" 2>/dev/null | head -c 1000
+        node "$script" --days 1 --compact "$query" 2>/dev/null | head -c 1500
       else
         echo ""
       fi
 
   - id: report
-    stdin: $save-state.stdout
     command: |
-      export PATH="/home/node/bin:$PATH"
-      cat > /tmp/lb_pm_report.json
-      osint_output='$osint-check.stdout'
+      cat > /tmp/lb_final_analysis.json << 'ANALYSIS_EOF'
+      $save-state.stdout
+      ANALYSIS_EOF
+      
+      cat > /tmp/lb_osint.txt << 'OSINT_EOF'
+      $osint-check.stdout
+      OSINT_EOF
+      
+      cat > /tmp/lb_chart.txt << 'CHART_EOF'
+      $generate-chart.stdout
+      CHART_EOF
 
-      jq -r --arg osint "$osint_output" '
-        (if .any_significant then
-          "🚨 PREDICTION MARKET ALERT — Significant Move!\n"
-        else
-          "📊 Prediction Market Update\n"
-        end) +
+      node -e "
+        const fs = require('fs');
+        const analysis = JSON.parse(fs.readFileSync('/tmp/lb_final_analysis.json', 'utf8').trim());
+        const osint = fs.readFileSync('/tmp/lb_osint.txt', 'utf8').trim();
+        const chartResult = fs.readFileSync('/tmp/lb_chart.txt', 'utf8').trim();
 
-        "⚙️  Threshold: ±" + (.threshold | tostring) + "% | Markets tracked: " + (.total_count | tostring) + "\n" +
+        let out = [];
 
-        (if .any_significant then
-          "\n**📈 Significant Moves:**\n" +
-          ([.markets[] | select(.significant) |
-            (if .delta > 0 then "📈" else "📉" end) + " **" +
-            (.last_pct | tostring) + "% → " + (.yes_pct | tostring) + "%** (" +
-            (if .delta > 0 then "+" else "" end) + ((.delta * 100 | round / 100) | tostring) + "%)\n" +
-            "   " + .question
-          ] | join("\n\n"))
-        else "" end) +
+        if (analysis.any_significant) {
+          out.push('🚨 **PREDICTION MARKET ALERT — Significant Move!**');
+        } else {
+          out.push('📊 **Prediction Market Update**');
+        }
+        out.push('⚙️  Threshold: ±' + analysis.threshold + '% | Markets tracked: ' + analysis.total_count);
 
-        "\n\n**📋 All Tracked Markets:**\n" +
-        ([.markets[:10][] |
-          "• **" + (.yes_pct | tostring) + "%** — " + (.question | if length > 70 then .[:67] + "..." else . end)
-        ] | join("\n")) +
+        const chartMatch = chartResult.match(/CHART_FILE:(.+)/);
+        if (chartMatch) {
+          out.push('');
+          out.push('CHART_FILE:' + chartMatch[1]);
+        }
 
-        (if ($osint | length > 30) then
-          "\n\n**🔍 OSINT (X):**\n" + $osint
-        else "" end)
-      ' /tmp/lb_pm_report.json
-      rm -f /tmp/lb_pm_report.json
+        if (analysis.any_significant) {
+          out.push('');
+          out.push('**📈 Significant Moves:**');
+          analysis.markets.filter(m => m.significant).forEach(m => {
+            const arrow = m.delta > 0 ? '📈' : '📉';
+            const sign = m.delta > 0 ? '+' : '';
+            out.push(arrow + ' **' + m.last_pct + '% → ' + m.yes_pct + '%** (' + sign + m.delta.toFixed(1) + '%)');
+            out.push('   ' + m.question);
+          });
+        }
+
+        out.push('');
+        out.push('**📋 All Tracked Markets:**');
+        analysis.markets.slice(0, 10).forEach(m => {
+          const q = m.question.length > 65 ? m.question.slice(0, 62) + '...' : m.question;
+          out.push('• **' + m.yes_pct + '%** — ' + q);
+        });
+
+        if (osint && osint.length > 30) {
+          out.push('');
+          out.push('**🔍 OSINT (X):**');
+          out.push(osint.slice(0, 1200));
+        }
+
+        console.log(out.join('\\n'));
+      "
+      rm -f /tmp/lb_final_analysis.json /tmp/lb_osint.txt /tmp/lb_chart.txt
