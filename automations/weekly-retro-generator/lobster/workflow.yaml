@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for retrospective narrative generation
+
 name: "Weekly Retro Generator"
 description: "Generate a weekly retrospective from agent activity logs, git commits, and calendar events"
 
@@ -176,8 +178,6 @@ steps:
 
   - id: build_retro_data
     # Assembles all collected data into a single structured JSON document.
-    # NOTE: Pipe /tmp/retro_assembled.json to an LLM to generate a narrative retrospective.
-    # The LLM should extract: Accomplishments, Progress, Blockers, Learnings, Next Week priorities.
     command: |
       cat > /tmp/retro_assemble.py << 'PYEOF'
       import json, os, re, sys
@@ -268,91 +268,23 @@ steps:
       python3 /tmp/retro_assemble.py "${format}"
 
   - id: format_retro
-    # Formats the assembled data into a readable retrospective.
-    # In production, replace this with LLM-generated narrative from /tmp/retro_assembled.json.
-    # The structured data in retro_assembled.json contains all context needed for LLM summarization.
-    command: |
-      cat > /tmp/retro_format.py << 'PYEOF'
-      import json, sys
-      from datetime import datetime
+    stdin: $build_retro_data.stdout
+    prompt: |
+      Generate a ${format} weekly retrospective from the assembled data below.
 
-      with open("/tmp/retro_assembled.json") as f:
-          data = json.load(f)
+      Structure the retro as:
+      1. **TL;DR** — One-sentence summary of the week
+      2. **Accomplishments** — What got done (extract from logs and commits)
+      3. **Progress** — What moved forward but isn't finished
+      4. **Blockers** — What's stuck and what would unblock it
+      5. **Learnings** — Key insights or lessons from this week
+      6. **Next Week** — Top 3 priorities based on pending work and patterns
 
-      meta = data["meta"]
-      stats = data["stats"]
-      extracted = data["extracted"]
-      topics = data["activity_topics"]
-      commits = data["commits_summary"]
+      Use emoji indicators. Reference specific commits and log entries.
+      Be honest about what went well and what didn't.
+    system: >
+      You are a thoughtful engineering retrospective facilitator. Write honest, actionable retros.
 
-      date_from = meta["date_range"].get("from", "?")
-      date_to = meta["date_range"].get("to", "?")
-
-      lines = []
-      lines.append(f"📆 **Weekly Retrospective**")
-      lines.append(f"_Week of {date_from} → {date_to}_")
-      lines.append("")
-
-      # Stats overview
-      lines.append(f"📊 **Activity Summary**")
-      lines.append(f"  • {stats['daily_logs']} daily logs ({stats['total_log_lines']} total lines)")
-      lines.append(f"  • {stats['git_commits']} git commits")
-      if stats.get("commit_categories"):
-          cats = stats["commit_categories"]
-          cat_str = ", ".join(f"{v} {k}" for k, v in sorted(cats.items(), key=lambda x: -x[1]))
-          lines.append(f"    ({cat_str})")
-      lines.append(f"  • {stats['calendar_events']} calendar events")
-      lines.append("")
-
-      # Key topics
-      if topics:
-          lines.append(f"🔄 **Key Topics This Week**")
-          for t in topics[:10]:
-              lines.append(f"  • {t}")
-          lines.append("")
-
-      # Accomplishments
-      if extracted["accomplishments"]:
-          lines.append(f"✅ **Accomplishments**")
-          for a in extracted["accomplishments"][:10]:
-              item = a.strip().lstrip("-* ").strip()
-              lines.append(f"  • {item}")
-          lines.append("")
-
-      # Blockers
-      if extracted["blockers"]:
-          lines.append(f"🚧 **Blockers & Issues**")
-          for b in extracted["blockers"][:5]:
-              item = b.strip().lstrip("-* ").strip()
-              lines.append(f"  • {item}")
-          lines.append("")
-
-      # Learnings
-      if extracted["learnings"]:
-          lines.append(f"💡 **Learnings**")
-          for l in extracted["learnings"][:5]:
-              item = l.strip().lstrip("-* ").strip()
-              lines.append(f"  • {item}")
-          lines.append("")
-
-      # Recent commits
-      if commits:
-          lines.append(f"🔨 **Notable Commits**")
-          for c in commits[:8]:
-              lines.append(f"  • `{c['hash']}` {c['message']}")
-          lines.append("")
-
-      lines.append("---")
-      lines.append(f"_Generated from {stats['daily_logs']} daily logs, {stats['git_commits']} commits, {stats['calendar_events']} calendar events_")
-      lines.append(f"_💬 For richer analysis, pipe /tmp/retro_assembled.json to an LLM_")
-
-      report = "\n".join(lines)
-      print(report)
-
-      with open("/tmp/retro_formatted.md", "w") as f:
-          f.write(report)
-      PYEOF
-      python3 /tmp/retro_format.py
 
   - id: save_retro
     command: |

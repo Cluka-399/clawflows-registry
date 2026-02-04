@@ -1,4 +1,5 @@
 # Lobster workflow: audience-growth-report
+# LLM: Uses prompt step for growth narrative
 # Weekly report on audience growth — fetches follower/subscriber counts,
 # compares against saved state, calculates growth, and produces a report.
 #
@@ -146,61 +147,19 @@ steps:
       echo "State saved to $state_file"
 
   # 7. Generate formatted report
-  # NOTE: For richer narrative reports, pipe $compute-growth.json to an LLM
   - id: report
-    command: |
-      growth='$compute-growth.json'
-      metrics='$extract-metrics.json'
+    stdin: $compute-growth.stdout
+    prompt: |
+      Generate a weekly audience growth report for ${username}.
 
-      echo "$growth" > /tmp/lb_agr_growth.json
-      echo "$metrics" > /tmp/lb_agr_metrics.json
+      Using the growth data below, create a narrative report that includes:
+      1. Current follower count and change since last period
+      2. Growth trend analysis (accelerating, decelerating, stable)
+      3. Comparison to recent history
+      4. Actionable recommendations to improve growth
+      5. Key milestones approaching
 
-      week=$(jq -r '.week' /tmp/lb_agr_metrics.json)
-      ts=$(jq -r '.timestamp' /tmp/lb_agr_metrics.json)
-      curr=$(jq -r '.current' /tmp/lb_agr_growth.json)
-      prev=$(jq -r '.previous' /tmp/lb_agr_growth.json)
-      abs=$(jq -r '.absolute_change' /tmp/lb_agr_growth.json)
-      pct=$(jq -r '.percent_change' /tmp/lb_agr_growth.json)
-      trend=$(jq -r '.trend' /tmp/lb_agr_growth.json)
-      snaps=$(jq -r '.total_snapshots' /tmp/lb_agr_growth.json)
-      extras=$(jq -r '.extras | to_entries | map("  \(.key): \(.value)") | join(", ")' /tmp/lb_agr_metrics.json)
+      Keep it concise and scannable with emoji indicators.
+    system: >
+      You are a social media growth analyst. Write engaging, data-backed growth reports.
 
-      if [ "$abs" -gt 0 ] 2>/dev/null; then
-        abs_fmt="+${abs}"; pct_fmt="+${pct}%"
-      elif [ "$abs" -lt 0 ] 2>/dev/null; then
-        abs_fmt="${abs}"; pct_fmt="${pct}%"
-      else
-        abs_fmt="0"; pct_fmt="0%"
-      fi
-
-      jq -n \
-        --arg user "${username}" \
-        --arg week "$week" \
-        --arg ts "$ts" \
-        --arg trend "$trend" \
-        --arg abs_fmt "$abs_fmt" \
-        --arg pct_fmt "$pct_fmt" \
-        --argjson curr "$curr" \
-        --argjson prev "$prev" \
-        --argjson abs "$abs" \
-        --arg pct "$pct" \
-        --argjson snaps "$snaps" \
-        --arg extras "$extras" \
-        '{
-          report_type: "audience_growth",
-          username: $user,
-          week: $week,
-          generated_at: $ts,
-          summary: "\($trend) \($abs_fmt) followers (\($pct_fmt)) this period",
-          metrics: {
-            current_followers: $curr,
-            previous_followers: $prev,
-            change: $abs,
-            change_percent: $pct,
-            trend: $trend,
-            data_points_in_history: $snaps
-          },
-          formatted_report: "Audience Growth Report - \($user)\n━━━━━━━━━━━━━━━━━━━━━━━━━\nPeriod: \($week)\n\nFollowers: \($curr) (\($abs_fmt) | \($pct_fmt))\n\($trend)\n\nAdditional: \($extras)\n\nHistory: \($snaps) previous snapshots"
-        }'
-
-      rm -f /tmp/lb_agr_*.json /tmp/lb_audience_raw.json

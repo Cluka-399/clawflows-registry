@@ -5,9 +5,7 @@
 #   lobster run --file workflow.yaml --args-json '{"source_post_path":"/path/to/post.md","canonical_url":"https://myblog.com/post"}'
 #
 # Requires: jq
-# NOTE: Platform-specific rewriting is best done by an LLM. This workflow
-# reads the source, extracts metadata, and produces structured output
-# ready for LLM transformation or manual editing per platform.
+# LLM: Uses prompt step for platform-specific content adaptation
 
 name: content-syndication
 description: Write one blog post, get it published across multiple platforms - each version platform-optimized
@@ -79,8 +77,6 @@ steps:
     stdin: $analyze-content.stdout
     command: |
       # Generate platform-specific transformation specs
-      # NOTE: Each spec is a structured prompt. For actual rewriting,
-      # pipe each spec + content to an LLM (e.g., via clawd.invoke).
       cat > /tmp/lb_cs_analyzed.json
 
       jq '. as $root | {
@@ -149,20 +145,20 @@ steps:
       }' /tmp/lb_cs_analyzed.json
       rm -f /tmp/lb_cs_analyzed.json
 
-  - id: report
+  - id: syndicate
     stdin: $generate-platform-specs.stdout
-    command: |
-      jq -r '
-        "📢 **Content Syndication Plan**\n\n" +
-        "**Source:** \(.source.title) (\(.source.word_count) words, ~\(.source.read_min) min read)\n" +
-        (if .source.canonical_url != "" then "**Canonical:** \(.source.canonical_url)\n" else "" end) +
-        (if .source.is_technical then "**Type:** Technical (has code blocks)\n" else "" end) +
-        "\n**Platforms (\(.platform_specs | length)):**\n" +
-        (.platform_specs | map(
-          "  • **\(.platform)**" +
-          (if .max_length then " (max \(.max_length) chars)" else "" end) +
-          "\n    \(.instructions)"
-        ) | join("\n")) +
-        "\n\n💡 Pipe this output to an LLM to generate platform-specific versions.\n" +
-        "Each platform spec includes instructions for optimal formatting."
-      '
+    prompt: |
+      Generate platform-optimized versions of the blog post for each target platform.
+
+      For each platform spec below:
+      1. Rewrite the content following the platform's instructions and style guide
+      2. Respect max_length constraints
+      3. Add appropriate front matter where specified
+      4. Include the canonical URL for SEO
+      5. Optimize headlines and hooks for each platform's audience
+
+      Output each version as a separate section with the platform name as header,
+      ready for copy-paste submission.
+    system: >
+      You are a content syndication expert. Create platform-native versions that feel organic, not cross-posted.
+

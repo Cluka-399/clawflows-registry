@@ -1,4 +1,5 @@
 # Lobster workflow: social-proof-collector
+# LLM: Uses prompt step for testimonial curation
 # Finds positive mentions of your brand across Reddit, Hacker News, LinkedIn,
 # and the general web. Collects them into a structured testimonial library.
 #
@@ -157,9 +158,6 @@ steps:
       $search_web.stdout
 
   # ---------- Step 6: Score sentiment with keyword matching ----------
-  # NOTE: For production use, pipe each mention through an LLM for accurate
-  # sentiment classification (STRONG_POSITIVE / POSITIVE / NEUTRAL / NEGATIVE).
-  # This step uses keyword-based scoring as a concrete baseline.
   - id: score_sentiment
     stdin: $merge_results.stdout
     command: |
@@ -191,58 +189,23 @@ steps:
       rm -f "$tmpf"
 
   # ---------- Step 7: Generate report & save ----------
-  - id: report
+  - id: curate-testimonials
     stdin: $score_sentiment.stdout
-    command: |
-      tmpf=$(mktemp)
-      cat > "$tmpf"
+    prompt: |
+      Curate a social proof library from the brand mentions below for ${brand_name}.
 
-      # Save full JSON to output file
-      jq '.' "$tmpf" > "${output_file}"
+      Tasks:
+      1. Re-score sentiment with contextual understanding (fix keyword-based errors)
+      2. Select the top 5 testimonials most suitable for:
+         - Landing page social proof
+         - Case study leads
+         - Social media resharing
+      3. For each top testimonial, extract the best quotable snippet
+      4. Identify any negative mentions that need a response
+      5. Suggest outreach to particularly enthusiastic advocates
+      6. Note any platforms where ${brand_name} presence is weak
 
-      # Generate human-readable report
-      jq -r '
-        (map(select(.sentiment == "STRONG_POSITIVE"))) as $strong |
-        (map(select(.sentiment == "POSITIVE"))) as $pos |
-        (map(select(.sentiment == "NEUTRAL"))) as $neutral |
-        (map(select(.sentiment == "NEGATIVE"))) as $neg |
+      Format as a structured testimonial library with clear categories.
+    system: >
+      You are a brand marketing analyst. Curate authentic social proof and identify advocacy opportunities.
 
-        "Social Proof Report for: ${brand_name}\n" +
-        "===========================================\n\n" +
-        "Found \(length) total mentions:\n" +
-        "  STRONG_POSITIVE: \($strong | length)\n" +
-        "  POSITIVE: \($pos | length)\n" +
-        "  NEUTRAL: \($neutral | length)\n" +
-        "  NEGATIVE: \($neg | length)\n\n" +
-
-        if ($strong | length) > 0 then
-          "## Best Testimonials\n\n" +
-          ($strong | to_entries | map(
-            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
-            "     \"\(.value.snippet[:200])\"\n" +
-            "     Link: \(.value.url)\n" +
-            "     Score: +\(.value.positive_hits) positive keywords\n"
-          ) | join("\n")) + "\n"
-        else "" end +
-
-        if ($pos | length) > 0 then
-          "## Positive Mentions\n\n" +
-          ($pos | to_entries | map(
-            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
-            "     \"\(.value.snippet[:150])...\"\n" +
-            "     Link: \(.value.url)\n"
-          ) | join("\n")) + "\n"
-        else "" end +
-
-        if ($neg | length) > 0 then
-          "## Negative Mentions (review these)\n\n" +
-          ($neg | to_entries | map(
-            "  \(.key + 1). [\(.value.platform)] \(.value.title)\n" +
-            "     \"\(.value.snippet[:150])...\"\n" +
-            "     Link: \(.value.url)\n"
-          ) | join("\n")) + "\n"
-        else "" end +
-
-        "\nFull JSON saved to: ${output_file}"
-      ' "$tmpf"
-      rm -f "$tmpf"

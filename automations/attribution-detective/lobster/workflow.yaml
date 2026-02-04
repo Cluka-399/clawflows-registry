@@ -1,3 +1,4 @@
+# LLM: Uses prompt step for attribution analysis
 name: "Full-Funnel Attribution Detective"
 # Traces customer journeys across touchpoints, correlates analytics/CRM/ads data,
 # builds journey maps and produces an attribution report.
@@ -87,7 +88,6 @@ steps:
       echo "Fetched $(jq length ${work_dir}/ads_combined.json) ad records across $PLATFORM_NUM platforms"
 
   - id: correlate_journeys
-    # NOTE: In production, pipe this output to an LLM for deeper correlation analysis
     command: |
       jq -n --slurpfile conv "${work_dir}/conversions.json" \
             --slurpfile analytics "${work_dir}/analytics.json" \
@@ -123,7 +123,6 @@ steps:
       echo "Correlated $(jq '.journeys | length' ${work_dir}/correlated.json) customer journeys"
 
   - id: build_journey_maps
-    # NOTE: In production, pipe this output to an LLM for narrative insights
     command: |
       jq '{
         summary: {
@@ -161,52 +160,22 @@ steps:
       cat "${work_dir}/journey_maps.json"
 
   - id: generate_report
-    # NOTE: In production, pipe journey_maps.json to an LLM for narrative recommendations
-    command: |
-      DATE=$(date +%Y-%m-%d)
-      MAPS="${work_dir}/journey_maps.json"
+    stdin: $build_journey_maps.stdout
+    prompt: |
+      Analyze the customer journey attribution data below and generate an actionable report.
 
-      TOTAL_CONV=$(jq '.summary.total_conversions' "$MAPS")
-      AVG_TOUCH=$(jq '.summary.avg_touchpoints' "$MAPS")
-      TOTAL_REV=$(jq '.summary.total_revenue' "$MAPS")
-      TOP_FIRST=$(jq -r '.first_touch_distribution[0] | "\(.source) (\(.count))"' "$MAPS")
-      TOP_LAST=$(jq -r '.last_touch_distribution[0] | "\(.channel) (\(.count))"' "$MAPS")
-      TOP_CONTENT=$(jq -r '.top_content[0:3][] | "  - \(.page) (\(.views) views)"' "$MAPS")
-      AD_PERF=$(jq -r '.ad_platform_performance[] | "  - \(.platform): \(.interactions) interactions"' "$MAPS")
-      JOURNEYS=$(jq -r '.journey_patterns[] | "  - Customer \(.customer): \(.path) (\(.touchpoint_count) touchpoints)"' "$MAPS")
+      Include:
+      1. Key metrics summary (conversions, revenue, avg touchpoints)
+      2. First-touch vs last-touch attribution comparison
+      3. Most effective content in conversion paths
+      4. Ad platform ROI analysis
+      5. Specific recommendations for budget reallocation
+      6. Journey pattern insights (which paths convert best)
 
-      REPORT_PATH="${report_dir}/attribution-report-${DATE}.md"
-      cat > "$REPORT_PATH" << ENDREPORT
-      # Attribution Report - ${DATE}
-      **Period:** ${time_period} lookback
+      Time period: ${time_period}
+    system: >
+      You are a marketing attribution analyst. Provide data-driven insights and clear budget recommendations.
 
-      ## Key Metrics
-      - **Total conversions:** ${TOTAL_CONV}
-      - **Avg touchpoints per conversion:** ${AVG_TOUCH}
-      - **Total revenue:** \$${TOTAL_REV}
-
-      ## First-Touch Attribution
-      Top entry point: **${TOP_FIRST}**
-
-      ## Last-Touch Attribution
-      Top closing channel: **${TOP_LAST}**
-
-      ## Top Content in Winning Journeys
-      ${TOP_CONTENT}
-
-      ## Ad Platform Performance
-      ${AD_PERF}
-
-      ## Journey Patterns
-      ${JOURNEYS}
-
-      ## Recommendations
-      1. Invest more in top first-touch content pages
-      2. Allocate ad budget toward platforms initiating journeys
-      3. Optimize funnel to reduce avg touchpoints (currently ${AVG_TOUCH})
-      ENDREPORT
-
-      echo "Report saved to $REPORT_PATH"
 
   - id: cleanup
     command: |

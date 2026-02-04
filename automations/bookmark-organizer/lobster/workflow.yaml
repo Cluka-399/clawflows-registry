@@ -6,8 +6,7 @@
 #   lobster run --file workflow.yaml --args-json '{"bookmarks_path":"/data/clawd/bookmarks.md"}'
 #
 # Requires: jq, curl
-# NOTE: Auto-categorization of uncategorized bookmarks benefits from an LLM.
-# This workflow collects data and flags items; pipe output to LLM for categorization.
+# LLM: Uses prompt step for bookmark categorization
 
 name: bookmark-organizer
 description: Periodically organize and summarize your saved bookmarks/links
@@ -110,10 +109,6 @@ steps:
     stdin: $check-links.stdout
     command: |
       # Produce summary stats and categorization data
-      # NOTE: For auto-categorization of "Uncategorized" bookmarks,
-      # pipe this output to an LLM with prompt:
-      #   "Categorize these bookmarks based on titles and URLs.
-      #    Suggest categories: Development, Design, AI/ML, Business, etc."
       cat > /tmp/lb_bo_checked.json
 
       jq '{
@@ -134,26 +129,18 @@ steps:
       }' /tmp/lb_bo_checked.json
       rm -f /tmp/lb_bo_checked.json
 
-  - id: report
+  - id: categorize-and-report
     stdin: $generate-summary.stdout
-    command: |
-      jq -r '
-        "🔖 **Bookmark Organizer Report**\n\n" +
-        "📊 **Summary:** \(.total) bookmarks in \(.categories | length) categories\n\n" +
-        "**Categories:**\n" +
-        (.categories | map("  • \(.category): \(.count) bookmark(s)") | join("\n")) +
-        "\n\n" +
-        (if .checked then
-          "**🔗 Link Health:** \(.health.alive)/\(.health.total_checked) alive" +
-          (if (.dead_links | length) > 0 then
-            "\n\n⚠️ **Dead Links (\(.dead_links | length)):**\n" +
-            (.dead_links | .[:10] | map("  • \(.title) → HTTP \(.status)\n    \(.url)") | join("\n"))
-          else "\n✅ All links healthy!" end)
-        else "🔗 Link checking disabled." end) +
-        "\n\n" +
-        (if .needs_categorization > 0 then
-          "🏷️ **\(.needs_categorization) uncategorized bookmark(s):**\n" +
-          (.uncategorized | .[:10] | map("  • \(.title)") | join("\n")) +
-          "\n💡 Pipe this to an LLM for auto-categorization suggestions."
-        else "✅ All bookmarks categorized." end)
-      '
+    prompt: |
+      Analyze the bookmark collection data below and produce an organized report.
+
+      Tasks:
+      1. For any uncategorized bookmarks, suggest appropriate categories based on their titles and URLs
+         (e.g., Development, Design, AI/ML, Business, DevOps, Learning, etc.)
+      2. Identify duplicate or very similar bookmarks
+      3. Suggest a reorganization plan if categories are imbalanced
+      4. Flag any bookmarks with dead links for removal
+      5. Format as a clean, scannable report with emoji category headers
+    system: >
+      You are a knowledge management assistant. Organize bookmarks into clear, useful categories.
+

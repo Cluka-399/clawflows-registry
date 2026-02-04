@@ -7,12 +7,7 @@
 #
 # Requires: jq
 #
-# NOTE: The original automation uses calendar + LLM analysis.
-# This Lobster version:
-#   1. Collects calendar data via configurable command
-#   2. Computes focus vs meeting time breakdown with shell/jq
-#   3. Outputs structured report
-#   (LLM insights step commented out — consumer agent can analyze the JSON output)
+# LLM: Uses prompt step for focus time insights and recommendations
 
 name: focus-time-report
 description: Track and report on your deep work vs fragmented time
@@ -69,3 +64,19 @@ steps:
       ' /tmp/lb_ft_events.json
 
       rm -f /tmp/lb_ft_events.json
+
+  - id: insights
+    stdin: $analyze-time.stdout
+    prompt: |
+      Analyze the focus time report below and provide actionable insights.
+
+      Include:
+      1. Assessment of focus time vs target (${target_focus_hours}h/week)
+      2. Meeting load analysis — is it sustainable?
+      3. Specific suggestions to protect/increase focus blocks
+      4. Identify patterns (e.g., fragmented mornings, meeting-heavy days)
+      5. One concrete scheduling change to try this week
+
+      Keep it brief and actionable.
+    system: >
+      You are a productivity coach. Help maximize deep work time with practical, specific advice.

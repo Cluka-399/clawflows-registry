@@ -10,7 +10,7 @@
 # Data source: YouTube RSS feeds (no API key needed)
 # State: JSON files in state_dir (default /tmp/yt-competitor-state)
 # Charts: Output includes chart-ready JSON for chart-image skill
-# LLM: generate_report output can be piped to an LLM for analysis
+# LLM: Uses prompt step for competitive analysis
 
 name: youtube-competitor-tracker
 description: Track competitor YouTube channels, store stats in JSON, detect viral videos, generate report data
@@ -135,8 +135,6 @@ steps:
       cat /tmp/yt_viral.json
       rm -f /tmp/yt_viral.json
 
-  # NOTE: Report JSON can be piped to an LLM for natural-language analysis,
-  # and chart data can be fed to chart-image skill for visualization
   - id: generate_report
     command: |
       echo '$fetch_videos.stdout' > /tmp/yt_rpt_videos.json
@@ -168,27 +166,21 @@ steps:
       "
       rm -f /tmp/yt_rpt_videos.json /tmp/yt_rpt_viral.json /tmp/yt_rpt_channels.json
 
-  - id: format_output
-    command: |
-      echo '$generate_report.stdout' > /tmp/yt_final_report.json
-      echo "YouTube Competitor Tracker Report"
-      echo "===================================="
-      echo ""
-      channels=$(jq -r '.summary.channels_tracked' /tmp/yt_final_report.json)
-      total=$(jq -r '.summary.total_videos_fetched' /tmp/yt_final_report.json)
-      viral=$(jq -r '.summary.viral_count' /tmp/yt_final_report.json)
-      echo "Tracked $channels channels, fetched $total recent videos"
-      echo ""
-      echo "Top Video:"
-      jq -r '"   \(.top_video.title) (\(.top_video.channel))\n   Views: \(.top_video.views) — \(.top_video.url)"' /tmp/yt_final_report.json
-      echo ""
-      echo "Channel Breakdown:"
-      jq -r '.channel_stats[] | "   \(.label): \(.value) total views across \(.videos) videos (avg: \(.avg_views))"' /tmp/yt_final_report.json
-      echo ""
-      if [ "$viral" -gt 0 ]; then
-        echo "Viral Videos (above threshold):"
-        jq -r '.viral_videos[] | "   \(.title) — \(.views) views\n     \(.url)"' /tmp/yt_final_report.json
-        echo ""
-      fi
-      echo "Full JSON report available in generate_report step output"
-      rm -f /tmp/yt_final_report.json
+  - id: analyze-competition
+    stdin: $generate_report.stdout
+    prompt: |
+      Analyze the YouTube competitor tracking data and provide strategic insights.
+
+      Include:
+      1. **Channel Performance Summary** — rank channels by recent performance
+      2. **Top Performing Content** — what topics/formats are getting the most views?
+      3. **Viral Content Analysis** — why did viral videos succeed? (title, topic, timing)
+      4. **Content Gaps** — topics competitors aren't covering that we could own
+      5. **Trend Detection** — any shifts in competitor content strategy?
+      6. **Recommendations** — specific video ideas based on what's working in the space
+      7. **Timing Insights** — when are competitors posting? Best upload windows?
+
+      Be specific with data. Reference actual video titles and view counts.
+    system: >
+      You are a YouTube competitive analyst. Provide actionable content strategy insights.
+

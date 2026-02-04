@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for enhanced moderation analysis
+
 name: "Comment Moderator"
 description: "Fetch comments from a configurable API, apply rule-based moderation, and produce a report"
 args:
@@ -138,8 +140,18 @@ steps:
           sort_by(-.count)
         ),
         flagged_comments: [.[] | select(.status == "flagged") | {id, user, body, flags, score}],
-        # NOTE: For LLM-enhanced moderation, pipe flagged_comments to an LLM
-        # for sentiment analysis and context-aware decisions.
-        # Example: cat /tmp/mod_results.json | jq "[.[] | select(.status==\"flagged\")]" | llm-tool moderate
         clean_sample: [.[] | select(.status == "clean") | {id, user, body}][:3]
       }' /tmp/mod_results.json
+
+  - id: llm-analysis
+    stdin: $report.stdout
+    prompt: |
+      Review the moderation report below and provide enhanced analysis:
+
+      1. For each flagged comment, assess the actual intent (is it truly spam/harmful or a false positive?)
+      2. Provide a sentiment score for flagged comments (hostile/neutral/constructive)
+      3. Suggest specific moderation actions: approve, delete, shadowban, or escalate
+      4. Identify patterns that suggest coordinated spam or bot activity
+      5. Recommend any rule adjustments to reduce false positives
+    system: >
+      You are a community moderator with nuanced judgment. Distinguish genuine discussion from spam.

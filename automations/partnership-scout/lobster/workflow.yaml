@@ -1,4 +1,5 @@
 # Lobster workflow: partnership-scout
+# LLM: Uses prompt step for partnership pitch generation
 # Find companies serving your audience (non-competitors), analyze partnership signals,
 # collect data for co-marketing pitch generation.
 #
@@ -188,9 +189,6 @@ steps:
       rm -f /tmp/lb_ps_analyzed.json /tmp/lb_ps_targets.json /tmp/lb_ps_entry.json /tmp/lb_ps_contacts_tmp.json /tmp/lb_ps_contacts_out.json
 
   # Step 4: Generate final structured report
-  # NOTE: The original automation generates LLM-based pitches per company.
-  # This step produces structured JSON ready to pipe to an LLM for pitch generation.
-  # To generate pitches, pipe partnership_targets to an LLM with their recent_content.
   - id: generate-report
     stdin: $find-contacts.json
     command: |
@@ -205,7 +203,6 @@ steps:
             product: $product,
             audience: $audience,
             generated_at: (now | todate),
-            note: "Pipe high-fit companies to an LLM with their recent_content for personalized pitch generation"
           },
           summary: {
             total_discovered: length,
@@ -220,43 +217,24 @@ steps:
       rm -f /tmp/lb_ps_contacts_final.json /tmp/lb_ps_analyzed_all.json
 
   # Step 5: Human-readable summary
-  - id: summary
-    stdin: $generate-report.json
-    command: |
-      cat > /tmp/lb_ps_final.json
+  - id: generate-pitches
+    stdin: $generate-report.stdout
+    prompt: |
+      Analyze the partnership scout data and generate co-marketing pitches.
 
-      total=$(jq '.summary.total_discovered' /tmp/lb_ps_final.json)
-      high=$(jq '.summary.high_fit' /tmp/lb_ps_final.json)
-      medium=$(jq '.summary.medium_fit' /tmp/lb_ps_final.json)
-      product=$(jq -r '.meta.product' /tmp/lb_ps_final.json)
+      Our product: ${your_product}
+      Target audience: ${target_audience}
 
-      echo "🤝 **Partnership Scout Report** for $product"
-      echo ""
-      echo "📊 Discovered **$total** adjacent companies | **$high** high fit | **$medium** medium fit"
-      echo ""
+      For each HIGH and MEDIUM fit company:
+      1. Explain why they're a good partnership fit (shared audience, complementary products)
+      2. Reference their recent content to personalize the pitch
+      3. Suggest 2-3 specific co-marketing ideas (webinar, blog swap, integration, bundle)
+      4. Draft a concise outreach email (3-4 paragraphs)
+      5. Suggest the best contact role to reach out to
 
-      # List high-fit targets
-      if [ "$high" -gt 0 ] 2>/dev/null; then
-        echo "🟢 **High-Fit Partners:**"
-        jq -r '.partnership_targets[] | select(.fit == "HIGH") | "  • **\(.company)** (\(.domain)) — \(.partnership_signal_count) partnership signals"' /tmp/lb_ps_final.json 2>/dev/null
-        echo ""
-      fi
+      Also provide:
+      - Overall partnership strategy summary
+      - Priority ranking of who to approach first
+    system: >
+      You are a partnership development manager. Write compelling, personalized co-marketing pitches.
 
-      # List medium-fit targets
-      if [ "$medium" -gt 0 ] 2>/dev/null; then
-        echo "🟡 **Medium-Fit Partners:**"
-        jq -r '.partnership_targets[] | select(.fit == "MEDIUM") | "  • **\(.company)** (\(.domain)) — \(.partnership_signal_count) partnership signals"' /tmp/lb_ps_final.json 2>/dev/null
-        echo ""
-      fi
-
-      # Show recent content from top targets for pitch context
-      top_count=$(jq '.partnership_targets | length' /tmp/lb_ps_final.json)
-      if [ "$top_count" -gt 0 ] 2>/dev/null; then
-        echo "📝 **Recent Content (for pitch personalization):**"
-        jq -r '.partnership_targets[:3][] | select(.recent_content | length > 0) | "  \(.company): " + (.recent_content[:2] | map(.title) | join(", "))' /tmp/lb_ps_final.json 2>/dev/null
-        echo ""
-      fi
-
-      echo "💡 _Pipe the full JSON output to an LLM to generate personalized co-marketing pitches._"
-
-      rm -f /tmp/lb_ps_final.json

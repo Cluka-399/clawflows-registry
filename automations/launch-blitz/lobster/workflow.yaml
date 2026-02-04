@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for platform-tailored descriptions
+
 name: "100-Platform Launch Blitz"
 description: |
   Submit your SaaS to 100+ launch directories. Initializes a directories database,
@@ -90,8 +92,6 @@ steps:
       }'
 
   # Step 4: Generate platform-specific descriptions for each selected directory
-  # NOTE: In production, pipe each platform's llm_prompt to an LLM API for tailored copy.
-  # This step produces structured data with descriptions truncated to each platform's char limit.
   - id: generate_descriptions
     command: |
       BATCH_FILE="${state_dir}/_current_batch.json"
@@ -123,6 +123,28 @@ steps:
         }]
       ' < "$BATCH_FILE" > "$DESC_FILE"
       cat "$DESC_FILE"
+
+  # Step 4b: Generate platform-tailored descriptions using LLM
+  - id: tailor_descriptions
+    stdin: $generate_descriptions.stdout
+    prompt: |
+      For each directory platform below, rewrite the product description to match
+      the platform's style and character limit.
+
+      Product: ${product_name}
+      Tagline: ${tagline}
+      Category: ${category}
+
+      For each platform:
+      1. Follow the style_guidance exactly
+      2. Stay within max_chars
+      3. Emphasize different product angles per platform audience
+      4. Include a compelling hook in the first sentence
+      5. End with a clear value proposition
+
+      Output as JSON array with {platform_id, platform_name, tailored_description}.
+    system: >
+      You are a SaaS launch copywriter. Write compelling, platform-native product descriptions.
 
   # Step 5: Build submission-ready data packages and save to file
   - id: build_packages

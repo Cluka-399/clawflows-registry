@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for narrative review generation
+
 name: "Weekly Review Generator"
 description: "Generate a metrics-focused weekly review: task completion stats, git activity metrics (lines changed, files touched, commit frequency), and structured summary report"
 
@@ -184,7 +186,6 @@ steps:
 
   - id: build_review_data
     # Assembles tasks + git metrics into a single structured JSON document.
-    # NOTE: Pipe /tmp/review_assembled.json to an LLM for narrative summary generation.
     command: |
       python3 << 'PYEOF'
       import json, sys, os
@@ -233,104 +234,23 @@ steps:
       PYEOF
 
   - id: format_review
-    # Formats assembled data into a metrics-focused weekly review report.
-    # For richer narrative, pipe /tmp/review_assembled.json to an LLM.
-    command: |
-      python3 << 'PYEOF'
-      import json, sys
+    stdin: $build_review_data.stdout
+    prompt: |
+      Generate a metrics-focused weekly review from the assembled data below.
 
-      with open("/tmp/review_assembled.json") as f:
-          data = json.load(f)
+      Include:
+      1. **Productivity Score** with visual indicator and trend
+      2. **Task Analysis** — completion rate, what got done, what's overdue
+      3. **Code Activity** — commits, lines changed, most active repos and files
+      4. **Patterns** — daily commit frequency, productive days vs quiet days
+      5. **Highlights** — most impactful commits or completed tasks
+      6. **Recommendations** — what to focus on next week based on the data
 
-      stats = data["summary_stats"]
-      tasks = data["tasks"]
-      git = data["git"]
-      meta = data["meta"]
+      Use tables for metrics, emoji for visual scanning.
+      Compare to typical weeks if historical data is available.
+    system: >
+      You are a developer productivity analyst. Create insightful, metrics-driven weekly reviews.
 
-      lines = []
-      lines.append("# 📋 Weekly Review")
-      lines.append(f"_Period: last {meta['days_back']} days | Generated: {meta['generated_at'][:10]}_")
-      lines.append("")
-
-      # Scorecard
-      lines.append("## 📊 Scorecard")
-      score = stats["productivity_score"]
-      bar_filled = score // 5
-      bar_empty = 20 - bar_filled
-      bar = "█" * bar_filled + "░" * bar_empty
-      lines.append(f"  Productivity: [{bar}] {score}/100")
-      lines.append("")
-      lines.append(f"  | Metric               | Value |")
-      lines.append(f"  |----------------------|-------|")
-      lines.append(f"  | Tasks completed      | {stats['tasks_completed']} |")
-      lines.append(f"  | Tasks pending        | {stats['tasks_pending']} |")
-      lines.append(f"  | Completion rate      | {stats['task_completion_rate']}% |")
-      lines.append(f"  | Git commits          | {stats['total_commits']} |")
-      lines.append(f"  | Lines added          | +{stats['total_lines_added']} |")
-      lines.append(f"  | Lines deleted        | -{stats['total_lines_deleted']} |")
-      lines.append(f"  | Net lines            | {'+' if stats['net_lines'] >= 0 else ''}{stats['net_lines']} |")
-      lines.append(f"  | Files touched        | {stats['files_touched']} |")
-      lines.append(f"  | Active repos         | {stats['repos_active']} |")
-      lines.append("")
-
-      # Completed tasks
-      if tasks.get("completed"):
-          lines.append(f"## ✅ Completed Tasks ({stats['tasks_completed']})")
-          for t in tasks["completed"][:15]:
-              src = f" ({t['date']})" if t.get("date") else ""
-              lines.append(f"  - {t['task']}{src}")
-          lines.append("")
-
-      # Pending tasks
-      if tasks.get("pending"):
-          lines.append(f"## ⏳ Pending Tasks ({stats['tasks_pending']})")
-          for t in tasks["pending"][:10]:
-              lines.append(f"  - {t['task']}")
-          lines.append("")
-
-      # Git activity per repo
-      for repo in git.get("repos", []):
-          lines.append(f"## 🔨 {repo['repo']} ({repo['commit_count']} commits)")
-          lines.append(f"  +{repo['lines_added']} / -{repo['lines_deleted']} lines | {repo['unique_files_touched']} files")
-          lines.append("")
-
-          # Daily commit frequency
-          if repo.get("daily_commits"):
-              lines.append("  **Daily activity:**")
-              for day, count in sorted(repo["daily_commits"].items()):
-                  bar = "▓" * count
-                  lines.append(f"    {day}: {bar} ({count})")
-              lines.append("")
-
-          # File types
-          if repo.get("file_types"):
-              types_str = ", ".join(f"{ext}: {c}" for ext, c in list(repo["file_types"].items())[:6])
-              lines.append(f"  **File types:** {types_str}")
-              lines.append("")
-
-          # Top files
-          if repo.get("top_changed_files"):
-              lines.append("  **Most changed files:**")
-              for tf in repo["top_changed_files"][:5]:
-                  lines.append(f"    - {tf['file']} ({tf['changes']}x)")
-              lines.append("")
-
-          # Recent commits
-          if repo.get("commits"):
-              lines.append("  **Recent commits:**")
-              for c in repo["commits"][:8]:
-                  lines.append(f"    - `{c['hash']}` {c['message']} (+{c['additions']}/-{c['deletions']}, {c['file_count']} files)")
-              lines.append("")
-
-      lines.append("---")
-      lines.append(f"_Data: {stats['tasks_completed']} tasks, {stats['total_commits']} commits across {stats['repos_active']} repos_")
-      lines.append("_💬 For narrative analysis, pipe /tmp/review_assembled.json to an LLM_")
-
-      report = "\n".join(lines)
-      print(report)
-      with open("/tmp/review_formatted.md", "w") as fout:
-          fout.write(report)
-      PYEOF
 
   - id: save_review
     command: |

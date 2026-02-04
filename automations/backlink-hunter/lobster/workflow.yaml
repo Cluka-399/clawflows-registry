@@ -1,6 +1,6 @@
 # Lobster workflow: backlink-hunter
 # Find broken links on resource pages in your niche. Produces structured
-# JSON of broken links + page info, ready to pipe to an LLM for outreach drafting.
+# LLM: Uses prompt step for outreach email drafting.
 #
 # Usage:
 #   lobster run --file workflow.yaml --args-json '{"niche_keywords":"python tutorial resources","your_content_urls":"https://example.com/python-guide","max_pages":"3","max_links_per_page":"20"}'
@@ -210,39 +210,24 @@ steps:
           page_title: .source_title,
           page_domain: .source_domain
         }],
-        _llm_instructions: "Match broken_url topics to your_content_urls. Find contact info for each page_domain. Draft personalized outreach emails offering your content as replacement for the broken link."
       }' /tmp/lb_bh_broken.json > /tmp/lb_bh_report.json
 
       cat /tmp/lb_bh_report.json
       rm -f /tmp/lb_bh_broken.json /tmp/lb_bh_report.json
 
-  # NOTE: The following steps from the original automation are LLM-dependent:
-  # - match_your_content: Semantic matching of broken URLs to your content
-  # - find_contact: Search for site owner contact info
-  # - draft_outreach: Generate personalized outreach emails
-  # - send_outreach: Send emails (requires email integration)
-  # - schedule_followup: Set follow-up reminders
-  # To implement: pipe compile-report output to an LLM (e.g. clawd.invoke)
 
-  - id: report
+  - id: draft-outreach
     stdin: $compile-report.stdout
-    command: |
-      jq -r '
-        "🔗 Backlink Hunter Report\n" +
-        "========================\n" +
-        "Checked: \(.summary.total_links_checked) links\n" +
-        "Broken:  \(.summary.broken_links_found) links\n" +
-        "Your content: \(.summary.your_content_urls | join(", "))\n\n" +
-        if (.opportunities | length) == 0 then
-          "No broken links found in this scan. Try broader keywords or more pages."
-        else
-          "Opportunities:\n\n" +
-          (.opportunities | map(
-            "• \(.broken_url)\n" +
-            "  Status: \(.http_status) | Found on: \(.page_domain)\n" +
-            "  Page: \(.page_title)\n" +
-            "  Link: \(.found_on_page)"
-          ) | join("\n\n")) +
-          "\n\n💡 Next: pipe compile-report JSON to LLM for outreach email drafts"
-        end
-      '
+    prompt: |
+      Analyze the broken link opportunities below and draft outreach emails.
+
+      For each broken link opportunity:
+      1. Match the broken URL's likely topic to the most relevant content URL from our list
+      2. Draft a personalized outreach email to the site owner offering our content as a replacement
+      3. Keep emails professional, helpful, and concise (3-4 paragraphs)
+      4. Reference the specific broken link and page where it was found
+
+      Include a summary at the top: total opportunities found, best matches, and recommended priority order.
+    system: >
+      You are an SEO outreach specialist. Write helpful, non-spammy broken link outreach emails.
+

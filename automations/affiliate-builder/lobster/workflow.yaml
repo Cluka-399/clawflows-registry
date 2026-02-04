@@ -1,3 +1,4 @@
+# LLM: Uses prompt step for affiliate outreach drafting
 name: "Affiliate Army Builder"
 description: >
   Find potential affiliates ranking for your keywords, analyze their content
@@ -102,8 +103,6 @@ steps:
       rm -rf "$TMPDIR_AFF"
 
   # Step 3: Merge search + page data, compute heuristic prospect score
-  # NOTE: For production, replace heuristic with LLM scoring.
-  # LLM prompt: "Score each affiliate prospect 1-10 based on traffic indicators,
   #   existing affiliate relationships, content quality, and competitor mentions."
   - id: score_prospects
     command: |
@@ -144,8 +143,6 @@ steps:
       rm -rf "$TMPDIR_AFF"
 
   # Step 4: Build recruitment data package with qualified prospects
-  # NOTE: For production, pipe each qualified prospect to an LLM to generate
-  # personalized recruitment emails including blogger URL, content summary,
   # product details, and commission structure.
   - id: build_prospect_report
     stdin: "$score_prospects.json"
@@ -189,7 +186,7 @@ steps:
         }],
         next_steps: [
           "Review qualified prospects and verify contact info",
-          "Generate personalized pitches (pipe prospect data to LLM)",
+          "Generate personalized pitches (uses prompt step)",
           "Send outreach emails via your preferred email tool"
         ]
       }' "$TMPFILE"

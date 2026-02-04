@@ -5,6 +5,7 @@
 #   lobster run --file workflow.yaml --args-json '{"topic":"AI agents","platform":"twitter"}'
 #
 # Requires: jq, curl
+# LLM: Uses prompt step for hashtag ranking and recommendations
 # Note: Uses public web sources; for production use, add platform API keys
 
 name: hashtag-researcher
@@ -69,11 +70,6 @@ steps:
   - id: compile-results
     stdin: $generate-hashtags.stdout
     command: |
-      # NOTE: For richer results, pipe this data to an LLM step that:
-      # - Ranks hashtags by estimated popularity
-      # - Suggests hashtag groupings (high/medium/low competition)
-      # - Adds platform-specific recommendations
-      # For now, compile all discovered hashtags with deduplication
       cat > /tmp/lb_hr_gen.json
       max="${max_results}"
 
@@ -96,19 +92,19 @@ steps:
       }' /tmp/lb_hr_gen.json
       rm -f /tmp/lb_hr_gen.json
 
-  - id: report
+  - id: rank-and-recommend
     stdin: $compile-results.stdout
-    command: |
-      jq -r '
-        "🏷️ **Hashtag Research: \(.topic)** (for \(.platform))\n\n" +
-        "**Primary (\(.groups.primary | length)):**\n" +
-        (.groups.primary | map("  \(.)") | join("\n")) + "\n\n" +
-        "**Related (\(.groups.related | length)):**\n" +
-        (.groups.related | map("  \(.)") | join("\n")) + "\n\n" +
-        "**Long-tail (\(.groups.long_tail | length)):**\n" +
-        (.groups.long_tail | map("  \(.)") | join("\n")) + "\n\n" +
-        "**All hashtags (\(.count)):**\n" +
-        (.hashtags | join(" ")) + "\n\n" +
-        "💡 Copy-paste set:\n```\n" +
-        (.hashtags | .[:15] | join(" ")) + "\n```"
-      '
+    prompt: |
+      Analyze the hashtag research data for "${topic}" on ${platform} and provide:
+
+      1. Rank all discovered hashtags by estimated popularity/competition
+      2. Group into: high competition (broad reach), medium, and niche (low competition, targeted)
+      3. Recommend the ideal mix for a post (e.g., 3 high + 5 medium + 7 niche)
+      4. Suggest 5 additional hashtags not in the data that would work well
+      5. Platform-specific tips for ${platform} hashtag strategy
+      6. Provide a ready-to-copy hashtag set
+
+      Format as a clean, actionable report.
+    system: >
+      You are a social media hashtag strategist. Recommend data-informed hashtag combinations for maximum reach.
+

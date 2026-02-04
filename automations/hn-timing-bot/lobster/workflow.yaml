@@ -6,12 +6,7 @@
 #
 # Requires: curl, jq
 #
-# NOTE: The original automation uses LLM to analyze posting conditions and
-# rate titles. This Lobster version does concrete data collection:
-# - Counts competing posts on topic
-# - Checks time-of-day (US hours)
-# - Measures front page velocity (age of newest posts)
-# For LLM-based title rating, pipe output to clawd.invoke or an LLM step.
+# LLM: Uses prompt step for title rating and posting strategy
 
 name: hn-timing-bot
 description: Monitor HN activity patterns and detect optimal posting conditions
@@ -78,11 +73,25 @@ steps:
       ' /tmp/lb_ht_stories.json
       rm -f /tmp/lb_ht_stories.json /tmp/lb_ht_front.json
 
-  # NOTE: Original has an LLM step for title quality rating.
-  # To add: pipe $analyze-conditions.stdout to clawd.invoke with a prompt.
+
+  - id: rate-and-advise
+    stdin: $analyze-conditions.stdout
+    prompt: |
+      Based on the HN front page analysis below, provide posting advice.
+
+      1. Rate the current posting window (OPTIMAL/GOOD/WAIT) with reasoning
+      2. If a target URL is provided, suggest 3-5 title variations ranked by likely HN appeal
+      3. Analyze the competing posts — is the topic saturated or is there room?
+      4. Suggest the best posting time in the next 12 hours if now isn't ideal
+      5. Any title/framing tips based on what's currently performing well on HN
+
+      Target URL: ${target_url}
+      Topic keywords: ${topic_keywords}
+    system: >
+      You are an HN posting strategist. Maximize front-page chances with timing and title advice.
 
   - id: report
-    stdin: $analyze-conditions.stdout
+    stdin: $rate-and-advise.stdout
     command: |
       jq -r --arg url "${target_url}" '
         if .rating == "OPTIMAL" then

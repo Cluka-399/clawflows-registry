@@ -6,9 +6,7 @@
 #
 # Requires: jq
 #
-# NOTE: The original automation uses LLM analysis to extract tasks from logs.
-# This Lobster version does concrete data collection (grep-based pattern detection)
-# from markdown logs. For deeper semantic analysis, pipe the output to an LLM.
+# LLM: Uses prompt step for pattern analysis and automation suggestions
 
 name: repeat-task-detector
 description: Analyze agent activity logs to find repetitive patterns that could be automated
@@ -78,30 +76,25 @@ steps:
       ' /tmp/lb_rt_logs.json
       rm -f /tmp/lb_rt_logs.json
 
-  - id: report
+  - id: analyze-and-suggest
     stdin: $find-patterns.stdout
-    command: |
-      cat > /tmp/lb_rt_patterns.json
-      # NOTE: For deeper semantic analysis of what tasks to automate,
-      # pipe this JSON output to an LLM with a prompt like:
-      # "Analyze these repeated patterns and suggest specific automations"
-      min_occ="${min_occurrences}"
-      jq -r --arg minocc "$min_occ" '
-        "🔄 **Repeat Task Analysis**\n" +
-        "_Scanned " + (.file_count|tostring) + " days of logs_\n" +
+    prompt: |
+      Analyze the repeated task patterns detected in agent activity logs.
 
-        if (.patterns|length) == 0 then
-          "\nNo significant repeat patterns found (min threshold: " + $minocc + ")."
-        else
-          "\n**Found " + (.patterns|length|tostring) + " repeated pattern(s):**\n" +
-          (.patterns[:10] | to_entries | map(
-            (.value.count|tostring) + "x  " + .value.pattern
-          ) | join("\n")) +
+      For each pattern found:
+      1. Describe what the agent is repeatedly doing
+      2. Estimate time spent per occurrence
+      3. Rate automation potential: HIGH / MEDIUM / LOW
+      4. For HIGH patterns, suggest a specific automation approach
+         (cron job, Lobster workflow, shell script, etc.)
+      5. Estimate time savings per week if automated
 
-          if (.candidates|length) > 0 then
-            "\n\n💡 **Top Automation Candidates:**\n" +
-            (.candidates[:5] | map("  → " + .pattern + " (" + (.count|tostring) + "x)") | join("\n"))
-          else "" end
-        end
-      ' /tmp/lb_rt_patterns.json
-      rm -f /tmp/lb_rt_patterns.json
+      Also identify:
+      - Tasks that seem like they should be batched together
+      - Patterns that suggest missing tools or integrations
+      - Quick wins vs. longer-term automation projects
+
+      Minimum occurrences threshold: ${min_occurrences}
+    system: >
+      You are a workflow automation consultant. Find repetitive work and design efficient automations.
+

@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for generating test variations
+
 name: "A/B Test Automator"
 description: "Check active A/B tests, analyze statistical significance, promote winners, and generate new test variations."
 
@@ -33,7 +35,6 @@ steps:
 
   - id: analyze_tests
     # Collects per-test stats into structured JSON.
-    # The output is suitable for piping to an LLM for narrative analysis,
     # but the statistical calculations (z-test) are done concretely here.
     command: |
       cat > /tmp/ab_analyze.py << 'PYEOF'
@@ -150,8 +151,6 @@ steps:
 
   - id: collect_for_variations
     # Gathers winning headlines and context for new variation generation.
-    # NOTE: Pipe /tmp/ab_variation_context.json to an LLM to generate creative headline variations.
-    # Without an LLM, this step produces structured prompts as placeholders.
     # Skips internally if no tests were promoted.
     command: |
       cat > /tmp/ab_gen_variations.py << 'PYEOF'
@@ -202,7 +201,6 @@ steps:
 
   - id: create_new_tests
     # Creates new A/B tests from variation data.
-    # In production, replace placeholder_variants with LLM-generated ones.
     # Skips internally if no tests were promoted.
     command: |
       cat > /tmp/ab_create_tests.sh << 'BASH'

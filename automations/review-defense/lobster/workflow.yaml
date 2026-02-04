@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for sentiment refinement and response drafting
+
 name: "Review Farm Defense System"
 description: >
   Monitor online reviews and mentions for a product using Brave Search.
@@ -66,7 +68,6 @@ steps:
       MAX_RESULTS: "${max_results}"
 
   # Step 2: Sentiment analysis using keyword heuristics
-  # NOTE: In production, pipe to an LLM for nuanced sentiment classification
   - id: classify_sentiment
     command: |
       cat > /tmp/sentiment_classify.py << 'PYEOF'
@@ -181,10 +182,30 @@ steps:
           "notes": [
               "Sentiment classified via keyword heuristics (not LLM)",
               "For production use: integrate real platform APIs (G2, Capterra, etc.)",
-              "Pipe classified results to LLM for nuanced sentiment + draft responses"
+              "Enhanced analysis available via prompt step (draft-responses)"
           ]
       }
       json.dump(report, sys.stdout, indent=2)
       PYEOF
       python3 /tmp/gen_report.py "${product_name}"
     stdin: "$classify_sentiment.stdout"
+
+  - id: draft-responses
+    stdin: $generate_report.stdout
+    prompt: |
+      Review the sentiment analysis report for ${product_name} and:
+
+      1. Re-evaluate sentiment for any results where keyword heuristics may be wrong
+         (sarcasm, mixed sentiment, comparative mentions)
+      2. For each NEGATIVE alert, draft an empathetic, professional response that:
+         - Acknowledges the concern
+         - Offers a solution or asks for more details
+         - Avoids being defensive
+      3. For POSITIVE testimonials, suggest:
+         - Which ones are best for social proof (landing page, ads)
+         - A brief thank-you response
+      4. Identify any patterns in negative feedback that suggest product issues
+
+      Prioritize responses by severity and platform visibility.
+    system: >
+      You are a customer success manager. Draft empathetic responses and extract actionable product feedback.

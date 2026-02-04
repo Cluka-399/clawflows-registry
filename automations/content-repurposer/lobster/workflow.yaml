@@ -6,9 +6,7 @@
 #   lobster run --file workflow.yaml --args-json '{"source_file":"/path/to/post.md"}'
 #
 # Requires: jq
-# NOTE: The actual repurposing (rewriting for each platform) benefits from
-# an LLM step. This workflow extracts and structures the content; pipe the
-# output to an LLM for platform-specific transformations.
+# LLM: Uses prompt step for platform-specific content transformation
 
 name: content-repurposer
 description: Generate multi-platform content from single source
@@ -70,8 +68,6 @@ steps:
     stdin: $extract-structure.stdout
     command: |
       # Generate platform-specific content skeletons
-      # NOTE: For best results, pipe this output to an LLM that rewrites
-      # each variant in the platform's native tone and format.
       cat > /tmp/lb_cr_struct.json
       max_tweet="${max_tweet_chars}"
 
@@ -110,16 +106,20 @@ steps:
       }' /tmp/lb_cr_struct.json
       rm -f /tmp/lb_cr_struct.json
 
-  - id: report
+  - id: repurpose
     stdin: $generate-variants.stdout
-    command: |
-      jq -r '
-        "📝 **Content Repurposer**\n" +
-        "Source: \(.source.title) (\(.source.word_count) words)\n\n" +
-        "Generated \(.variants | length) platform variant(s):\n\n" +
-        (.variants | map(
-          "**\(.platform)** (\(.format)):\n" +
-          "  Hook: \(.hook)\n" +
-          "  Notes: \(.notes)\n"
-        ) | join("\n"))
-      '
+    prompt: |
+      Transform the source content into platform-specific versions.
+
+      For each target platform variant below:
+      1. Rewrite the content in that platform's native style and format
+      2. Respect character limits
+      3. Add platform-appropriate hooks, CTAs, and formatting
+      4. For Twitter: create a thread with numbered tweets, hook first
+      5. For LinkedIn: professional tone, engagement question at end
+      6. For blog-summary: 3-5 bullet TL;DR with link back
+
+      Output each platform version clearly separated with headers.
+    system: >
+      You are a multi-platform content strategist. Adapt tone, length, and format perfectly for each platform.
+

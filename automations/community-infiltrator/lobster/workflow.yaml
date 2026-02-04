@@ -1,4 +1,5 @@
 # Lobster workflow: community-infiltrator
+# LLM: Uses prompt step for community response drafting
 # Find community discussions where your product could be recommended.
 # Uses Brave Search API + HN Algolia to find questions, recommendations,
 # and competitor complaints in public communities.
@@ -326,8 +327,6 @@ steps:
         }
 
         // Build readable report
-        // NOTE: For LLM-powered response drafting, pipe each opportunity to an LLM
-        // with product context to generate suggested community responses
         const lines = [];
         lines.push(`💬 **Community Infiltrator Report**`);
         lines.push(`Scanned ${data.total_scanned} discussions | Found ${data.count} new opportunities (🔥 ${data.hot} hot, 🟡 ${data.warm} warm)\n`);
@@ -352,3 +351,19 @@ steps:
       '
     env:
       REPORT_JSON: "$filter-new.stdout"
+
+  - id: draft-responses
+    stdin: $report.stdout
+    prompt: |
+      For each community opportunity below, draft a helpful response that naturally
+      mentions our product as a solution.
+
+      Guidelines:
+      - Be genuinely helpful first, promotional second
+      - Match the tone of the platform (casual for Reddit, professional for LinkedIn)
+      - For HOT opportunities, draft a full response
+      - For WARM opportunities, suggest a brief comment angle
+      - Never sound like astroturfing — be authentic and transparent
+      - Reference specific features that solve the user's problem
+    system: >
+      You are a community engagement specialist. Write authentic, helpful responses that naturally showcase your product.

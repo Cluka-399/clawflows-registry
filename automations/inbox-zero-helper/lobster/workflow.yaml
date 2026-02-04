@@ -1,3 +1,5 @@
+# LLM: Uses prompt step for smart email triage and draft replies
+
 name: inbox-zero-helper
 description: "Categorize, summarize, and draft response hints for your email inbox"
 
@@ -45,8 +47,6 @@ steps:
       MOCK
 
   # ── Step 2: Categorize emails using keyword heuristics ──
-  # NOTE: For production use, pipe the JSON to an LLM for much better categorization.
-  # This step uses keyword matching as a baseline heuristic.
   - id: categorize_emails
     command: |
       cat > /tmp/inbox_zero_emails.json <<'ENDINPUT'
@@ -184,8 +184,6 @@ steps:
       fi
 
   # ── Step 5: Generate response hints for action-needed emails ──
-  # NOTE: In production, pipe action-needed emails to an LLM for actual draft generation.
-  # This step produces structured data ready for LLM consumption.
   - id: draft_hints
     command: |
       cat > /tmp/inbox_zero_groups.json <<'ENDINPUT'
@@ -226,8 +224,6 @@ steps:
               "response_hint": hint
           })
 
-      # NOTE: For LLM-powered drafts, send this JSON to an LLM with a prompt like:
-      # "For each email, draft a concise professional reply matching the sender's tone."
       print(json.dumps({"drafts": hints, "count": len(hints)}, indent=2))
       PYEOF
 
@@ -273,3 +269,18 @@ steps:
       }
       print(json.dumps(report, indent=2))
       PYEOF
+
+  - id: smart-triage
+    stdin: $final_report.stdout
+    prompt: |
+      Review the inbox triage report below and enhance it:
+
+      1. Verify email categorizations — fix any misclassified emails
+      2. For each urgent/action-needed email, draft a concise reply (2-3 sentences)
+      3. Identify any emails that look like phishing or spam that were missed
+      4. Suggest which emails can be batch-handled vs need individual attention
+      5. Provide a prioritized action list: what to handle first, what can wait
+
+      Keep drafts professional and match the sender's tone.
+    system: >
+      You are an executive assistant. Triage email efficiently and draft quick, appropriate replies.

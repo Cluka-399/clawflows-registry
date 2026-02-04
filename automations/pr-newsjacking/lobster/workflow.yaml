@@ -1,4 +1,5 @@
 # Lobster workflow: pr-newsjacking
+# LLM: Uses prompt step for newsjacking pitch generation
 # Monitor breaking news, collect context, find journalists, produce pitch-ready data
 #
 # Usage:
@@ -95,10 +96,6 @@ steps:
   - id: compile-report
     stdin: $enrich-articles.stdout
     command: |
-      # NOTE: In production, pipe this JSON output to an LLM to:
-      #   1. Rate each article HOT/WARM/PASS for newsjacking potential
-      #   2. Draft 2-3 quotable expert sound bites for HOT articles
-      #   3. Generate personalized journalist pitch emails
       cat > /tmp/lb_nj_ctx.json
       jq -n \
         --arg keywords "${industry_keywords}" \
@@ -115,34 +112,29 @@ steps:
           article_count: (($ctx[0].articles // []) | length),
           journalist_leads: ($journos[0].journalists // []),
           journalist_count: (($journos[0].journalists // []) | length),
-          llm_instructions: "For each article: (1) Rate HOT/WARM/PASS for newsjacking potential based on topics_of_expertise. (2) For HOT articles, draft 2-3 quotable sound bites using expert_bio. (3) For each journalist lead, draft a personalized pitch email referencing the HOT article and their beat.",
           timestamp: (now | todate)
         }'
       rm -f /tmp/lb_nj_ctx.json /tmp/lb_nj_journalists.json
 
-  - id: summary
+  - id: generate-pitches
     stdin: $compile-report.stdout
-    command: |
-      jq -r '
-        "📰 PR Newsjacking Report",
-        "━━━━━━━━━━━━━━━━━━━━━━━",
-        "🔍 Keywords: \(.keywords)",
-        "📊 Articles found: \(.article_count)",
-        "🎤 Journalist leads: \(.journalist_count)",
-        "",
-        "📰 Breaking News:",
-        (.news_articles | to_entries[] |
-          "  \(.key + 1). \(.value.title)",
-          "     🔗 \(.value.url)",
-          "     ⏰ \(.value.age // "recent")",
-          "     📝 \(.value.description[:120])...",
-          ""
-        ),
-        "👤 Journalist Leads:",
-        (.journalist_leads | to_entries[] |
-          "  \(.key + 1). \(.value.title[:80])",
-          "     🔗 \(.value.url)"
-        ),
-        "",
-        "💡 Next: Pipe compile-report output to an LLM for HOT/WARM/PASS ratings, commentary drafts, and personalized pitches."
-      '
+    prompt: |
+      Analyze the breaking news and journalist data for newsjacking opportunities.
+
+      Expert credentials: ${expert_bio}
+      Areas of expertise: ${topics_of_expertise}
+
+      For each news article:
+      1. Rate newsjacking potential: HOT / WARM / PASS (based on relevance to expertise)
+      2. For HOT articles, draft 2-3 quotable expert sound bites
+      3. Explain the unique angle our expert brings
+
+      For each journalist lead:
+      1. Draft a personalized pitch email referencing the HOT article and their beat
+      2. Include the expert's sound bite as a teaser
+      3. Keep pitches concise and newsworthy
+
+      Prioritize speed — newsjacking has a short window.
+    system: >
+      You are a PR strategist specializing in newsjacking. Draft timely, compelling media pitches.
+

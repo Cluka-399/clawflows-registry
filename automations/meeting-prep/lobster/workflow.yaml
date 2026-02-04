@@ -6,9 +6,7 @@
 #
 # Requires: jq, gcalcli (or any calendar CLI)
 #
-# NOTE: The original automation uses LLM analysis to generate meeting briefs.
-# This Lobster version does concrete data collection (calendar events + email search).
-# For AI-generated briefs, pipe the output to an LLM.
+# LLM: Uses prompt step for meeting briefing generation
 
 name: meeting-prep
 description: Prepare briefings for upcoming meetings with context and agenda
@@ -69,21 +67,19 @@ steps:
       ' /tmp/lb_mp_events.json
       rm -f /tmp/lb_mp_events.json
 
-  - id: report
+  - id: generate-briefs
     stdin: $filter-meetings.stdout
-    command: |
-      # NOTE: For AI-generated briefs with attendee context and suggested agendas,
-      # pipe this JSON to an LLM with prompt:
-      # "For each meeting, create a brief: context, attendees, suggested agenda, prep needed"
-      jq -r '
-        if .count == 0 then
-          "📅 No meetings requiring prep in the next '"${hours_ahead}"' hours 🎉"
-        else
-          "📅 **Today'\''s Meeting Prep** (" + (.count|tostring) + " meetings)\n" +
-          (.meetings | to_entries | map(
-            "\n**" + (.value.start_time // "?") + " - " + (.value.title // "Untitled") + "**" +
-            "\n  📍 Time: " + (.value.start_date // "") + " " + (.value.start_time // "") +
-            " → " + (.value.end_time // "")
-          ) | join("\n---"))
-        end
-      '
+    prompt: |
+      Generate meeting preparation briefs for each upcoming meeting below.
+
+      For each meeting:
+      1. Suggest a likely agenda based on the meeting title
+      2. List what to prepare (documents, data, updates)
+      3. Suggest 2-3 talking points or questions to raise
+      4. Estimate if this is a decision meeting, status update, or brainstorm
+      5. Flag any meetings that might be skippable or could be an email
+
+      Format with clear headers per meeting, most urgent first.
+    system: >
+      You are an executive assistant. Create concise, actionable meeting prep briefs.
+

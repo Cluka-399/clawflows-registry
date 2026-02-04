@@ -6,9 +6,7 @@
 #
 # Requires: jq, curl
 #
-# NOTE: Original uses LLM to curate/filter content quality.
-# This version collects concrete search results. An LLM curation
-# step would use clawd.invoke (commented below).
+# LLM: Uses prompt step for content curation and digest generation
 
 name: learning-digest
 description: Curate educational content based on your interests and learning goals
@@ -82,23 +80,24 @@ steps:
       ' /tmp/lb_learn_hn.json /tmp/lb_learn_web2.json
       rm -f /tmp/lb_learn_hn.json /tmp/lb_learn_web2.json
 
-  - id: format-digest
+  - id: curate-digest
     stdin: $combine-and-rank.stdout
-    command: |
-      cat > /tmp/lb_learn_final.json
-      count=$(jq 'length' /tmp/lb_learn_final.json)
-      echo "📚 **Learning Digest**"
-      echo "_Topics: ${topics}_"
-      echo ""
-      # Group by topic
-      jq -r '
-        group_by(.topic) | .[] |
-        "**\(.[0].topic | gsub("^\\s+|\\s+$";"")):**\n" +
-        ([.[] | "• \(.title)\n  \(.url)"] | join("\n")) + "\n"
-      ' /tmp/lb_learn_final.json
-      echo "---"
-      echo "_${count} resources collected | Difficulty: ${difficulty}_"
-      echo "_Tip: Bookmark what interests you, schedule time to learn_"
-      # NOTE: To add LLM curation (quality filtering, difficulty tagging, 
-      # reading time estimates), pipe /tmp/lb_learn_final.json to clawd.invoke
-      rm -f /tmp/lb_learn_final.json
+    prompt: |
+      Curate a learning digest from the resources below.
+
+      Topics of interest: ${topics}
+      Target difficulty: ${difficulty}
+
+      For each resource:
+      1. Rate quality and relevance (skip low-quality or off-topic items)
+      2. Tag difficulty level (beginner/intermediate/advanced)
+      3. Estimate reading time
+      4. Write a 1-2 sentence summary of what you'll learn
+
+      Group by topic, order by quality. Include a "Start Here" recommendation
+      for the single best resource to read first.
+
+      Format as a clean, motivating digest with emoji headers.
+    system: >
+      You are a learning curator. Select the best resources and make learning paths clear and motivating.
+
