@@ -63,20 +63,17 @@ steps:
       cat "$tmpout"
       rm -f "$tmpout" /tmp/lb_cs_m.json /tmp/lb_cs_state.json
 
-  # NOTE: The original automation has an "analyze_hiring_signals" step that uses LLM.
-  # In Lobster, pipe the output to an LLM separately, or add a clawd.invoke step.
-  # For now, this workflow does concrete data collection (change detection).
-
-  - id: report
+  - id: analyze-changes
     stdin: $check-pages.stdout
-    command: |
-      cat > /tmp/lb_cs_report.json
-      count=$(jq 'length' /tmp/lb_cs_report.json)
-      if [ "$count" = "0" ]; then
-        echo "No changes detected for ${competitor_name}."
-      else
-        jq -r --arg name "${competitor_name}" \
-          '"🔍 **" + $name + " Update Detected**\n\n" + (map("• **" + .path + "** changed\n  " + .url) | join("\n\n"))' \
-          /tmp/lb_cs_report.json
-      fi
-      rm -f /tmp/lb_cs_report.json
+    prompt: |
+      Analyze these competitor page changes for ${competitor_name}.
+      For each changed page, explain what likely changed and why it matters.
+      If careers/jobs pages changed, analyze hiring signals (what roles,
+      what teams are growing, what it implies about their strategy).
+      If pricing changed, flag it as high priority.
+      If no changes detected (empty array), say so briefly.
+      Keep the analysis concise and actionable.
+    system: >
+      You are a competitive intelligence analyst. Focus on strategic
+      implications, not just describing changes. Be direct and actionable.
+    condition: true

@@ -160,54 +160,29 @@ steps:
       cat "${output_dir}/formatted.json"
 
   - id: generate-script
+    stdin: $format-tweets.stdout
+    prompt: |
+      Create a 5-minute conversational audio briefing about "${topic}" based on
+      the X/Twitter posts and related discussions below.
+
+      Guidelines:
+      - Write for text-to-speech: no URLs, hashtags, or @ symbols in the script
+      - Use natural spoken language with conversational transitions
+      - Start with a greeting, mention the topic
+      - Group by theme, not chronologically
+      - Attribute quotes and insights to specific people by name
+      - End with overall sentiment summary and key takeaways
+      - Target approximately 700 words for 5 minutes
+    system: >
+      You are a tech podcast host creating an engaging audio briefing.
+      Write scripts that sound natural when read aloud. No bullet points,
+      no headers, no visual formatting. Use spoken transitions like
+      "Now let's talk about..." and "What's interesting is..."
+
+  - id: save-script
+    stdin: $generate-script.stdout
     command: |
-      # Generate an audio briefing script from collected posts.
-      #
-      # NOTE (LLM integration point): For richer output, pipe formatted.json
-      # to an LLM with a prompt like:
-      #   "Create a 3-minute conversational audio briefing about [topic] based on
-      #    these X/Twitter posts and related discussions. Write for text-to-speech:
-      #    no URLs, hashtags, or @ symbols. Use natural spoken language. Start with
-      #    a greeting, cover each notable post with attribution, end with overall
-      #    sentiment summary and key takeaways."
-      #
-      # Current: deterministic script generation from structured data.
-
-      cat > /tmp/xab_script.jq << 'JQEOF'
-      def clean: gsub("[#@]"; "") | gsub("https?://[^ ]+"; "") | gsub("&amp;"; "and") | gsub("&lt;"; "") | gsub("&gt;"; "") | gsub("&#x27;"; "'") | gsub("\\s+"; " ");
-
-      "Here is your audio brief on " + $topic + " from X and the web. " +
-      (
-        if (.x_post_count + .x_profile_count) > 0 then
-          "I found " + (.x_post_count | tostring) + " X posts and " + (.news_count | tostring) + " news mentions. "
-        else
-          "I found " + (.count | tostring) + " recent mentions and discussions. "
-        end
-      ) +
-      "Let me walk you through what people are saying. " +
-      (
-        if .count == 0 then
-          "Unfortunately, I did not find any recent posts about " + $topic + ". You might want to try a different search term or check back later."
-        else
-          ([.posts[:12][] |
-            (if .source == "x_post" then
-              .author + " posted on X: " + (.content | clean | .[0:280]) + ". "
-            elif .source == "x_profile" then
-              "The X account " + .author + " shows: " + (.content | clean | .[0:200]) + ". "
-            else
-              "From " + .author + ": " + (.title | clean | .[0:150]) + ". " +
-              (.content | clean | .[0:200]) + ". "
-            end)
-          ] | join(" ")) +
-          " That wraps up the main highlights. " +
-          "In total, " + (.count | tostring) + " sources from " + (.authors | length | tostring) + " different accounts and outlets are discussing " + $topic + ". " +
-          "That is your audio brief. Stay informed!"
-        end
-      )
-      JQEOF
-
-      jq -r --arg topic "${topic}" -f /tmp/xab_script.jq "${output_dir}/formatted.json" > "${output_dir}/script.txt"
-
+      cat > "${output_dir}/script.txt"
       wc_words=$(wc -w < "${output_dir}/script.txt" | tr -d ' ')
       wc_chars=$(wc -c < "${output_dir}/script.txt" | tr -d ' ')
       printf '{"script_file":"%s","word_count":%s,"char_count":%s}' "${output_dir}/script.txt" "$wc_words" "$wc_chars"

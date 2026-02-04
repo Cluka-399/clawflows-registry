@@ -5,10 +5,7 @@
 #   lobster run --file workflow.yaml --args-json '{"topics":"AI, startups, technology"}'
 #
 # Requires: jq, curl
-#
-# NOTE: The original ClawFlows version uses LLM to summarize articles.
-# This Lobster version collects all data concretely; an LLM summarization
-# step would need a `clawd.invoke` or external API call (commented below).
+# LLM: Uses prompt step (llm:host by default — uses your agent's model)
 
 name: daily-news-digest
 description: Aggregate and summarize news from multiple sources into a morning briefing
@@ -73,19 +70,18 @@ steps:
       ' /tmp/lb_nd_hn.json /tmp/lb_nd_search.json
       rm -f /tmp/lb_nd_hn.json /tmp/lb_nd_search.json
 
-  - id: format-digest
+  - id: summarize-digest
     stdin: $combine-and-dedup.stdout
-    command: |
-      cat > /tmp/lb_nd_combined.json
-      today=$(date '+%A, %b %d')
-      count=$(jq 'length' /tmp/lb_nd_combined.json)
-      echo "☀️ **Morning News Digest**"
-      echo "_${today}_"
-      echo ""
-      jq -r '.[] | "• [\(.source)] \(.title)\n  \(.url)"' /tmp/lb_nd_combined.json
-      echo ""
-      echo "---"
-      echo "_${count} articles from HN + web search_"
-      # NOTE: To add LLM summarization, pipe /tmp/lb_nd_combined.json to
-      # an LLM API (e.g., clawd.invoke) for grouping and summarization
-      rm -f /tmp/lb_nd_combined.json
+    prompt: |
+      Create a morning news digest from the articles below.
+      Topics of interest: ${topics}.
+
+      Group articles by theme. For each group, write a 2-3 sentence summary
+      of why it matters. Include the article title and URL for each item.
+
+      Format as a readable briefing with emoji section headers.
+      Open with today's date and a greeting. Keep it concise but informative.
+    system: >
+      You are a morning news curator. Write concise, scannable digests
+      that help busy people stay informed. Group by theme, highlight
+      what matters, skip the fluff.
