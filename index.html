@@ -863,11 +863,9 @@
             background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
             font-family: inherit; font-size: 0.95rem; outline: none;
           " oninput="filterAutomations()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <button id="filter-lobster" onclick="toggleLobsterFilter()" style="
-            padding: 0.65rem 1rem; border-radius: 8px; background: var(--bg-card);
-            border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;
-            font-family: inherit; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;
-          ">🦞 Lobster Ready</button>
+          <span style="padding: 0.65rem 1rem; border-radius: 8px; background: rgba(255,107,107,0.1);
+            border: 1px solid var(--accent); color: var(--accent);
+            font-size: 0.9rem; font-weight: 500;">🦞 All 109 Lobster Ready</span>
         </div>
         
         <div id="automations-grid" class="automations-grid">
@@ -1095,29 +1093,16 @@
     }
     
     let allAutomations = [];
-    let lobsterFilterOn = false;
-    
     function filterAutomations() {
       const query = (document.getElementById('search-box').value || '').toLowerCase();
       const filtered = allAutomations.filter(a => {
-        const matchesSearch = !query || 
+        return !query || 
           (a.name || '').toLowerCase().includes(query) || 
           (a.description || '').toLowerCase().includes(query) ||
           (a.tags || []).some(t => t.toLowerCase().includes(query));
-        const matchesLobster = !lobsterFilterOn || a.lobster_ready;
-        return matchesSearch && matchesLobster;
       });
       renderAutomations(filtered);
       document.getElementById('automation-count').textContent = filtered.length;
-    }
-    
-    function toggleLobsterFilter() {
-      lobsterFilterOn = !lobsterFilterOn;
-      const btn = document.getElementById('filter-lobster');
-      btn.style.borderColor = lobsterFilterOn ? 'var(--accent)' : 'var(--border)';
-      btn.style.color = lobsterFilterOn ? 'var(--accent)' : 'var(--text-secondary)';
-      btn.style.background = lobsterFilterOn ? 'rgba(255,107,107,0.1)' : 'var(--bg-card)';
-      filterAutomations();
     }
     
     function renderAutomations(automations) {
@@ -1135,7 +1120,6 @@
           <h3>${escapeHtml(a.name)}</h3>
           <p>${escapeHtml(a.description || '')}</p>
           <div class="tags">
-            ${a.lobster_ready ? '<span class="tag lobster">🦞 Lobster Ready</span>' : ''}
             ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
           </div>
         </a>
