@@ -857,15 +857,12 @@
           <h2>🚀 All Automations <span id="automation-count" class="badge">109</span></h2>
         </div>
         
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
+        <div style="margin-bottom: 1.5rem;">
           <input type="text" id="search-box" placeholder="Search automations..." style="
-            flex: 1; min-width: 200px; padding: 0.75rem 1rem; border-radius: 8px;
+            width: 100%; padding: 0.75rem 1rem; border-radius: 8px;
             background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
-            font-family: inherit; font-size: 0.95rem; outline: none;
+            font-family: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box;
           " oninput="filterAutomations()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <span style="padding: 0.65rem 1rem; border-radius: 8px; background: rgba(255,107,107,0.1);
-            border: 1px solid var(--accent); color: var(--accent);
-            font-size: 0.9rem; font-weight: 500;">🦞 All 109 Lobster Ready</span>
         </div>
         
         <div id="automations-grid" class="automations-grid">
