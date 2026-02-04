@@ -1,0 +1,12 @@
+name: Prediction Market Tracker
+description: Monitor Polymarket prediction markets by topic, track probability changes, alert on significant moves. Supports OSINT cross-referencing via X search.
+author: cluka
+version: 1.0.0
+requires:
+  - web_fetch
+  - notifications
+tags:
+  - finance
+  - prediction-markets
+  - polymarket
+  - monitoring

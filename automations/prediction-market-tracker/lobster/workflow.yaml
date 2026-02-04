@@ -1,0 +1,195 @@
+# Lobster workflow: prediction-market-tracker
+# Monitor Polymarket prediction markets by topic keywords, alert on significant moves
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json '{"keywords":"iran,strike","alert_threshold":"3"}'
+#
+# Requires: jq, curl
+#
+# APIs used:
+#   - gamma-api.polymarket.com (Polymarket markets, no auth needed)
+
+name: prediction-market-tracker
+description: Monitor Polymarket prediction markets by topic, alert on significant probability changes
+
+args:
+  keywords:
+    description: "Comma-separated keywords to filter markets (case-insensitive, matches any)"
+    default: "strike,attack,military,war"
+  exclude_keywords:
+    description: "Comma-separated keywords to exclude markets"
+    default: ""
+  alert_threshold:
+    description: "Alert if probability changes more than this percentage since last check"
+    default: "3"
+  state_file:
+    description: "Path to state file for tracking last known probabilities"
+    default: "/tmp/clawflows-prediction-market-state.json"
+  osint_query:
+    description: "Optional X/Twitter search query for cross-referencing (empty = skip)"
+    default: ""
+  osint_script:
+    description: "Path to X search script"
+    default: "/data/skills/search-x/scripts/search.js"
+
+steps:
+  - id: fetch-markets
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      tmpf=$(mktemp)
+      curl -sf --max-time 20 \
+        "https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=200&order=volume24hr&ascending=false" \
+        -o "$tmpf" 2>/dev/null
+      if [ -s "$tmpf" ] && jq -e 'type == "array"' "$tmpf" >/dev/null 2>&1; then
+        cat "$tmpf"
+      else
+        echo '[]'
+      fi
+      rm -f "$tmpf"
+
+  - id: filter-markets
+    stdin: $fetch-markets.stdout
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      cat > /tmp/lb_pm_raw.json
+      keywords="${keywords}"
+      exclude="${exclude_keywords}"
+
+      jq -c --arg kw "$keywords" --arg ex "$exclude" '
+        ($kw | ascii_downcase | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $include |
+        ($ex | if . == "" then [] else ascii_downcase | split(",") | map(gsub("^\\s+|\\s+$"; "")) end) as $exclude |
+
+        [.[] |
+          (.question // "") as $q |
+          ($q | ascii_downcase) as $ql |
+          ((.outcomePrices // "[\"0\",\"0\"]") | if type == "string" then fromjson else . end) as $prices |
+          (($prices[0] // "0") | tonumber * 100) as $yes_pct |
+          (.volumeNum // 0) as $vol |
+          (.slug // "") as $slug |
+
+          # Check keyword match (any keyword must appear as word boundary)
+          ([$include[] | . as $kword | if ($ql | test("\\b" + $kword + "\\b")) then 1 else empty end] | length > 0) as $matches |
+          (if ($exclude | length) > 0 then
+            [$exclude[] | . as $exword | if ($ql | test("\\b" + $exword + "\\b")) then 1 else empty end] | length > 0
+          else false end) as $excluded |
+
+          select($matches and ($excluded | not)) |
+          {
+            question: $q,
+            yes_pct: ($yes_pct * 100 | round / 100),
+            volume: $vol,
+            slug: $slug
+          }
+        ] |
+        sort_by(.yes_pct) | reverse
+      ' /tmp/lb_pm_raw.json
+      rm -f /tmp/lb_pm_raw.json
+
+  - id: load-state
+    command: |
+      cat "${state_file}" 2>/dev/null || echo '{}'
+
+  - id: analyze
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      markets_file=$(mktemp)
+      state_tmp=$(mktemp)
+      printf '%s' '$filter-markets.stdout' > "$markets_file"
+      printf '%s' '$load-state.stdout' > "$state_tmp"
+
+      jq -n \
+        --slurpfile markets "$markets_file" \
+        --slurpfile state "$state_tmp" \
+        --arg threshold "${alert_threshold}" \
+      '
+        ($threshold | tonumber) as $thresh |
+        ($state[0] // {}) as $prev |
+        ($markets[0] // []) as $mkts |
+        [
+          $mkts[] |
+          . as $m |
+          ($prev[$m.slug].yes_pct // null) as $last_pct |
+          (if $last_pct then ($m.yes_pct - $last_pct) else null end) as $delta |
+          {
+            question: $m.question,
+            yes_pct: $m.yes_pct,
+            volume: $m.volume,
+            slug: $m.slug,
+            last_pct: ($last_pct // 0),
+            delta: ($delta // 0),
+            significant: (if $delta then
+              ($delta > $thresh or $delta < (0 - $thresh))
+            else false end),
+            first_run: ($last_pct == null)
+          }
+        ] as $analyzed |
+        {
+          markets: $analyzed,
+          any_significant: ($analyzed | any(.significant)),
+          significant_count: ([$analyzed[] | select(.significant)] | length),
+          total_count: ($analyzed | length),
+          threshold: $thresh
+        }
+      '
+      rm -f "$markets_file" "$state_tmp"
+
+  - id: save-state
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      analysis_file=$(mktemp)
+      printf '%s' '$analyze.stdout' > "$analysis_file"
+      now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      jq --arg t "$now" '
+        [.markets[] | {key: .slug, value: {yes_pct: .yes_pct, updated: $t}}] | from_entries
+      ' "$analysis_file" > "${state_file}"
+      cat "$analysis_file"
+      rm -f "$analysis_file"
+
+  - id: osint-check
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      query="${osint_query}"
+      script="${osint_script}"
+      if [ -n "$query" ] && [ -f "$script" ]; then
+        node "$script" --days 1 --compact "$query" 2>/dev/null | head -c 1000
+      else
+        echo ""
+      fi
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      export PATH="/home/node/bin:$PATH"
+      cat > /tmp/lb_pm_report.json
+      osint_output='$osint-check.stdout'
+
+      jq -r --arg osint "$osint_output" '
+        (if .any_significant then
+          "🚨 PREDICTION MARKET ALERT — Significant Move!\n"
+        else
+          "📊 Prediction Market Update\n"
+        end) +
+
+        "⚙️  Threshold: ±" + (.threshold | tostring) + "% | Markets tracked: " + (.total_count | tostring) + "\n" +
+
+        (if .any_significant then
+          "\n**📈 Significant Moves:**\n" +
+          ([.markets[] | select(.significant) |
+            (if .delta > 0 then "📈" else "📉" end) + " **" +
+            (.last_pct | tostring) + "% → " + (.yes_pct | tostring) + "%** (" +
+            (if .delta > 0 then "+" else "" end) + ((.delta * 100 | round / 100) | tostring) + "%)\n" +
+            "   " + .question
+          ] | join("\n\n"))
+        else "" end) +
+
+        "\n\n**📋 All Tracked Markets:**\n" +
+        ([.markets[:10][] |
+          "• **" + (.yes_pct | tostring) + "%** — " + (.question | if length > 70 then .[:67] + "..." else . end)
+        ] | join("\n")) +
+
+        (if ($osint | length > 30) then
+          "\n\n**🔍 OSINT (X):**\n" + $osint
+        else "" end)
+      ' /tmp/lb_pm_report.json
+      rm -f /tmp/lb_pm_report.json
