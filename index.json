@@ -12,7 +12,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/ab-test-automator/"
     },
     {
@@ -27,7 +27,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/affiliate-builder/"
     },
     {
@@ -42,7 +42,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/agent-drift-detector/"
     },
     {
@@ -60,7 +60,7 @@
         "devops"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/api-health-check/"
     },
     {
@@ -78,7 +78,7 @@
         "mobile"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/app-store-reviews/"
     },
     {
@@ -95,7 +95,7 @@
         "ai"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/arxiv-paper-scout/"
     },
     {
@@ -109,7 +109,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/attribution-detective/"
     },
     {
@@ -126,7 +126,7 @@
         "analytics"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/audience-growth-report/"
     },
     {
@@ -141,7 +141,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/backlink-hunter/"
     },
     {
@@ -157,7 +157,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/bill-due-reminder/"
     },
     {
@@ -172,7 +172,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/bitcoin-tracker/"
     },
     {
@@ -188,7 +188,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/bookmark-organizer/"
     },
     {
@@ -203,7 +203,7 @@
         "pomodoro"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/break-reminder/"
     },
     {
@@ -219,7 +219,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/budget-tracker/"
     },
     {
@@ -237,7 +237,7 @@
         "releases"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/changelog-monitor/"
     },
     {
@@ -254,7 +254,7 @@
         "monitoring"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/cicd-status-monitor/"
     },
     {
@@ -271,7 +271,7 @@
         "linting"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/code-quality-report/"
     },
     {
@@ -287,7 +287,7 @@
         "developer"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/code-review-reminder/"
     },
     {
@@ -302,7 +302,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/cold-email-personalizer/"
     },
     {
@@ -319,7 +319,7 @@
         "moderation"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/comment-moderator/"
     },
     {
@@ -333,7 +333,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/community-infiltrator/"
     },
     {
@@ -348,7 +348,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/competitor-shadow/"
     },
     {
@@ -365,7 +365,7 @@
         "content"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/content-calendar/"
     },
     {
@@ -381,7 +381,7 @@
         "content"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/content-repurposer/"
     },
     {
@@ -396,7 +396,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/content-syndication/"
     },
     {
@@ -413,7 +413,7 @@
         "developer"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/context-switcher/"
     },
     {
@@ -430,7 +430,7 @@
         "crypto"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/crypto-dca-reminder/"
     },
     {
@@ -448,8 +448,23 @@
         "portfolio"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/crypto-portfolio/"
+    },
+    {
+      "name": "Customer Enrichment",
+      "description": "Enrich customer/lead data from email or domain. Scrapes company website, finds LinkedIn profiles, extracts company info, and uses LLM to identify pain points and opportunities.",
+      "author": "Cluka (inspired by @pontusab's Midday pattern)",
+      "version": "1.0.0",
+      "requires": [
+        "web_fetch",
+        "web_search",
+        "llm"
+      ],
+      "tags": [],
+      "created": "2026-01-31",
+      "updated": "2026-02-05",
+      "url": "/automations/customer-enrichment/"
     },
     {
       "name": "daily-affirmation",
@@ -463,7 +478,7 @@
         "daily"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/daily-affirmation/"
     },
     {
@@ -479,7 +494,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/daily-news-digest/"
     },
     {
@@ -497,7 +512,7 @@
         "developer"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/daily-standup-generator/"
     },
     {
@@ -515,7 +530,7 @@
         "daily"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/daily-standup-prep/"
     },
     {
@@ -532,7 +547,7 @@
         "devops"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/database-backup-verifier/"
     },
     {
@@ -548,7 +563,7 @@
         "productivity"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/deadline-tracker/"
     },
     {
@@ -564,7 +579,7 @@
         "productivity"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/deep-work-protector/"
     },
     {
@@ -581,7 +596,7 @@
         "security"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/dependency-updater/"
     },
     {
@@ -598,7 +613,7 @@
         "security"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/docker-image-scanner/"
     },
     {
@@ -615,7 +630,7 @@
         "business"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/domain-expiry-monitor/"
     },
     {
@@ -632,7 +647,7 @@
         "digest"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/email-digest/"
     },
     {
@@ -649,7 +664,7 @@
         "analytics"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/engagement-analyzer/"
     },
     {
@@ -664,7 +679,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/event-hijacker/"
     },
     {
@@ -681,7 +696,7 @@
         "fitness"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/exercise-tracker/"
     },
     {
@@ -697,7 +712,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/expense-categorizer/"
     },
     {
@@ -714,7 +729,7 @@
         "budget"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/expense-tracker/"
     },
     {
@@ -730,7 +745,7 @@
         "ergonomics"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/eye-strain-break/"
     },
     {
@@ -745,7 +760,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/financial-snapshot/"
     },
     {
@@ -762,7 +777,7 @@
         "calendar"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/focus-mode-scheduler/"
     },
     {
@@ -777,7 +792,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/focus-time-report/"
     },
     {
@@ -793,7 +808,7 @@
         "social"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/follower-milestone/"
     },
     {
@@ -810,7 +825,7 @@
         "cleanup"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/git-branch-cleaner/"
     },
     {
@@ -826,7 +841,7 @@
         "maintenance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/git-stale-branch-cleaner/"
     },
     {
@@ -840,7 +855,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/github-stale-prs/"
     },
     {
@@ -857,7 +872,7 @@
         "trending"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/github-trending/"
     },
     {
@@ -874,7 +889,7 @@
         "productivity"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/habit-streaks/"
     },
     {
@@ -891,7 +906,7 @@
         "marketing"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/hashtag-researcher/"
     },
     {
@@ -905,7 +920,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/hn-timing-bot/"
     },
     {
@@ -921,7 +936,7 @@
         "health"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/hydration-reminder/"
     },
     {
@@ -936,7 +951,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/inbox-zero-helper/"
     },
     {
@@ -951,7 +966,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/influencer-outreach/"
     },
     {
@@ -968,7 +983,7 @@
         "business"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/invoice-reminder/"
     },
     {
@@ -983,7 +998,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/launch-blitz/"
     },
     {
@@ -998,7 +1013,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/learning-digest/"
     },
     {
@@ -1015,7 +1030,7 @@
         "monitoring"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/log-analyzer/"
     },
     {
@@ -1031,7 +1046,7 @@
         "planning"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/meal-planner/"
     },
     {
@@ -1047,7 +1062,7 @@
         "health"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/medication-reminder/"
     },
     {
@@ -1063,7 +1078,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/meeting-prep/"
     },
     {
@@ -1080,7 +1095,7 @@
         "meetings"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/meeting-prep-assistant/"
     },
     {
@@ -1095,7 +1110,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/molt-price-alert/"
     },
     {
@@ -1112,7 +1127,7 @@
         "wellness"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/mood-tracker/"
     },
     {
@@ -1127,7 +1142,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/morning-brief/"
     },
     {
@@ -1142,7 +1157,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/newsletter-growth/"
     },
     {
@@ -1159,7 +1174,7 @@
         "security"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/npm-audit-scheduler/"
     },
     {
@@ -1174,7 +1189,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/partnership-scout/"
     },
     {
@@ -1191,7 +1206,7 @@
         "performance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/performance-benchmark/"
     },
     {
@@ -1209,7 +1224,7 @@
         "entertainment"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/podcast-tracker/"
     },
     {
@@ -1225,7 +1240,7 @@
         "social"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/post-scheduler/"
     },
     {
@@ -1241,7 +1256,7 @@
         "ergonomics"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/posture-check/"
     },
     {
@@ -1257,7 +1272,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/pr-newsjacking/"
     },
     {
@@ -1276,7 +1291,7 @@
         "monitoring"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/prediction-market-tracker/"
     },
     {
@@ -1291,7 +1306,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/pricing-intelligence/"
     },
     {
@@ -1308,7 +1323,7 @@
         "daily"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/product-hunt-daily/"
     },
     {
@@ -1325,7 +1340,7 @@
         "projects"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/project-milestone-alert/"
     },
     {
@@ -1340,7 +1355,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/repeat-task-detector/"
     },
     {
@@ -1355,7 +1370,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/review-defense/"
     },
     {
@@ -1372,7 +1387,7 @@
         "rss"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/rss-digest/"
     },
     {
@@ -1388,7 +1403,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/savings-goal-tracker/"
     },
     {
@@ -1405,7 +1420,7 @@
         "security"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/security-advisory-monitor/"
     },
     {
@@ -1420,7 +1435,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/seo-gap-assassin/"
     },
     {
@@ -1436,7 +1451,7 @@
         "health"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/sleep-schedule-optimizer/"
     },
     {
@@ -1453,7 +1468,7 @@
         "analytics"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/social-engagement-tracker/"
     },
     {
@@ -1470,7 +1485,7 @@
         "mentions"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/social-mentions/"
     },
     {
@@ -1485,7 +1500,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/social-proof-collector/"
     },
     {
@@ -1502,7 +1517,7 @@
         "monitoring"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/ssl-certificate-monitor/"
     },
     {
@@ -1517,7 +1532,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/standup-notes/"
     },
     {
@@ -1534,7 +1549,7 @@
         "investing"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/stock-watchlist-alert/"
     },
     {
@@ -1550,7 +1565,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/subscription-auditor/"
     },
     {
@@ -1564,7 +1579,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/support-to-content/"
     },
     {
@@ -1581,7 +1596,7 @@
         "tasks"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/task-prioritizer/"
     },
     {
@@ -1597,7 +1612,7 @@
         "finance"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/tax-document-organizer/"
     },
     {
@@ -1614,7 +1629,7 @@
         "quality"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/test-coverage-monitor/"
     },
     {
@@ -1630,7 +1645,7 @@
         "calendar"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/time-block-optimizer/"
     },
     {
@@ -1647,7 +1662,7 @@
         "marketing"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/trending-topic-alert/"
     },
     {
@@ -1665,7 +1680,7 @@
         "devops"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/uptime-monitor/"
     },
     {
@@ -1680,7 +1695,7 @@
         "reminder"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/water-reminder/"
     },
     {
@@ -1697,7 +1712,7 @@
         "daily"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/weather-commute/"
     },
     {
@@ -1713,7 +1728,7 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/weekly-retro-generator/"
     },
     {
@@ -1730,7 +1745,7 @@
         "productivity"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/weekly-review-generator/"
     },
     {
@@ -1745,7 +1760,7 @@
         "health"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/wellness-weekly-report/"
     },
     {
@@ -1766,7 +1781,7 @@
         "x-twitter"
       ],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/x-audio-brief/"
     },
     {
@@ -1781,9 +1796,9 @@
       ],
       "tags": [],
       "created": "2026-01-31",
-      "updated": "2026-01-31",
+      "updated": "2026-02-05",
       "url": "/automations/youtube-competitor-tracker/"
     }
   ],
-  "count": 110
+  "count": 111
 }

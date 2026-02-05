@@ -1,0 +1,86 @@
+name: Customer Enrichment
+description: Enrich customer/lead data from email or domain. Scrapes company website, finds LinkedIn profiles, extracts company info, and uses LLM to identify pain points and opportunities.
+version: 1.0.0
+author: Cluka (inspired by @pontusab's Midday pattern)
+
+requires:
+  - web_fetch
+  - web_search
+  - llm
+
+trigger:
+  manual: true
+
+parameters:
+  - name: input
+    description: Email address or domain to enrich
+    required: true
+  - name: product_context
+    description: Your product info for pain point matching
+    default: ""
+
+steps:
+  - name: extract_domain
+    action: parse
+    params:
+      input: "{{input}}"
+      extract: domain_from_email_or_passthrough
+
+  - name: scrape_website
+    action: web_fetch
+    params:
+      url: "https://{{domain}}"
+      pages:
+        - /
+        - /about
+        - /team
+        - /pricing
+        - /careers
+
+  - name: search_linkedin
+    action: web_search
+    params:
+      query: "site:linkedin.com {{domain}} CEO OR CTO OR founder"
+
+  - name: search_company_news
+    action: web_search
+    params:
+      query: "{{domain}} funding OR launch OR announcement"
+      freshness: pm
+
+  - name: enrich_with_llm
+    action: llm
+    params:
+      model: default
+      prompt: |
+        Analyze this company data and extract structured insights:
+        
+        Website content: {{website_content}}
+        LinkedIn results: {{linkedin_results}}
+        Recent news: {{news_results}}
+        
+        Extract:
+        1. Company name and description
+        2. Key people (name, title, LinkedIn URL)
+        3. Company size estimate
+        4. Tech stack (if detectable)
+        5. Recent activity/momentum signals
+        6. Potential pain points based on: {{product_context}}
+        
+        Output as structured JSON.
+
+output:
+  format: json
+  schema:
+    company_name: string
+    domain: string
+    description: string
+    people:
+      - name: string
+        title: string
+        linkedin_url: string
+    estimated_size: string
+    tech_stack: array
+    recent_activity: array
+    pain_points: array
+    enriched_at: datetime

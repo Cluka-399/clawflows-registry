@@ -1,0 +1,395 @@
+# Lobster workflow: customer-enrichment
+# Enrich customer/lead data from email or domain using web scraping + LLM analysis.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"input":"john@acme.com","product_context":"AI coding tools for developers"}'
+#   lobster run --file workflow.yaml --args-json '{"input":"stripe.com"}'
+#
+# Requires: curl, jq, BRAVE_API_KEY, LLM_API_KEY (OpenAI-compatible endpoint)
+#
+# Based on @pontusab's Midday pattern: Gemini + URL Context + Google Search grounding + Zod schema
+
+name: customer-enrichment
+description: Enrich customer/lead data from email or domain. Scrapes website, finds LinkedIn, uses LLM for analysis.
+
+args:
+  input:
+    desc: "Email address or domain to enrich"
+  product_context:
+    desc: "Your product description for pain point matching"
+    default: ""
+  llm_base_url:
+    desc: "OpenAI-compatible LLM API base URL"
+    default: "https://api.anthropic.com/v1"
+  llm_model:
+    desc: "Model to use for analysis"
+    default: "claude-sonnet-4-5-20241022"
+
+steps:
+  - id: extract_domain
+    command: |
+      # Extract domain from email or use as-is
+      input="${input}"
+      
+      if echo "$input" | grep -q '@'; then
+        # It's an email - extract domain
+        domain=$(echo "$input" | sed 's/.*@//')
+        email="$input"
+      else
+        # It's already a domain
+        domain=$(echo "$input" | sed 's|^https\?://||' | sed 's|/.*||')
+        email=""
+      fi
+      
+      # Clean up domain
+      domain=$(echo "$domain" | tr '[:upper:]' '[:lower:]' | sed 's/^www\.//')
+      
+      jq -nc --arg domain "$domain" --arg email "$email" --arg input "$input" '{
+        domain: $domain,
+        email: $email,
+        original_input: $input
+      }'
+
+  - id: scrape_website
+    stdin: $extract_domain.stdout
+    command: |
+      # Scrape main pages from company website
+      info=$(cat)
+      domain=$(echo "$info" | jq -r '.domain')
+      
+      tmpdir=$(mktemp -d)
+      
+      # Fetch multiple pages
+      for path in "/" "/about" "/about-us" "/team" "/company" "/pricing" "/careers" "/jobs"; do
+        url="https://${domain}${path}"
+        curl -sf -L --max-time 10 \
+          -H "User-Agent: Mozilla/5.0 (compatible; CustomerEnrichBot/1.0)" \
+          "$url" 2>/dev/null | \
+          # Extract text content, strip HTML
+          sed 's/<script[^>]*>.*<\/script>//g' | \
+          sed 's/<style[^>]*>.*<\/style>//g' | \
+          sed 's/<[^>]*>//g' | \
+          tr -s '[:space:]' ' ' | \
+          head -c 5000 > "${tmpdir}/$(echo "$path" | tr '/' '_').txt" 2>/dev/null || true
+      done
+      
+      # Combine all scraped content
+      cat ${tmpdir}/*.txt 2>/dev/null | head -c 15000 > "${tmpdir}/combined.txt"
+      
+      # Also try to get meta info from homepage
+      curl -sf -L --max-time 10 "https://${domain}" 2>/dev/null | \
+        grep -oP '(?<=<title>)[^<]+' | head -1 > "${tmpdir}/title.txt" 2>/dev/null || echo "" > "${tmpdir}/title.txt"
+      
+      curl -sf -L --max-time 10 "https://${domain}" 2>/dev/null | \
+        grep -oP '(?<=<meta name="description" content=")[^"]+' | head -1 > "${tmpdir}/meta_desc.txt" 2>/dev/null || echo "" > "${tmpdir}/meta_desc.txt"
+      
+      jq -nc --arg domain "$domain" \
+             --arg title "$(cat ${tmpdir}/title.txt)" \
+             --arg meta "$(cat ${tmpdir}/meta_desc.txt)" \
+             --arg content "$(cat ${tmpdir}/combined.txt | tr -d '\000')" '{
+        domain: $domain,
+        title: $title,
+        meta_description: $meta,
+        content: $content,
+        content_length: ($content | length)
+      }'
+      
+      rm -rf "$tmpdir"
+
+  - id: search_linkedin
+    stdin: $extract_domain.stdout
+    command: |
+      # Search for company LinkedIn profiles and key people
+      info=$(cat)
+      domain=$(echo "$info" | jq -r '.domain')
+      
+      # Search for company page and key people
+      query=$(printf '%s' "site:linkedin.com ${domain} CEO OR CTO OR founder OR \"Head of\" OR VP" | sed 's/ /%20/g')
+      
+      curl -sf -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        "https://api.search.brave.com/res/v1/web/search?q=${query}&count=10" \
+        > /tmp/lb_ce_linkedin.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_ce_linkedin.json
+      
+      jq -c '{
+        linkedin_results: [(.web.results // [])[:10][] | {
+          title: .title,
+          url: .url,
+          description: (.description // "")
+        }]
+      }' /tmp/lb_ce_linkedin.json
+      
+      rm -f /tmp/lb_ce_linkedin.json
+
+  - id: search_news
+    stdin: $extract_domain.stdout
+    command: |
+      # Search for recent company news and announcements
+      info=$(cat)
+      domain=$(echo "$info" | jq -r '.domain')
+      
+      query=$(printf '%s' "${domain} funding OR launch OR announcement OR raises OR series" | sed 's/ /%20/g')
+      
+      curl -sf -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        "https://api.search.brave.com/res/v1/web/search?q=${query}&count=5&freshness=pm" \
+        > /tmp/lb_ce_news.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_ce_news.json
+      
+      jq -c '{
+        news_results: [(.web.results // [])[:5][] | {
+          title: .title,
+          url: .url,
+          description: (.description // ""),
+          age: (.age // "")
+        }]
+      }' /tmp/lb_ce_news.json
+      
+      rm -f /tmp/lb_ce_news.json
+
+  - id: search_tech_stack
+    stdin: $extract_domain.stdout
+    command: |
+      # Try to detect tech stack via BuiltWith-style search
+      info=$(cat)
+      domain=$(echo "$info" | jq -r '.domain')
+      
+      query=$(printf '%s' "${domain} tech stack OR built with OR technologies OR engineering blog" | sed 's/ /%20/g')
+      
+      curl -sf -H "X-Subscription-Token: ${BRAVE_API_KEY}" \
+        "https://api.search.brave.com/res/v1/web/search?q=${query}&count=5" \
+        > /tmp/lb_ce_tech.json 2>/dev/null || echo '{"web":{"results":[]}}' > /tmp/lb_ce_tech.json
+      
+      jq -c '{
+        tech_signals: [(.web.results // [])[:5][] | {
+          title: .title,
+          url: .url,
+          description: (.description // "")
+        }]
+      }' /tmp/lb_ce_tech.json
+      
+      rm -f /tmp/lb_ce_tech.json
+
+  - id: combine_research
+    command: |
+      # Combine all research into one JSON object
+      extract='$extract_domain.stdout'
+      website='$scrape_website.stdout'
+      linkedin='$search_linkedin.stdout'
+      news='$search_news.stdout'
+      tech='$search_tech_stack.stdout'
+      
+      jq -sc '
+        .[0] as $extract |
+        .[1] as $website |
+        .[2] as $linkedin |
+        .[3] as $news |
+        .[4] as $tech |
+        {
+          input: $extract,
+          website: $website,
+          linkedin: $linkedin.linkedin_results,
+          news: $news.news_results,
+          tech_signals: $tech.tech_signals
+        }
+      ' <(echo "$extract") <(echo "$website") <(echo "$linkedin") <(echo "$news") <(echo "$tech")
+    stdin_files:
+      - $extract_domain.stdout
+      - $scrape_website.stdout
+      - $search_linkedin.stdout
+      - $search_news.stdout
+      - $search_tech_stack.stdout
+
+  - id: merge_data
+    command: |
+      # Merge all collected data
+      cat > /tmp/lb_ce_extract.json <<'EXTRACT_EOF'
+      $extract_domain.stdout
+      EXTRACT_EOF
+      
+      cat > /tmp/lb_ce_website.json <<'WEBSITE_EOF'
+      $scrape_website.stdout
+      WEBSITE_EOF
+      
+      cat > /tmp/lb_ce_linkedin.json <<'LINKEDIN_EOF'
+      $search_linkedin.stdout
+      LINKEDIN_EOF
+      
+      cat > /tmp/lb_ce_news.json <<'NEWS_EOF'
+      $search_news.stdout
+      NEWS_EOF
+      
+      cat > /tmp/lb_ce_tech.json <<'TECH_EOF'
+      $search_tech_stack.stdout
+      TECH_EOF
+
+      jq -sc '
+        {
+          input: .[0],
+          website: .[1],
+          linkedin: .[2].linkedin_results,
+          news: .[3].news_results,
+          tech_signals: .[4].tech_signals
+        }
+      ' /tmp/lb_ce_extract.json /tmp/lb_ce_website.json /tmp/lb_ce_linkedin.json /tmp/lb_ce_news.json /tmp/lb_ce_tech.json
+      
+      rm -f /tmp/lb_ce_*.json
+    deps:
+      - extract_domain
+      - scrape_website
+      - search_linkedin
+      - search_news
+      - search_tech_stack
+
+  - id: llm_enrich
+    stdin: $merge_data.stdout
+    command: |
+      # Use LLM to analyze and structure the enrichment data
+      research=$(cat)
+      product_ctx="${product_context}"
+      
+      # Build prompt
+      prompt=$(cat <<PROMPT_EOF
+      Analyze this company research data and extract structured insights.
+
+      RESEARCH DATA:
+      ${research}
+
+      PRODUCT CONTEXT (for pain point matching):
+      ${product_ctx:-"General B2B SaaS"}
+
+      Extract and return ONLY valid JSON with this exact schema:
+      {
+        "company_name": "string - official company name",
+        "domain": "string - primary domain",
+        "description": "string - one paragraph company description",
+        "industry": "string - primary industry",
+        "people": [
+          {
+            "name": "string",
+            "title": "string", 
+            "linkedin_url": "string or null"
+          }
+        ],
+        "estimated_size": "string - e.g. '10-50', '50-200', '200-500', '500+'",
+        "tech_stack": ["array of detected technologies"],
+        "recent_activity": ["array of recent news/events"],
+        "momentum_signals": ["array of growth indicators"],
+        "pain_points": ["array of potential pain points based on product context"],
+        "outreach_hooks": ["array of personalization angles for outreach"]
+      }
+
+      Return ONLY the JSON object, no markdown, no explanation.
+      PROMPT_EOF
+      )
+      
+      # Call LLM API (Anthropic format)
+      if [ -n "${LLM_API_KEY:-}" ]; then
+        response=$(curl -sf -X POST "${llm_base_url}/messages" \
+          -H "Content-Type: application/json" \
+          -H "x-api-key: ${LLM_API_KEY}" \
+          -H "anthropic-version: 2023-06-01" \
+          -d "$(jq -nc --arg model "${llm_model}" --arg prompt "$prompt" '{
+            model: $model,
+            max_tokens: 2000,
+            messages: [{role: "user", content: $prompt}]
+          }')" 2>/dev/null)
+        
+        # Extract JSON from response
+        echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null || echo "$response"
+      else
+        # Fallback: try OpenAI-compatible format
+        if [ -n "${OPENAI_API_KEY:-}" ]; then
+          response=$(curl -sf -X POST "${llm_base_url:-https://api.openai.com/v1}/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${OPENAI_API_KEY}" \
+            -d "$(jq -nc --arg model "${llm_model:-gpt-4}" --arg prompt "$prompt" '{
+              model: $model,
+              messages: [{role: "user", content: $prompt}],
+              temperature: 0.3
+            }')" 2>/dev/null)
+          
+          echo "$response" | jq -r '.choices[0].message.content // empty' 2>/dev/null || echo "$response"
+        else
+          # No LLM key - return raw research data
+          echo '{"error": "No LLM_API_KEY or OPENAI_API_KEY set - returning raw research"}'
+          echo "$research" | jq -c '{
+            raw_research: .,
+            note: "Set LLM_API_KEY (Anthropic) or OPENAI_API_KEY for AI enrichment"
+          }'
+        fi
+      fi
+
+  - id: format_output
+    stdin: $llm_enrich.stdout
+    command: |
+      # Add metadata and format final output
+      enriched=$(cat)
+      
+      # Try to parse as JSON, add metadata
+      if echo "$enriched" | jq -e . >/dev/null 2>&1; then
+        echo "$enriched" | jq -c --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --arg input "${input}" '{
+          enrichment: .,
+          meta: {
+            original_input: $input,
+            enriched_at: $ts,
+            source: "clawflows/customer-enrichment"
+          }
+        }'
+      else
+        # LLM returned non-JSON, wrap it
+        jq -nc --arg content "$enriched" --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          --arg input "${input}" '{
+          enrichment: {raw: $content},
+          meta: {
+            original_input: $input,
+            enriched_at: $ts,
+            source: "clawflows/customer-enrichment",
+            note: "LLM returned non-JSON response"
+          }
+        }'
+      fi
+
+  - id: report
+    stdin: $format_output.stdout
+    command: |
+      # Human-readable summary
+      data=$(cat)
+      
+      jq -r '
+        "🔍 Customer Enrichment Report\n" +
+        "════════════════════════════════════════\n" +
+        "Input: \(.meta.original_input)\n" +
+        "Enriched: \(.meta.enriched_at)\n\n" +
+        
+        if .enrichment.company_name then
+          "🏢 Company: \(.enrichment.company_name)\n" +
+          "🌐 Domain: \(.enrichment.domain)\n" +
+          "📝 Description: \(.enrichment.description // "N/A")\n" +
+          "🏭 Industry: \(.enrichment.industry // "N/A")\n" +
+          "👥 Size: \(.enrichment.estimated_size // "Unknown")\n\n" +
+          
+          "👤 Key People:\n" +
+          (if (.enrichment.people | length) > 0 then
+            (.enrichment.people | map("   • \(.name) - \(.title)\n     \(.linkedin_url // "No LinkedIn")") | join("\n"))
+          else "   (none found)" end) + "\n\n" +
+          
+          "🛠️ Tech Stack: \((.enrichment.tech_stack // []) | join(", "))\n\n" +
+          
+          "📰 Recent Activity:\n" +
+          (if (.enrichment.recent_activity | length) > 0 then
+            (.enrichment.recent_activity | map("   • \(.)") | join("\n"))
+          else "   (none found)" end) + "\n\n" +
+          
+          "🎯 Pain Points:\n" +
+          (if (.enrichment.pain_points | length) > 0 then
+            (.enrichment.pain_points | map("   • \(.)") | join("\n"))
+          else "   (none identified)" end) + "\n\n" +
+          
+          "💡 Outreach Hooks:\n" +
+          (if (.enrichment.outreach_hooks | length) > 0 then
+            (.enrichment.outreach_hooks | map("   • \(.)") | join("\n"))
+          else "   (none suggested)" end)
+        else
+          "⚠️ Raw research data (no LLM enrichment):\n" +
+          (.enrichment | tostring | .[0:500])
+        end
+      ' <<< "$data"
