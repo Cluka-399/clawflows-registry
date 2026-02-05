@@ -265,56 +265,41 @@ steps:
           process.exit(0);
         }
 
-        // Build multi-series data for line chart
-        // Format: [{x: timestamp, series1: val, series2: val, ...}]
-        
-        // Collect all unique timestamps
-        const allTimes = new Set();
-        withHistory.forEach(m => m.history.forEach(h => allTimes.add(h.t)));
-        const sortedTimes = Array.from(allTimes).sort();
-        
-        // Create short labels for series
-        const seriesLabels = withHistory.map(m => {
-          const q = m.question;
-          // Extract key identifier
+        // Create short labels for each market
+        const getLabel = (q) => {
           const dateMatch = q.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2}/i);
           const actionMatch = q.match(/^(US strikes|Israel strikes|US x Iran|Khamenei|meeting)/i);
           if (dateMatch && actionMatch) {
             return (actionMatch[1].replace('strikes', '→') + ' ' + dateMatch[0]).slice(0, 20);
           }
           if (q.includes('Oman')) return 'Oman meeting';
-          return q.slice(0, 18) + (q.length > 18 ? '…' : '');
-        });
+          if (q.includes('nuclear')) return 'Talks resume';
+          return q.slice(0, 16) + (q.length > 16 ? '…' : '');
+        };
 
-        // Build data points - interpolate missing values
-        const chartData = sortedTimes.map(t => {
-          const point = { x: t };
-          withHistory.forEach((m, i) => {
-            const entry = m.history.find(h => h.t === t);
-            if (entry) {
-              point[seriesLabels[i]] = entry.pct;
-            } else {
-              // Find closest earlier value
-              const earlier = m.history.filter(h => h.t < t).sort((a,b) => b.t.localeCompare(a.t))[0];
-              if (earlier) point[seriesLabels[i]] = earlier.pct;
-            }
+        // Build LONG format: [{x: time, market: label, y: pct}, ...]
+        const chartData = [];
+        withHistory.forEach(m => {
+          const label = getLabel(m.question);
+          m.history.forEach(h => {
+            // Format timestamp more readably
+            const d = new Date(h.t);
+            const timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' + 
+                          d.getHours().toString().padStart(2,'0') + ':' + 
+                          d.getMinutes().toString().padStart(2,'0');
+            chartData.push({ x: timeStr, market: label, y: h.pct });
           });
-          return point;
         });
 
-        // Output as JSON for chart script
-        console.log(JSON.stringify({
-          data: chartData,
-          series: seriesLabels
-        }));
-      " > /tmp/trend_prep.json
+        console.log(JSON.stringify(chartData));
+      " > /tmp/trend_data.json
       
       rm -f /tmp/lb_trend_analysis.json
 
-      prep=$(cat /tmp/trend_prep.json)
-      if echo "$prep" | grep -q "TREND_SKIP"; then
-        echo "$prep"
-        rm -f /tmp/trend_prep.json
+      data=$(cat /tmp/trend_data.json)
+      if [ "$data" = "[]" ] || echo "$data" | grep -q "TREND_SKIP"; then
+        echo "TREND_SKIP: no data"
+        rm -f /tmp/trend_data.json
         exit 0
       fi
 
@@ -326,21 +311,18 @@ steps:
         dark_flag="--dark"
       fi
 
-      # Extract data array for chart
-      data=$(echo "$prep" | node -e "const d=require('fs').readFileSync(0,'utf8');console.log(JSON.stringify(JSON.parse(d).data))")
-      
       node "$CHART_SCRIPT" \
         --type line \
         --data "$data" \
+        --series-field "market" \
         --title "Probability Trends Over Time" \
         --y-title "% Probability" \
         --y-domain "0,100" \
-        --x-type "time" \
         $dark_flag \
         --width 950 --height 500 \
         --output "$TREND_OUTPUT" 2>&1
 
-      rm -f /tmp/trend_prep.json
+      rm -f /tmp/trend_data.json
       echo "TREND_CHART:$TREND_OUTPUT"
 
   - id: osint-check
