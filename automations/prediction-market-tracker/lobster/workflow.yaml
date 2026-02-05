@@ -1,5 +1,6 @@
 # Lobster workflow: prediction-market-tracker
 # Monitor Polymarket prediction markets by topic keywords, alert on significant moves
+# Now with historical trend tracking and line charts!
 #
 # Usage:
 #   lobster run --file workflow.yaml
@@ -11,7 +12,7 @@
 #   - gamma-api.polymarket.com (Polymarket markets, no auth needed)
 
 name: prediction-market-tracker
-description: Monitor Polymarket prediction markets by topic, alert on significant probability changes
+description: Monitor Polymarket prediction markets by topic, alert on significant probability changes with trend charts
 
 args:
   keywords:
@@ -24,13 +25,16 @@ args:
     description: "Alert if probability changes more than this percentage since last check"
     default: "3"
   state_file:
-    description: "Path to state file for tracking last known probabilities"
+    description: "Path to state file for tracking probability history"
     default: "/tmp/clawflows-prediction-market-state.json"
   chart_output:
-    description: "Path for generated chart image"
+    description: "Path for generated bar chart image"
     default: "/tmp/prediction-market-chart.png"
+  trend_chart_output:
+    description: "Path for generated trend line chart"
+    default: "/tmp/prediction-market-trends.png"
   chart_title:
-    description: "Title for the chart"
+    description: "Title for the bar chart"
     default: "Prediction Markets — Polymarket"
   osint_query:
     description: "Optional X/Twitter search query for cross-referencing (empty = skip)"
@@ -41,6 +45,9 @@ args:
   chart_script:
     description: "Path to chart-image script"
     default: "/data/clawd/skills/chart-image/scripts/chart.mjs"
+  history_days:
+    description: "Number of days of history to retain"
+    default: "7"
 
 steps:
   - id: fetch-markets
@@ -93,7 +100,7 @@ steps:
     command: |
       cat "${state_file}" 2>/dev/null || echo '{}'
 
-  - id: analyze
+  - id: analyze-and-save
     command: |
       cat > /tmp/lb_markets.json << 'MARKETS_EOF'
       $filter-markets.stdout
@@ -104,24 +111,55 @@ steps:
       STATE_EOF
       
       THRESH="${alert_threshold}"
+      STATE_FILE="${state_file}"
+      HISTORY_DAYS="${history_days}"
 
       node -e "
         const fs = require('fs');
         const markets = JSON.parse(fs.readFileSync('/tmp/lb_markets.json', 'utf8').trim());
-        const state = JSON.parse(fs.readFileSync('/tmp/lb_state.json', 'utf8').trim());
+        let state = {};
+        try {
+          state = JSON.parse(fs.readFileSync('/tmp/lb_state.json', 'utf8').trim());
+        } catch(e) {}
+        
         const thresh = parseFloat('$THRESH' || '3');
+        const historyDays = parseInt('$HISTORY_DAYS' || '7');
+        const now = new Date();
+        const cutoff = new Date(now - historyDays * 24 * 60 * 60 * 1000);
 
+        // Analyze markets and update state with history
         const analyzed = markets.map(m => {
-          const lastPct = state[m.slug]?.yes_pct;
+          // Get or create market state
+          if (!state[m.slug]) {
+            state[m.slug] = { history: [], question: m.question };
+          }
+          
+          const mktState = state[m.slug];
+          mktState.question = m.question; // Keep question updated
+          
+          // Get last recorded pct
+          const lastEntry = mktState.history[mktState.history.length - 1];
+          const lastPct = lastEntry ? lastEntry.pct : null;
+          
+          // Add new data point
+          mktState.history.push({ t: now.toISOString(), pct: m.yes_pct });
+          
+          // Prune old history
+          mktState.history = mktState.history.filter(h => new Date(h.t) > cutoff);
+          
           const delta = lastPct != null ? m.yes_pct - lastPct : null;
           return {
             ...m,
-            last_pct: lastPct || 0,
+            last_pct: lastPct || m.yes_pct,
             delta: delta || 0,
             significant: delta != null && Math.abs(delta) >= thresh,
-            first_run: lastPct == null
+            first_run: lastPct == null,
+            history: mktState.history
           };
         });
+
+        // Save updated state
+        fs.writeFileSync('$STATE_FILE', JSON.stringify(state, null, 2));
 
         const result = {
           markets: analyzed,
@@ -134,31 +172,10 @@ steps:
       "
       rm -f /tmp/lb_markets.json /tmp/lb_state.json
 
-  - id: save-state
-    command: |
-      cat > /tmp/lb_analysis.json << 'ANALYSIS_EOF'
-      $analyze.stdout
-      ANALYSIS_EOF
-      
-      STATE_FILE="${state_file}"
-
-      node -e "
-        const fs = require('fs');
-        const analysis = JSON.parse(fs.readFileSync('/tmp/lb_analysis.json', 'utf8').trim());
-        const now = new Date().toISOString();
-        const state = {};
-        (analysis.markets || []).forEach(m => {
-          state[m.slug] = { yes_pct: m.yes_pct, updated: now };
-        });
-        fs.writeFileSync('$STATE_FILE', JSON.stringify(state, null, 2));
-        console.log(JSON.stringify(analysis));
-      "
-      rm -f /tmp/lb_analysis.json
-
-  - id: generate-chart
+  - id: generate-bar-chart
     command: |
       cat > /tmp/lb_chart_analysis.json << 'ANALYSIS_EOF'
-      $save-state.stdout
+      $analyze-and-save.stdout
       ANALYSIS_EOF
       
       CHART_SCRIPT="${chart_script}"
@@ -191,11 +208,9 @@ steps:
         console.log(JSON.stringify(chartData));
       " > /tmp/pm_chart_data.json
       
-      rm -f /tmp/lb_chart_analysis.json
-      
       if [ "$(cat /tmp/pm_chart_data.json)" = "[]" ]; then
-        echo "CHART_SKIP: no data"
-        rm -f /tmp/pm_chart_data.json
+        echo "BAR_CHART_SKIP: no data"
+        rm -f /tmp/pm_chart_data.json /tmp/lb_chart_analysis.json
         exit 0
       fi
 
@@ -218,8 +233,115 @@ steps:
         --width 850 --height 420 \
         --output "$CHART_OUTPUT" 2>&1
 
-      rm -f /tmp/pm_chart_data.json
-      echo "CHART_FILE:$CHART_OUTPUT"
+      rm -f /tmp/pm_chart_data.json /tmp/lb_chart_analysis.json
+      echo "BAR_CHART:$CHART_OUTPUT"
+
+  - id: generate-trend-chart
+    command: |
+      cat > /tmp/lb_trend_analysis.json << 'ANALYSIS_EOF'
+      $analyze-and-save.stdout
+      ANALYSIS_EOF
+      
+      CHART_SCRIPT="${chart_script}"
+      TREND_OUTPUT="${trend_chart_output}"
+
+      if [ ! -f "$CHART_SCRIPT" ]; then
+        echo "TREND_SKIP: chart script not found"
+        exit 0
+      fi
+
+      node -e "
+        const fs = require('fs');
+        const analysis = JSON.parse(fs.readFileSync('/tmp/lb_trend_analysis.json', 'utf8').trim());
+        const markets = analysis.markets || [];
+        
+        // Pick top markets by volume/interest that have enough history
+        const withHistory = markets
+          .filter(m => m.history && m.history.length >= 2)
+          .slice(0, 6); // Top 6 markets
+        
+        if (withHistory.length === 0) {
+          console.log('TREND_SKIP: not enough history yet');
+          process.exit(0);
+        }
+
+        // Build multi-series data for line chart
+        // Format: [{x: timestamp, series1: val, series2: val, ...}]
+        
+        // Collect all unique timestamps
+        const allTimes = new Set();
+        withHistory.forEach(m => m.history.forEach(h => allTimes.add(h.t)));
+        const sortedTimes = Array.from(allTimes).sort();
+        
+        // Create short labels for series
+        const seriesLabels = withHistory.map(m => {
+          const q = m.question;
+          // Extract key identifier
+          const dateMatch = q.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2}/i);
+          const actionMatch = q.match(/^(US strikes|Israel strikes|US x Iran|Khamenei|meeting)/i);
+          if (dateMatch && actionMatch) {
+            return (actionMatch[1].replace('strikes', '→') + ' ' + dateMatch[0]).slice(0, 20);
+          }
+          if (q.includes('Oman')) return 'Oman meeting';
+          return q.slice(0, 18) + (q.length > 18 ? '…' : '');
+        });
+
+        // Build data points - interpolate missing values
+        const chartData = sortedTimes.map(t => {
+          const point = { x: t };
+          withHistory.forEach((m, i) => {
+            const entry = m.history.find(h => h.t === t);
+            if (entry) {
+              point[seriesLabels[i]] = entry.pct;
+            } else {
+              // Find closest earlier value
+              const earlier = m.history.filter(h => h.t < t).sort((a,b) => b.t.localeCompare(a.t))[0];
+              if (earlier) point[seriesLabels[i]] = earlier.pct;
+            }
+          });
+          return point;
+        });
+
+        // Output as JSON for chart script
+        console.log(JSON.stringify({
+          data: chartData,
+          series: seriesLabels
+        }));
+      " > /tmp/trend_prep.json
+      
+      rm -f /tmp/lb_trend_analysis.json
+
+      prep=$(cat /tmp/trend_prep.json)
+      if echo "$prep" | grep -q "TREND_SKIP"; then
+        echo "$prep"
+        rm -f /tmp/trend_prep.json
+        exit 0
+      fi
+
+      hour=$(date -u +%H)
+      israel_hour=$((hour + 2))
+      [ $israel_hour -ge 24 ] && israel_hour=$((israel_hour - 24))
+      dark_flag=""
+      if [ $israel_hour -ge 20 ] || [ $israel_hour -lt 7 ]; then
+        dark_flag="--dark"
+      fi
+
+      # Extract data array for chart
+      data=$(echo "$prep" | node -e "const d=require('fs').readFileSync(0,'utf8');console.log(JSON.stringify(JSON.parse(d).data))")
+      
+      node "$CHART_SCRIPT" \
+        --type line \
+        --data "$data" \
+        --title "Probability Trends Over Time" \
+        --y-title "% Probability" \
+        --y-domain "0,100" \
+        --x-type "time" \
+        $dark_flag \
+        --width 950 --height 500 \
+        --output "$TREND_OUTPUT" 2>&1
+
+      rm -f /tmp/trend_prep.json
+      echo "TREND_CHART:$TREND_OUTPUT"
 
   - id: osint-check
     command: |
@@ -234,53 +356,65 @@ steps:
   - id: report
     command: |
       cat > /tmp/lb_final_analysis.json << 'ANALYSIS_EOF'
-      $save-state.stdout
+      $analyze-and-save.stdout
       ANALYSIS_EOF
       
       cat > /tmp/lb_osint.txt << 'OSINT_EOF'
       $osint-check.stdout
       OSINT_EOF
       
-      cat > /tmp/lb_chart.txt << 'CHART_EOF'
-      $generate-chart.stdout
+      cat > /tmp/lb_bar_chart.txt << 'CHART_EOF'
+      $generate-bar-chart.stdout
       CHART_EOF
+
+      cat > /tmp/lb_trend_chart.txt << 'TREND_EOF'
+      $generate-trend-chart.stdout
+      TREND_EOF
 
       node -e "
         const fs = require('fs');
         const analysis = JSON.parse(fs.readFileSync('/tmp/lb_final_analysis.json', 'utf8').trim());
         const osint = fs.readFileSync('/tmp/lb_osint.txt', 'utf8').trim();
-        const chartResult = fs.readFileSync('/tmp/lb_chart.txt', 'utf8').trim();
+        const barChartResult = fs.readFileSync('/tmp/lb_bar_chart.txt', 'utf8').trim();
+        const trendChartResult = fs.readFileSync('/tmp/lb_trend_chart.txt', 'utf8').trim();
 
         let out = [];
 
         if (analysis.any_significant) {
-          out.push('🚨 **PREDICTION MARKET ALERT — Significant Move!**');
+          out.push('🚨 **PREDICTION MARKET ALERT — Significant Moves Detected!**');
         } else {
           out.push('📊 **Prediction Market Update**');
         }
-        out.push('⚙️  Threshold: ±' + analysis.threshold + '% | Markets tracked: ' + analysis.total_count);
+        out.push('⚙️ Threshold: ±' + analysis.threshold + '% | Markets tracked: ' + analysis.total_count);
 
-        const chartMatch = chartResult.match(/CHART_FILE:(.+)/);
-        if (chartMatch) {
+        // Bar chart path
+        const barMatch = barChartResult.match(/BAR_CHART:(.+)/);
+        if (barMatch) {
           out.push('');
-          out.push('CHART_FILE:' + chartMatch[1]);
+          out.push('BAR_CHART:' + barMatch[1]);
+        }
+
+        // Trend chart path
+        const trendMatch = trendChartResult.match(/TREND_CHART:(.+)/);
+        if (trendMatch) {
+          out.push('');
+          out.push('TREND_CHART:' + trendMatch[1]);
         }
 
         if (analysis.any_significant) {
           out.push('');
-          out.push('**📈 Significant Moves:**');
+          out.push('**📈 Significant Moves Since Last Check:**');
           analysis.markets.filter(m => m.significant).forEach(m => {
             const arrow = m.delta > 0 ? '📈' : '📉';
             const sign = m.delta > 0 ? '+' : '';
-            out.push(arrow + ' **' + m.last_pct + '% → ' + m.yes_pct + '%** (' + sign + m.delta.toFixed(1) + '%)');
-            out.push('   ' + m.question);
+            out.push('• **' + m.last_pct + '% → ' + m.yes_pct + '%** (' + sign + m.delta.toFixed(1) + '%) — ' + m.question);
           });
         }
 
         out.push('');
-        out.push('**📋 All Tracked Markets:**');
+        out.push('**📋 Top Markets:**');
         analysis.markets.slice(0, 10).forEach(m => {
-          const q = m.question.length > 65 ? m.question.slice(0, 62) + '...' : m.question;
+          const q = m.question.length > 50 ? m.question.slice(0, 47) + '...' : m.question;
           out.push('• **' + m.yes_pct + '%** — ' + q);
         });
 
@@ -292,4 +426,4 @@ steps:
 
         console.log(out.join('\\n'));
       "
-      rm -f /tmp/lb_final_analysis.json /tmp/lb_osint.txt /tmp/lb_chart.txt
+      rm -f /tmp/lb_final_analysis.json /tmp/lb_osint.txt /tmp/lb_bar_chart.txt /tmp/lb_trend_chart.txt
