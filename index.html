@@ -839,12 +839,12 @@
         </p>
         
         <div class="hero-cta">
-          <a href="#automations" class="btn btn-primary">Browse Automations</a>
-          <a href="https://github.com/openclaw/lobster" class="btn btn-secondary">⭐ Lobster Engine</a>
-          <a href="#contribute" class="btn btn-secondary">Add Your Own</a>
+          <a href="#automations" class="btn btn-primary" onclick="if(window.aa) aa.track('cta_click', {button: 'browse_automations'})">Browse Automations</a>
+          <a href="https://github.com/openclaw/lobster" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'lobster_engine'})">⭐ Lobster Engine</a>
+          <a href="#contribute" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'add_your_own'})">Add Your Own</a>
         </div>
         
-        <div class="install-box" onclick="navigator.clipboard.writeText('install clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
+        <div class="install-box" onclick="navigator.clipboard.writeText('install clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!'; if(window.aa) aa.track('copy_install', {command: 'install clawflows'});">
           <code>install clawflows</code>
           <span class="copy-hint">Tell your OpenClaw bot</span>
         </div>
@@ -914,10 +914,10 @@
             Lobster is the <strong>execution engine</strong>. ClawFlows is the <strong>registry</strong>.<br>
             Together: npm + node for AI agent automations.
           </p>
-          <a href="https://github.com/openclaw/lobster" class="btn btn-primary" style="margin-right: 0.75rem;">
+          <a href="https://github.com/openclaw/lobster" class="btn btn-primary" style="margin-right: 0.75rem;" onclick="if(window.aa) aa.track('cta_click', {button: 'lobster_github', section: 'lobster'})">
             ⭐ Lobster on GitHub
           </a>
-          <a href="./docs/lobster-guide.md" class="btn btn-secondary">
+          <a href="./docs/lobster-guide.md" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'integration_guide', section: 'lobster'})">
             Integration Guide
           </a>
         </div>
@@ -1082,6 +1082,7 @@
         document.getElementById('hero-count').textContent = `🚀 ${count}+ automations (${lobsterCount} Lobster-ready) and growing!`;
         
         mixpanel.track('page_loaded', { automation_count: count });
+        if (window.aa) aa.track('page_loaded', { automation_count: count, lobster_count: lobsterCount });
         
       } catch (err) {
         container.innerHTML = '<p class="loading">Could not load automations. <a href="https://github.com/Cluka-399/clawflows-registry/tree/main/automations">View on GitHub</a></p>';
@@ -1100,6 +1101,7 @@
       });
       renderAutomations(filtered);
       document.getElementById('automation-count').textContent = filtered.length;
+      if (query && window.aa) aa.track('search', { query: query, results: filtered.length });
     }
     
     function renderAutomations(automations) {
@@ -1109,7 +1111,7 @@
         return;
       }
       container.innerHTML = automations.map(a => `
-        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}'})">
+        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('automation_click', {name: '${escapeHtml(a.name)}', lobster_ready: ${!!a.lobster_ready}})">
           <div class="automation-meta">
             <span>v${a.version || '1.0.0'}</span>
             <span>by ${escapeHtml(a.author || 'anonymous')}</span>
