@@ -214,7 +214,7 @@ steps:
         exit 0
       fi
 
-      hour=$(date -u +%H)
+      hour=$(date -u +%-H)
       israel_hour=$((hour + 2))
       [ $israel_hour -ge 24 ] && israel_hour=$((israel_hour - 24))
       dark_flag=""
@@ -303,7 +303,7 @@ steps:
         exit 0
       fi
 
-      hour=$(date -u +%H)
+      hour=$(date -u +%-H)
       israel_hour=$((hour + 2))
       [ $israel_hour -ge 24 ] && israel_hour=$((israel_hour - 24))
       dark_flag=""
