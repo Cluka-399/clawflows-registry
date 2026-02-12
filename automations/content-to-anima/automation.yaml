@@ -1,0 +1,146 @@
+name: Content to Anima Pipeline
+description: Find trending ideas on Reddit/X, generate 3 visual concepts with Gemini, let user pick one, then build it on Anima — from idea to live site in minutes.
+version: 1.0.0
+author: Cluka
+
+requires:
+  - web_search
+  - image_generation
+  - anima_mcp
+  - messaging
+
+trigger:
+  manual: true  # User-initiated
+
+parameters:
+  - name: source
+    description: Where to find ideas — "reddit", "x", or a direct topic/prompt
+    required: true
+  - name: query
+    description: Search query or topic (e.g. "SaaS dashboards", "fitness app landing page")
+    required: true
+  - name: subreddit
+    description: Subreddit to search (if source is reddit)
+    default: ""
+  - name: framework
+    description: Anima framework — "react" or "html"
+    default: react
+  - name: styling
+    description: Anima styling — "tailwind", "css", "inline_styles"
+    default: tailwind
+
+steps:
+  - name: find_idea
+    action: search
+    description: Search Reddit or X for trending content matching the query
+    params:
+      source: "{{source}}"
+      query: "{{query}}"
+      subreddit: "{{subreddit}}"
+    prompt: |
+      Search {{source}} for "{{query}}".
+      Find 1-3 interesting, trending ideas that would make a great web page or app.
+      For each idea, extract:
+      - Title/concept
+      - Why it's interesting
+      - Key visual elements that would make it stand out
+      
+      Pick the BEST one and describe it as a clear visual concept.
+
+  - name: generate_concepts
+    action: generate_images
+    description: Use Gemini to create 3 visual concept images
+    depends_on: find_idea
+    prompt: |
+      Based on this idea: {{find_idea.best_concept}}
+      
+      Generate 3 different visual concept images using Gemini (nano-banana-pro):
+      
+      Concept 1: Clean, minimal, modern — white space heavy
+      Concept 2: Bold, colorful, eye-catching — strong visual hierarchy  
+      Concept 3: Dark mode, premium feel — subtle gradients and glows
+      
+      Each should be a mockup/concept of what the web page could look like.
+      
+      Send all 3 images to the user with labels.
+
+  - name: user_picks
+    action: wait_for_input
+    description: User reviews 3 concepts and picks their favorite
+    depends_on: generate_concepts
+    prompt: |
+      Here are 3 concepts for "{{find_idea.best_concept}}":
+      
+      Which one do you like? (1, 2, or 3)
+      
+      I'll then build it on Anima.
+
+  - name: deconstruct_image
+    action: analyze
+    description: Deconstruct the chosen concept into a detailed prompt
+    depends_on: user_picks
+    prompt: |
+      Analyze the chosen concept image ({{user_picks.choice}}).
+      
+      Deconstruct it into a detailed description covering:
+      - Layout structure (header, sections, grid, sidebar)
+      - Color palette (specific hex values if visible)
+      - Typography style (serif/sans-serif, weights, sizes)
+      - Key UI components (cards, buttons, forms, charts)
+      - Content sections and their purpose
+      - Visual style (shadows, borders, gradients, spacing)
+      - Any icons or imagery patterns
+      
+      Write this as a detailed Anima prompt that would recreate this design.
+
+  - name: anima_create
+    action: anima_playground_create
+    description: Send the deconstructed prompt to Anima to build it
+    depends_on: deconstruct_image
+    params:
+      type: p2c
+      prompt: "{{deconstruct_image.anima_prompt}}"
+      framework: "{{framework}}"
+      styling: "{{styling}}"
+    command: |
+      npx mcporter call anima-mcp.playground-create --timeout 600000 --args '{
+        "type": "p2c",
+        "prompt": "{{deconstruct_image.anima_prompt}}",
+        "framework": "{{framework}}",
+        "styling": "{{styling}}"
+      }' --output json
+
+  - name: anima_publish
+    action: anima_publish
+    description: Publish the playground to a live URL
+    depends_on: anima_create
+    command: |
+      npx mcporter call anima-mcp.playground-publish --timeout 600000 --args '{
+        "sessionId": "{{anima_create.sessionId}}",
+        "mode": "webapp"
+      }' --output json
+
+  - name: screenshot
+    action: screenshot
+    description: Capture the published live site
+    depends_on: anima_publish
+    command: |
+      curl -sL -o /tmp/anima-result.png "https://api.screenshotone.com/take?url={{anima_publish.liveUrl}}&access_key=$SCREENSHOT_ONE_ACCESS_KEY&full_page=true&delay=5&viewport_width=1280&format=png"
+
+  - name: deliver_result
+    action: message
+    description: Send the final screenshot and live URL to the user
+    depends_on: screenshot
+    params:
+      template: |
+        🚀 **Content → Anima Pipeline Complete!**
+        
+        **Idea:** {{find_idea.best_concept}}
+        **Concept:** #{{user_picks.choice}}
+        **Playground:** {{anima_create.playgroundUrl}}
+        **Live URL:** {{anima_publish.liveUrl}}
+        
+        📸 Screenshot attached
+
+state:
+  storage: memory/content-to-anima-state.json
