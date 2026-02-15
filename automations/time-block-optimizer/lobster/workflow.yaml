@@ -99,10 +99,34 @@ steps:
       jq -c --slurpfile evts /tmp/lb_evts_raw.json '. + {events: $evts[0]}' /tmp/lb_blocks.json
       rm -f /tmp/lb_evts_raw.json
 
+  - id: llm_schedule
+    stdin: $compute-blocks.stdout
+    command: |
+      cat > /tmp/lb_tbo_llm.json
+      DATA=$(cat /tmp/lb_tbo_llm.json)
+      llm_task.invoke <<PROMPT
+      You are a time management expert. Given this calendar analysis:
+
+      $DATA
+
+      Provide:
+      - block_assignments: suggest what type of work fits each focus block (deep work, admin, creative)
+      - async_candidates: meetings that could probably be async (with reasoning)
+      - schedule_tweaks: 2-3 adjustments for better flow and fewer context switches
+      - deep_work_score: rate this schedule 1-10 for deep work friendliness
+      - maker_vs_manager: assessment of schedule type and recommendations
+
+      Return JSON with those fields.
+      PROMPT
+      rm -f /tmp/lb_tbo_llm.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     stdin: $compute-blocks.stdout
     command: |
       cat > /tmp/lb_rpt.json
+      LLM_DATA='${{ steps.llm_schedule.stdout }}'
       jq -r '
         "⏰ Time Block Analysis\n" +
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
@@ -114,12 +138,19 @@ steps:
         "\n\n🟢 Focus Blocks (≥${min_block_min}min):\n" +
         if (.focus_blocks | length) == 0 then "  ⚠️ No focus blocks available!"
         else (.focus_blocks | map("  \(.start)-\(.end) (\(.duration_min)min)") | join("\n")) end +
-        (if .best_block then "\n\n⭐ Best block: \(.best_block.start)-\(.best_block.end) (\(.best_block.duration_min)min)" else "" end) +
-        "\n\n# LLM STEP (not automated):\n" +
-        "# Feed this analysis to LLM for:\n" +
-        "# - Suggest which tasks to slot into each focus block\n" +
-        "# - Identify meetings that could be async\n" +
-        "# - Recommend schedule adjustments for better flow\n" +
-        "# - Compare to ideal deep-work ratio (maker schedule)"
+        (if .best_block then "\n\n⭐ Best block: \(.best_block.start)-\(.best_block.end) (\(.best_block.duration_min)min)" else "" end)
       ' /tmp/lb_rpt.json
+      echo ""
+      echo "🤖 LLM Schedule Insights"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "$LLM_DATA" | jq -r '
+        "\n📋 Block Assignments:" +
+        (.block_assignments | if type == "array" then map("\n  • " + .) | join("") elif type == "object" then to_entries | map("\n  • \(.key): \(.value)") | join("") else "\n  \(.)" end) +
+        "\n\n🔄 Async Candidates:" +
+        (.async_candidates | if type == "array" then map("\n  • " + (if type == "object" then "\(.meeting // .name): \(.reasoning // .reason)" else tostring end)) | join("") else "\n  \(.)" end) +
+        "\n\n💡 Schedule Tweaks:" +
+        (.schedule_tweaks | if type == "array" then map("\n  • " + tostring) | join("") else "\n  \(.)" end) +
+        "\n\n⭐ Deep Work Score: \(.deep_work_score)/10" +
+        "\n\n🎯 Maker vs Manager:\n  \(.maker_vs_manager)"
+      ' 2>/dev/null || echo "$LLM_DATA"
       rm -f /tmp/lb_rpt.json /tmp/lb_blocks.json

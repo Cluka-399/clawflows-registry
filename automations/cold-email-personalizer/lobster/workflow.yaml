@@ -191,8 +191,6 @@ steps:
     stdin: $web_research.stdout
     command: |
       # Assemble complete research profiles with personalization signals
-      # TODO: Pipe this output to an LLM to identify pain points and generate
-      # hyper-personalized email drafts referencing specific posts/projects
       cat > /tmp/lb_ce_researched.json
 
       jq -c --arg product "${product_name}" --arg pitch "${product_pitch}" '{
@@ -224,42 +222,42 @@ steps:
 
       rm -f /tmp/lb_ce_researched.json
 
-  - id: report
+  - id: generate_emails
     stdin: $build_profiles.stdout
     command: |
-      # Format a human-readable summary
-      # TODO: In production, pipe build_profiles output to an LLM with a prompt like:
-      #   "For each target, write a cold email under 150 words referencing their
-      #    specific project/post, connecting their pain point to our product.
-      #    Include a clear CTA."
-      # TODO: Use an email-finding service or pattern-based guessing to find emails
-      # TODO: Send via email API and schedule 3-day follow-ups
+      llm_task.invoke --prompt "You are a cold email expert. Given the JSON research profiles below, for each target:
+      1. Identify their likely pain points based on their tech stack, projects, and activity.
+      2. Write a hyper-personalized cold email (under 150 words) that:
+         - References a specific project or blog post they worked on
+         - Connects their pain point to the product
+         - Has a clear, low-friction CTA (e.g. 'reply with your thoughts' or 'quick 15-min call')
+         - Feels human and genuine, not salesy
+      3. Suggest a subject line (under 60 chars, no spam triggers)
+
+      Return valid JSON: {\"emails\": [{\"name\": \"...\", \"username\": \"...\", \"subject\": \"...\", \"body\": \"...\", \"pain_point\": \"...\", \"personalization_hook\": \"...\"}]}
+
+      Include the original profile data in a 'profiles' key so downstream steps can use it."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
+
+  - id: report
+    stdin: $generate_emails.stdout
+    command: |
+      # Format a human-readable summary with generated emails
       jq -r '
-        .product.name as $pname |
-        "🎯 Cold Email Personalizer — Research Report\n" +
-        "Product: \(.product.name) — \(.product.pitch)\n" +
-        "Targets researched: \(.meta.target_count)\n" +
-        "Generated: \(.meta.researched_at)\n" +
+        "🎯 Cold Email Personalizer — Generated Emails\n" +
         "═══════════════════════════════════════════\n\n" +
-        (.targets | to_entries | map(
+        (if .profiles then
+          "Targets researched: \(.profiles.meta.target_count // "N/A")\n" +
+          "Product: \(.profiles.product.name // "N/A") — \(.profiles.product.pitch // "")\n\n"
+        else "" end) +
+        (.emails | to_entries | map(
           "[\(.key + 1)] \(.value.name) (@\(.value.username))\n" +
-          "    Company: \(.value.company // "N/A")\n" +
-          "    Bio: \(.value.bio // "N/A")\n" +
-          "    Location: \(.value.location // "N/A")\n" +
-          "    Followers: \(.value.followers // 0)\n" +
-          "    Profile: \(.value.profile_url)\n\n" +
-          "    📦 Top Project: \(.value.personalization_hooks.top_project // "N/A")\n" +
-          "    🛠️  Tech Stack: \(.value.personalization_hooks.tech_stack)\n" +
-          "    🏷️  Topics: \(.value.personalization_hooks.recent_topics)\n\n" +
-          "    🌐 Web Mentions:\n" +
-          (if (.value.signals.web_mentions | length) > 0
-           then (.value.signals.web_mentions | map(
-              "      • \(.title)\n        \(.url)"
-            ) | join("\n"))
-           else "      (none found)"
-           end) +
-          "\n\n    💡 Personalization angle:\n" +
-          "      Reference their project \"" + (.value.personalization_hooks.top_project // "top work") + "\" and\n" +
-          "      connect \(.value.personalization_hooks.tech_stack) expertise to " + $pname + ".\n"
+          "    Pain Point: \(.value.pain_point)\n" +
+          "    Hook: \(.value.personalization_hook)\n\n" +
+          "    📧 Subject: \(.value.subject)\n\n" +
+          "    Body:\n" +
+          (.value.body | split("\n") | map("      " + .) | join("\n")) +
+          "\n"
         ) | join("\n───────────────────────────────────────────\n\n"))
       '

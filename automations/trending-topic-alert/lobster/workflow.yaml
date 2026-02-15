@@ -76,15 +76,61 @@ steps:
       cat /tmp/lb_ta_trend.json
       rm -f /tmp/lb_ta_trend.json
 
-  - id: report
+  - id: llm_analyze
     stdin: $save-state.stdout
     command: |
-      jq -r '
-        if .trending then
-          "🔥 Trending Alert: \(.match_count)/\(.total_stories) front page stories match your niche!\n\n" +
-          (.matches | map("• \(.title) (\(.points) pts)\n  \(.hn_url)") | join("\n\n"))
-        elif .match_count > 0 then
-          "📊 \(.match_count) matching stories (threshold: \(.threshold)) — not alerting yet."
-        else
-          "No matching stories on HN front page right now."
-        end'
+      cat > /tmp/lb_ta_llm.json
+      TRENDING=$(jq -r '.trending' /tmp/lb_ta_llm.json)
+      if [ "$TRENDING" != "true" ]; then
+        cat /tmp/lb_ta_llm.json
+        rm -f /tmp/lb_ta_llm.json
+        exit 0
+      fi
+      DATA=$(cat /tmp/lb_ta_llm.json)
+      llm_task.invoke <<PROMPT
+      Hacker News is currently trending with ${niche_keywords}-related stories:
+
+      $DATA
+
+      Analyze:
+      - why_trending: what's driving this trend right now
+      - content_angles: 3 content ideas to capitalize on this trend
+      - engagement_tips: how to join the HN discussion effectively
+      - trend_duration: likely short-lived (hours) or sustained (days)
+
+      Return JSON with those fields.
+      PROMPT
+      rm -f /tmp/lb_ta_llm.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  - id: report
+    stdin: $llm_analyze.stdout
+    command: |
+      cat > /tmp/lb_ta_report.json
+      # Try to parse as LLM-enriched response (has why_trending), otherwise fall back to basic
+      HAS_LLM=$(jq -r 'if .why_trending then "yes" else "no" end' /tmp/lb_ta_report.json 2>/dev/null || echo "no")
+      if [ "$HAS_LLM" = "yes" ]; then
+        # LLM-enriched trending report
+        jq -r '
+          "🔥 Trending Alert!\n\n" +
+          "📈 Why trending: \(.why_trending)\n\n" +
+          "💡 Content Angles:\n" +
+          (.content_angles | to_entries | map("  \(.key + 1). \(.value)") | join("\n")) +
+          "\n\n🗣️ Engagement Tips: \(.engagement_tips)\n\n" +
+          "⏱️ Trend Duration: \(.trend_duration)"
+        ' /tmp/lb_ta_report.json
+      else
+        # Basic report (non-trending or LLM not available)
+        jq -r '
+          if .trending then
+            "🔥 Trending Alert: \(.match_count)/\(.total_stories) front page stories match your niche!\n\n" +
+            (.matches | map("• \(.title) (\(.points) pts)\n  \(.hn_url)") | join("\n\n"))
+          elif .match_count > 0 then
+            "📊 \(.match_count) matching stories (threshold: \(.threshold)) — not alerting yet."
+          else
+            "No matching stories on HN front page right now."
+          end
+        ' /tmp/lb_ta_report.json
+      fi
+      rm -f /tmp/lb_ta_report.json

@@ -118,23 +118,7 @@ steps:
 
   - id: generate-pitches
     stdin: $compile-report.stdout
-    prompt: |
-      Analyze the breaking news and journalist data for newsjacking opportunities.
-
-      Expert credentials: ${expert_bio}
-      Areas of expertise: ${topics_of_expertise}
-
-      For each news article:
-      1. Rate newsjacking potential: HOT / WARM / PASS (based on relevance to expertise)
-      2. For HOT articles, draft 2-3 quotable expert sound bites
-      3. Explain the unique angle our expert brings
-
-      For each journalist lead:
-      1. Draft a personalized pitch email referencing the HOT article and their beat
-      2. Include the expert's sound bite as a teaser
-      3. Keep pitches concise and newsworthy
-
-      Prioritize speed — newsjacking has a short window.
-    system: >
-      You are a PR strategist specializing in newsjacking. Draft timely, compelling media pitches.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a PR strategist specializing in newsjacking. Draft timely, compelling media pitches.\n\nUSER: Analyze the breaking news and journalist data for newsjacking opportunities.\n\nExpert credentials: ${expert_bio}\nAreas of expertise: ${topics_of_expertise}\n\nFor each news article:\n1. Rate newsjacking potential: HOT / WARM / PASS (based on relevance to expertise)\n2. For HOT articles, draft 2-3 quotable expert sound bites\n3. Explain the unique angle our expert brings\n\nFor each journalist lead:\n1. Draft a personalized pitch email referencing the HOT article and their beat\n2. Include the expert's sound bite as a teaser\n3. Keep pitches concise and newsworthy\n\nPrioritize speed — newsjacking has a short window.\n\nHere is the compiled report data (provided via stdin):"
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 

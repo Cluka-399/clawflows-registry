@@ -272,15 +272,6 @@ steps:
 
   - id: smart-triage
     stdin: $final_report.stdout
-    prompt: |
-      Review the inbox triage report below and enhance it:
-
-      1. Verify email categorizations — fix any misclassified emails
-      2. For each urgent/action-needed email, draft a concise reply (2-3 sentences)
-      3. Identify any emails that look like phishing or spam that were missed
-      4. Suggest which emails can be batch-handled vs need individual attention
-      5. Provide a prioritized action list: what to handle first, what can wait
-
-      Keep drafts professional and match the sender's tone.
-    system: >
-      You are an executive assistant. Triage email efficiently and draft quick, appropriate replies.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are an executive assistant. Triage email efficiently and draft quick, appropriate replies.\n\nUSER: Review the inbox triage report below and enhance it:\n\n1. Verify email categorizations — fix any misclassified emails\n2. For each urgent/action-needed email, draft a concise reply (2-3 sentences)\n3. Identify any emails that look like phishing or spam that were missed\n4. Suggest which emails can be batch-handled vs need individual attention\n5. Provide a prioritized action list: what to handle first, what can wait\n\nKeep drafts professional and match the sender's tone."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }

@@ -1,4 +1,4 @@
-# LLM: Uses prompt step for retrospective narrative generation
+# LLM: Uses llm_task.invoke for retrospective narrative generation
 
 name: "Weekly Retro Generator"
 description: "Generate a weekly retrospective from agent activity logs, git commits, and calendar events"
@@ -269,39 +269,25 @@ steps:
 
   - id: format_retro
     stdin: $build_retro_data.stdout
-    prompt: |
-      Generate a ${format} weekly retrospective from the assembled data below.
-
-      Structure the retro as:
-      1. **TL;DR** — One-sentence summary of the week
-      2. **Accomplishments** — What got done (extract from logs and commits)
-      3. **Progress** — What moved forward but isn't finished
-      4. **Blockers** — What's stuck and what would unblock it
-      5. **Learnings** — Key insights or lessons from this week
-      6. **Next Week** — Top 3 priorities based on pending work and patterns
-
-      Use emoji indicators. Reference specific commits and log entries.
-      Be honest about what went well and what didn't.
-    system: >
-      You are a thoughtful engineering retrospective facilitator. Write honest, actionable retros.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a thoughtful engineering retrospective facilitator. Write honest, actionable retros.\n\nUSER: Generate a ${format} weekly retrospective from the assembled data below.\n\nStructure the retro as:\n1. **TL;DR** — One-sentence summary of the week\n2. **Accomplishments** — What got done (extract from logs and commits)\n3. **Progress** — What moved forward but isn't finished\n4. **Blockers** — What's stuck and what would unblock it\n5. **Learnings** — Key insights or lessons from this week\n6. **Next Week** — Top 3 priorities based on pending work and patterns\n\nUse emoji indicators. Reference specific commits and log entries.\nBe honest about what went well and what didn't.\n\nDATA:\n$(cat -)"
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 
 
   - id: save_retro
+    stdin: $format_retro.stdout
     command: |
       OUTPUT_DIR="${output_dir}"
       mkdir -p "$OUTPUT_DIR"
       TODAY=$(date +%Y-%m-%d)
       OUTFILE="${OUTPUT_DIR}/week-${TODAY}.md"
 
-      # Add markdown header
-      cat > "$OUTFILE" << EOF
-      # Weekly Retro — ${TODAY}
-
-      $(cat /tmp/retro_formatted.md)
-      EOF
-
-      # Clean up leading whitespace from heredoc
-      sed -i 's/^      //' "$OUTFILE"
+      # Add markdown header — stdin has the LLM-generated retro
+      {
+        echo "# Weekly Retro — ${TODAY}"
+        echo ""
+        cat -
+      } > "$OUTFILE"
 
       echo "Saved to: ${OUTFILE}"
       cat "$OUTFILE"

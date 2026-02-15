@@ -149,17 +149,8 @@ steps:
   # 7. Generate formatted report
   - id: report
     stdin: $compute-growth.stdout
-    prompt: |
-      Generate a weekly audience growth report for ${username}.
-
-      Using the growth data below, create a narrative report that includes:
-      1. Current follower count and change since last period
-      2. Growth trend analysis (accelerating, decelerating, stable)
-      3. Comparison to recent history
-      4. Actionable recommendations to improve growth
-      5. Key milestones approaching
-
-      Keep it concise and scannable with emoji indicators.
-    system: >
-      You are a social media growth analyst. Write engaging, data-backed growth reports.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a social media growth analyst. Write engaging, data-backed growth reports.\n\nUSER: Generate a weekly audience growth report for ${username}.\n\nUsing the growth data below, create a narrative report that includes:\n1. Current follower count and change since last period\n2. Growth trend analysis (accelerating, decelerating, stable)\n3. Comparison to recent history\n4. Actionable recommendations to improve growth\n5. Key milestones approaching\n\nKeep it concise and scannable with emoji indicators."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

@@ -168,19 +168,7 @@ steps:
 
   - id: analyze-competition
     stdin: $generate_report.stdout
-    prompt: |
-      Analyze the YouTube competitor tracking data and provide strategic insights.
-
-      Include:
-      1. **Channel Performance Summary** — rank channels by recent performance
-      2. **Top Performing Content** — what topics/formats are getting the most views?
-      3. **Viral Content Analysis** — why did viral videos succeed? (title, topic, timing)
-      4. **Content Gaps** — topics competitors aren't covering that we could own
-      5. **Trend Detection** — any shifts in competitor content strategy?
-      6. **Recommendations** — specific video ideas based on what's working in the space
-      7. **Timing Insights** — when are competitors posting? Best upload windows?
-
-      Be specific with data. Reference actual video titles and view counts.
-    system: >
-      You are a YouTube competitive analyst. Provide actionable content strategy insights.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a YouTube competitive analyst. Provide actionable content strategy insights.\n\nUSER: Analyze the YouTube competitor tracking data and provide strategic insights.\n\nInclude:\n1. **Channel Performance Summary** — rank channels by recent performance\n2. **Top Performing Content** — what topics/formats are getting the most views?\n3. **Viral Content Analysis** — why did viral videos succeed? (title, topic, timing)\n4. **Content Gaps** — topics competitors aren't covering that we could own\n5. **Trend Detection** — any shifts in competitor content strategy?\n6. **Recommendations** — specific video ideas based on what's working in the space\n7. **Timing Insights** — when are competitors posting? Best upload windows?\n\nBe specific with data. Reference actual video titles and view counts."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 

@@ -191,21 +191,7 @@ steps:
   # ---------- Step 7: Generate report & save ----------
   - id: curate-testimonials
     stdin: $score_sentiment.stdout
-    prompt: |
-      Curate a social proof library from the brand mentions below for ${brand_name}.
-
-      Tasks:
-      1. Re-score sentiment with contextual understanding (fix keyword-based errors)
-      2. Select the top 5 testimonials most suitable for:
-         - Landing page social proof
-         - Case study leads
-         - Social media resharing
-      3. For each top testimonial, extract the best quotable snippet
-      4. Identify any negative mentions that need a response
-      5. Suggest outreach to particularly enthusiastic advocates
-      6. Note any platforms where ${brand_name} presence is weak
-
-      Format as a structured testimonial library with clear categories.
-    system: >
-      You are a brand marketing analyst. Curate authentic social proof and identify advocacy opportunities.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a brand marketing analyst. Curate authentic social proof and identify advocacy opportunities.\n\nUSER: Curate a social proof library from the brand mentions below for ${brand_name}.\n\nTasks:\n1. Re-score sentiment with contextual understanding (fix keyword-based errors)\n2. Select the top 5 testimonials most suitable for:\n   - Landing page social proof\n   - Case study leads\n   - Social media resharing\n3. For each top testimonial, extract the best quotable snippet\n4. Identify any negative mentions that need a response\n5. Suggest outreach to particularly enthusiastic advocates\n6. Note any platforms where ${brand_name} presence is weak\n\nFormat as a structured testimonial library with clear categories."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 

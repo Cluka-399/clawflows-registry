@@ -64,16 +64,9 @@ steps:
       rm -f "$tmpout" /tmp/lb_cs_m.json /tmp/lb_cs_state.json
 
   - id: analyze-changes
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a competitive intelligence analyst. Focus on strategic implications, not just describing changes. Be direct and actionable.\n\nUSER: Analyze these competitor page changes for ${competitor_name}. For each changed page, explain what likely changed and why it matters. If careers/jobs pages changed, analyze hiring signals (what roles, what teams are growing, what it implies about their strategy). If pricing changed, flag it as high priority. If no changes detected (empty array), say so briefly. Keep the analysis concise and actionable.\n\nDATA:\n$(cat /dev/stdin)"
     stdin: $check-pages.stdout
-    prompt: |
-      Analyze these competitor page changes for ${competitor_name}.
-      For each changed page, explain what likely changed and why it matters.
-      If careers/jobs pages changed, analyze hiring signals (what roles,
-      what teams are growing, what it implies about their strategy).
-      If pricing changed, flag it as high priority.
-      If no changes detected (empty array), say so briefly.
-      Keep the analysis concise and actionable.
-    system: >
-      You are a competitive intelligence analyst. Focus on strategic
-      implications, not just describing changes. Be direct and actionable.
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
     condition: true

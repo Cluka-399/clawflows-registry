@@ -7,8 +7,7 @@
 # Requires: curl, jq, bash
 #
 # NOTE: Without Ahrefs/SEMrush APIs, we use Brave Search to discover what
-# pages/topics each domain covers, then compare to find gaps. The final
-# "brief generation" step produces structured JSON that can be piped to an LLM.
+# pages/topics each domain covers, then compare to find gaps.
 
 name: seo-gap-assassin
 description: >
@@ -138,14 +137,10 @@ steps:
       ' /tmp/lb_seo_gap_comp.json
       rm -f /tmp/lb_seo_gap_comp.json /tmp/lb_seo_gap_your.json
 
-  # Step 5: Generate content briefs for each gap (structured JSON — pipe to LLM for full briefs)
+  # Step 5: Generate structured gap data for each content gap
   - id: briefs
     stdin: $find-gaps.stdout
     command: |
-      # NOTE: This step produces structured data for each gap.
-      # For full content briefs, pipe .briefs[] to an LLM with a prompt like:
-      #   "Generate a content brief for the topic: <title>. Include target keywords,
-      #    search intent, recommended format, H2/H3 outline, and unique angles."
       cat > /tmp/lb_seo_gaps.json
       jq -c '
         .gaps as $gaps |
@@ -160,31 +155,56 @@ steps:
               competitor_description: .description,
               suggested_keywords: .unique_topics,
               overlap_pct: .overlap_pct,
-              action: "Create content covering this topic to close the gap",
-              brief_status: "data_collected_needs_llm_expansion"
+              action: "Create content covering this topic to close the gap"
             }
           ]
         }
       ' /tmp/lb_seo_gaps.json
       rm -f /tmp/lb_seo_gaps.json
 
-  # Step 6: Summary report
-  - id: report
+  # Step 5b: Use LLM to expand gap data into full content briefs
+  - id: llm_briefs
     stdin: $briefs.stdout
     command: |
+      cat > /tmp/lb_seo_llm_input.json
+      DATA=$(cat /tmp/lb_seo_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are an SEO content strategist. Given these content gaps between ${your_domain} and its competitors:
+
+      $DATA
+
+      For each gap (top 5 max), generate a full content brief:
+      - target_title: SEO-optimized title
+      - search_intent: informational/commercial/transactional
+      - recommended_format: blog post/guide/comparison/tutorial
+      - outline: array of H2/H3 headings
+      - unique_angle: what makes this different from the competitor's version
+      - estimated_word_count: number
+      - priority: HIGH/MEDIUM/LOW based on gap score and keyword value
+
+      Return JSON: { "content_briefs": [...] }
+      PROMPT
+      rm -f /tmp/lb_seo_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  # Step 6: Summary report with AI-generated content briefs
+  - id: report
+    stdin: $llm_briefs.stdout
+    command: |
       jq -r '
-        "🎯 **SEO Gap Analysis Complete**\n" +
-        "Domain: \(.your_domain)\n" +
-        "Found \(.gap_count) content gap(s)\n\n" +
-        if (.briefs | length) == 0 then
+        "🎯 **SEO Gap Analysis Complete**\n\n" +
+        if (.content_briefs | length) == 0 then
           "No significant gaps found — your content covers competitor topics well!"
         else
-          "**Top Opportunities:**\n\n" +
-          ([.briefs[:10][] |
-            "• **\(.target_topic)**\n" +
-            "  Competitor: \(.competitor) — \(.competitor_url)\n" +
-            "  Keywords: \(.suggested_keywords | join(", "))\n" +
-            "  Gap score: \(100 - .overlap_pct)%"
+          "**AI-Generated Content Briefs:**\n\n" +
+          ([.content_briefs[:5][] |
+            "### \(.priority // "—") | \(.target_title)\n" +
+            "  Intent: \(.search_intent) | Format: \(.recommended_format)\n" +
+            "  Word count: ~\(.estimated_word_count)\n" +
+            "  Unique angle: \(.unique_angle)\n" +
+            "  Outline:\n" +
+            ([.outline[]? | "    - " + .] | join("\n"))
           ] | join("\n\n"))
         end
       '

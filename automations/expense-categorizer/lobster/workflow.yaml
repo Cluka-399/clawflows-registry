@@ -71,45 +71,64 @@ steps:
       ' /tmp/lb_expenses.json
       rm -f /tmp/lb_expenses.json /tmp/lb_cat_rules.json
 
-  - id: report
+  - id: llm_recategorize
     stdin: $categorize.stdout
+    command: |
+      cat > /tmp/ec_llm_input.json
+      DATA=$(cat /tmp/ec_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are a financial categorization expert. Review these categorized expenses:
+
+      $DATA
+
+      Tasks:
+      1. Recategorize any "uncategorized" expenses into the best category
+      2. Flag potential duplicate transactions
+      3. Flag any suspicious/unusual amounts
+      Return the corrected data in the same JSON format with additions: llm_category (for recategorized items), flags (array of {expense_index, flag_type, reason})
+      PROMPT
+      rm -f /tmp/ec_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  - id: report
+    stdin: $llm_recategorize.stdout
     command: |
       cat > /tmp/lb_cat_report.json
       jq -r '
-        "🏷️  Expense Categorizer Report\n" +
-        "==============================\n\n" +
+        "🏷️  Expense Categorizer Report (LLM-Enhanced)\n" +
+        "==============================================\n\n" +
         "📊 \(.count) expenses totaling $\(.total)\n" +
         (if .uncategorized > 0 then
-          "⚠️  \(.uncategorized) uncategorized expense(s)\n"
+          "⚠️  \(.uncategorized) still uncategorized expense(s)\n"
         else
           "✅ All expenses categorized!\n"
         end) +
-        "\n--- By Category ---\n" +
-        (.summary | map(
-          "  \(.category): $\(.total) (\(.count) txns, avg $\(.avg))" +
-          " — \(.total / $parent.total * 100 | round)%"
-        ) | join("\n")) +
-        "\n\n--- Recent Expenses ---\n" +
-        (.categorized | sort_by(.date) | reverse | .[0:10] | map(
-          "  [\(.category)] \(.date) \(.description): $\(.amount)"
-        ) | join("\n"))
-      ' /tmp/lb_cat_report.json 2>/dev/null || \
-      jq -r '
-        "🏷️  Expense Categorizer Report\n" +
-        "==============================\n\n" +
-        "📊 \(.count) expenses totaling $\(.total)\n" +
-        (if .uncategorized > 0 then
-          "⚠️  \(.uncategorized) uncategorized expense(s)\n"
-        else
-          "✅ All expenses categorized!\n"
-        end) +
+        (if (.categorized | map(select(.llm_category)) | length) > 0 then
+          "🤖 LLM recategorized \(.categorized | map(select(.llm_category)) | length) expense(s)\n"
+        else "" end) +
+        (if (.flags // [] | length) > 0 then
+          "🚩 \(.flags | length) flag(s) raised\n"
+        else "" end) +
         "\n--- By Category ---\n" +
         (.summary | map(
           "  \(.category): $\(.total) (\(.count) txns, avg $\(.avg))"
         ) | join("\n")) +
+        (if (.categorized | map(select(.llm_category)) | length) > 0 then
+          "\n\n--- LLM Recategorized ---\n" +
+          (.categorized | to_entries | map(select(.value.llm_category)) | map(
+            "  #\(.key) \(.value.description): \(.value.category) → \(.value.llm_category)"
+          ) | join("\n"))
+        else "" end) +
+        (if (.flags // [] | length) > 0 then
+          "\n\n--- Flags ---\n" +
+          (.flags | map(
+            "  🚩 [\(.flag_type)] expense #\(.expense_index): \(.reason)"
+          ) | join("\n"))
+        else "" end) +
         "\n\n--- Recent Expenses ---\n" +
         (.categorized | sort_by(.date) | reverse | .[0:10] | map(
-          "  [\(.category)] \(.date) \(.description): $\(.amount)"
+          "  [\(.llm_category // .category)] \(.date) \(.description): $\(.amount)"
         ) | join("\n"))
       ' /tmp/lb_cat_report.json
       rm -f /tmp/lb_cat_report.json

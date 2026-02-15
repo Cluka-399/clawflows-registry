@@ -69,17 +69,7 @@ steps:
 
   - id: generate-briefs
     stdin: $filter-meetings.stdout
-    prompt: |
-      Generate meeting preparation briefs for each upcoming meeting below.
-
-      For each meeting:
-      1. Suggest a likely agenda based on the meeting title
-      2. List what to prepare (documents, data, updates)
-      3. Suggest 2-3 talking points or questions to raise
-      4. Estimate if this is a decision meeting, status update, or brainstorm
-      5. Flag any meetings that might be skippable or could be an email
-
-      Format with clear headers per meeting, most urgent first.
-    system: >
-      You are an executive assistant. Create concise, actionable meeting prep briefs.
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are an executive assistant. Create concise, actionable meeting prep briefs.\n\nUSER: Generate meeting preparation briefs for each upcoming meeting below.\n\nFor each meeting:\n1. Suggest a likely agenda based on the meeting title\n2. List what to prepare (documents, data, updates)\n3. Suggest 2-3 talking points or questions to raise\n4. Estimate if this is a decision meeting, status update, or brainstorm\n5. Flag any meetings that might be skippable or could be an email\n\nFormat with clear headers per meeting, most urgent first."
 

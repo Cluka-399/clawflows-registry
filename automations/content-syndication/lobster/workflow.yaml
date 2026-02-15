@@ -147,18 +147,8 @@ steps:
 
   - id: syndicate
     stdin: $generate-platform-specs.stdout
-    prompt: |
-      Generate platform-optimized versions of the blog post for each target platform.
-
-      For each platform spec below:
-      1. Rewrite the content following the platform's instructions and style guide
-      2. Respect max_length constraints
-      3. Add appropriate front matter where specified
-      4. Include the canonical URL for SEO
-      5. Optimize headlines and hooks for each platform's audience
-
-      Output each version as a separate section with the platform name as header,
-      ready for copy-paste submission.
-    system: >
-      You are a content syndication expert. Create platform-native versions that feel organic, not cross-posted.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a content syndication expert. Create platform-native versions that feel organic, not cross-posted.\n\nUSER: Generate platform-optimized versions of the blog post for each target platform.\n\nFor each platform spec below:\n1. Rewrite the content following the platform's instructions and style guide\n2. Respect max_length constraints\n3. Add appropriate front matter where specified\n4. Include the canonical URL for SEO\n5. Optimize headlines and hooks for each platform's audience\n\nOutput each version as a separate section with the platform name as header, ready for copy-paste submission.\n\nInput data:\n$(cat)"
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

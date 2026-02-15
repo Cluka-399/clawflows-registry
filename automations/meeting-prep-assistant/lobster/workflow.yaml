@@ -7,8 +7,8 @@
 # Requires: jq, gcalcli (or any calendar CLI)
 #
 # NOTE: The original automation uses calendar + file_system capabilities.
-# This version fetches imminent meetings and searches for related docs/notes.
-# For AI-generated briefs, pipe the output to an LLM.
+# This version fetches imminent meetings, searches for related docs/notes,
+# and generates AI-powered briefs via llm_task.invoke.
 
 name: meeting-prep-assistant
 description: Generate meeting briefs 30 min before - attendees, agenda, relevant docs
@@ -80,29 +80,52 @@ steps:
         '{meetings: $m[0].meetings, docs: $d[0], count: $m[0].count}'
       rm -f /tmp/lb_mpa_meetings.json /tmp/lb_mpa_docs.json
 
-  - id: report
+  - id: llm_brief
     stdin: $find-related-docs.stdout
     command: |
-      # NOTE: For AI-powered briefs analyzing attendee relationships, 
-      # history, and suggesting talking points, pipe this JSON to an LLM.
-      jq -r '
-        if .count == 0 then
-          "📅 No meetings in the next '"${minutes_before}"' minutes."
-        else
-          "📋 **Meeting Brief** (" + (.count|tostring) + " upcoming)\n" +
-          ([range(.count)] | map(
-            .meetings[.] as $m |
-            (.docs[.] // {related_files:[]}) as $d |
-            "\n**" + ($m.start_time // "?") + " — " + ($m.title // "Untitled") + "**" +
-            if ($d.related_files | length) > 0 then
-              "\n  📎 Related notes: " + ($d.related_files | join(", "))
-            else
-              "\n  📎 No related notes found"
-            end
-          ) | join("\n---"))
-        end
-      ' 2>/dev/null || jq -r '
-        if .count == 0 then "📅 No meetings in the next '"${minutes_before}"' minutes."
-        else "📋 " + (.count|tostring) + " meeting(s) coming up. See JSON output for details."
-        end
-      '
+      cat > /tmp/lb_mpa_llm_input.json
+      DATA=$(cat /tmp/lb_mpa_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are an executive meeting prep assistant. Given these upcoming meetings and related notes:
+
+      $DATA
+
+      For each meeting, generate a brief with:
+      - key_context: what this meeting is likely about based on the title and related docs
+      - suggested_talking_points: 2-3 things to raise
+      - prep_actions: anything to review/prepare before the meeting
+      - energy_level: "high" (important decision), "medium" (routine), "low" (informational)
+
+      Return JSON: { "briefs": [{ "title": "...", "key_context": "...", "talking_points": [...], "prep_actions": [...], "energy_level": "..." }] }
+      PROMPT
+      rm -f /tmp/lb_mpa_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  - id: report
+    stdin: $llm_brief.stdout
+    command: |
+      cat > /tmp/lb_mpa_briefs.json
+      BRIEFS=$(cat /tmp/lb_mpa_briefs.json)
+      # Check if we got valid briefs
+      if echo "$BRIEFS" | jq -e '.briefs' >/dev/null 2>&1; then
+        echo "$BRIEFS" | jq -r '
+          if (.briefs | length) == 0 then
+            "📅 No meetings coming up."
+          else
+            "📋 **AI Meeting Briefs** (" + (.briefs | length | tostring) + " upcoming)\n" +
+            (.briefs | map(
+              "\n" +
+              (if .energy_level == "high" then "🔴" elif .energy_level == "medium" then "🟡" else "🟢" end) +
+              " **" + .title + "**\n" +
+              "  💡 " + .key_context + "\n" +
+              "  🗣️ Talking points:\n" + (.talking_points | map("    • " + .) | join("\n")) + "\n" +
+              "  📝 Prep: " + (.prep_actions | join("; "))
+            ) | join("\n---\n"))
+          end
+        '
+      else
+        echo "📅 No meeting briefs generated."
+        echo "$BRIEFS"
+      fi
+      rm -f /tmp/lb_mpa_briefs.json

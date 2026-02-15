@@ -160,13 +160,10 @@ steps:
             events: allEvents.filter(e => e.type === 'event').length,
             cfps: allEvents.filter(e => e.type === 'cfp').length
           },
-          // TODO: Pipe this to an LLM for deeper relevance analysis,
-          // networking intel, and personalized recommendations
           events: allEvents,
           todos: [
             'AUTO_REGISTER: Browser automation needed to register for HIGH relevance virtual events',
             'CFP_SUBMIT: Browser automation needed to submit speaker kit to open CFPs',
-            'NETWORKING_INTEL: Pipe event data to LLM to research speakers and generate talking points',
             'SCHEDULE_FOLLOWUPS: Create calendar reminders for day-after-event follow-ups'
           ]
         };
@@ -174,3 +171,43 @@ steps:
         fs.writeFileSync('/tmp/eh_report.json', JSON.stringify(report, null, 2));
         console.log(JSON.stringify(report, null, 2));
       "
+
+  - id: llm_analyze
+    stdin: $build_report.stdout
+    command: |
+      cat > /tmp/eh_llm_input.json
+      REPORT=$(cat /tmp/eh_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are an event strategy analyst. Given these events and CFPs found for "${industry_keywords}":
+
+      $REPORT
+
+      Analyze and return JSON with:
+      - top_picks: top 3-5 events ranked by strategic value (with reasoning)
+      - networking_targets: speakers/organizers worth connecting with
+      - cfp_strategy: which CFPs to prioritize and topic suggestions
+      - quick_wins: events you can attend with minimal effort
+      PROMPT
+      rm -f /tmp/eh_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  - id: final_report
+    command: |
+      node -e "
+        const fs = require('fs');
+        const report = JSON.parse(fs.readFileSync('/tmp/eh_report.json', 'utf8'));
+        let llmAnalysis = {};
+        try {
+          llmAnalysis = JSON.parse(process.env.LLM_OUTPUT);
+        } catch(e) {
+          llmAnalysis = { raw: process.env.LLM_OUTPUT, parse_error: e.message };
+        }
+        const final = {
+          ...report,
+          llm_analysis: llmAnalysis
+        };
+        console.log(JSON.stringify(final, null, 2));
+      "
+    env:
+      LLM_OUTPUT: $llm_analyze.stdout

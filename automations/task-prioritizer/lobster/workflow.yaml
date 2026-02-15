@@ -77,10 +77,35 @@ steps:
       ' "${tasks_file}" > /tmp/lb_classified.json
       cat /tmp/lb_classified.json
 
+  - id: llm_optimize
+    stdin: $classify-tasks.stdout
+    command: |
+      cat > /tmp/lb_tasks_llm.json
+      DATA=$(cat /tmp/lb_tasks_llm.json)
+      llm_task.invoke <<PROMPT
+      You are a productivity coach. Given these Eisenhower-classified tasks:
+
+      $DATA
+
+      Provide:
+      - optimal_order: reordered task list for today with reasoning
+      - dependencies: tasks that should be done before others
+      - batching: tasks that can be grouped together
+      - delegate_suggestions: which "delegate" quadrant tasks to hand off and to whom (generic roles)
+      - time_boxes: suggested time blocks for each task
+      - daily_plan: a concrete "do this, then this" schedule
+
+      Return JSON with those fields.
+      PROMPT
+      rm -f /tmp/lb_tasks_llm.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     stdin: $classify-tasks.stdout
     command: |
       cat > /tmp/lb_tasks_in.json
+      LLM_DATA='$llm_optimize.stdout'
       jq -r '
         def quadrant_emoji: if . == "do_first" then "🔴" elif . == "schedule" then "🟡" elif . == "delegate" then "🟠" else "⚪" end;
         def quadrant_label: if . == "do_first" then "DO FIRST" elif . == "schedule" then "SCHEDULE" elif . == "delegate" then "DELEGATE" else "DEFER/DROP" end;
@@ -103,12 +128,26 @@ steps:
         ([.[].tasks[]] | length | "  Total: \(.) tasks\n") +
         ([.[].tasks[].effort_hours] | add | "  Total effort: \(.)h\n") +
         ([.[].tasks[] | select(.days_left < 0)] | length | "  Overdue: \(.)\n") +
-        ([.[].tasks[] | select(.days_left == 0)] | length | "  Due today: \(.)\n\n") +
-        "# LLM STEP (not automated):\n" +
-        "# Feed classified tasks to LLM for:\n" +
-        "# - Suggest optimal ordering within each quadrant\n" +
-        "# - Identify task dependencies and batching opportunities\n" +
-        "# - Recommend what to delegate and to whom\n" +
-        "# - Time-box suggestions for the day"
+        ([.[].tasks[] | select(.days_left == 0)] | length | "  Due today: \(.)")
       ' /tmp/lb_tasks_in.json
+
+      echo ""
+      echo ""
+      echo "🤖 LLM Optimization Insights"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "$LLM_DATA" | jq -r '
+        "📌 Optimal Order:\n" +
+        (.optimal_order | if type == "array" then map("  • " + (if type == "object" then (.task // .title // tostring) + (if .reasoning then " — " + .reasoning else "" end) else tostring end)) | join("\n") else tostring end) +
+        "\n\n🔗 Dependencies:\n" +
+        (.dependencies | if type == "array" then map("  • " + tostring) | join("\n") else tostring end) +
+        "\n\n📦 Batching Opportunities:\n" +
+        (.batching | if type == "array" then map("  • " + tostring) | join("\n") else tostring end) +
+        "\n\n👥 Delegation Suggestions:\n" +
+        (.delegate_suggestions | if type == "array" then map("  • " + tostring) | join("\n") else tostring end) +
+        "\n\n⏱️ Time Boxes:\n" +
+        (.time_boxes | if type == "array" then map("  • " + tostring) | join("\n") else tostring end) +
+        "\n\n📅 Daily Plan:\n" +
+        (.daily_plan | if type == "string" then . elif type == "array" then map("  • " + tostring) | join("\n") else tostring end)
+      ' 2>/dev/null || echo "$LLM_DATA"
+
       rm -f /tmp/lb_tasks_in.json /tmp/lb_classified.json

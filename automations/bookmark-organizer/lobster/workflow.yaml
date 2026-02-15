@@ -131,16 +131,8 @@ steps:
 
   - id: categorize-and-report
     stdin: $generate-summary.stdout
-    prompt: |
-      Analyze the bookmark collection data below and produce an organized report.
-
-      Tasks:
-      1. For any uncategorized bookmarks, suggest appropriate categories based on their titles and URLs
-         (e.g., Development, Design, AI/ML, Business, DevOps, Learning, etc.)
-      2. Identify duplicate or very similar bookmarks
-      3. Suggest a reorganization plan if categories are imbalanced
-      4. Flag any bookmarks with dead links for removal
-      5. Format as a clean, scannable report with emoji category headers
-    system: >
-      You are a knowledge management assistant. Organize bookmarks into clear, useful categories.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a knowledge management assistant. Organize bookmarks into clear, useful categories.\n\nUSER: Analyze the bookmark collection data below and produce an organized report.\n\nTasks:\n1. For any uncategorized bookmarks, suggest appropriate categories based on their titles and URLs (e.g., Development, Design, AI/ML, Business, DevOps, Learning, etc.)\n2. Identify duplicate or very similar bookmarks\n3. Suggest a reorganization plan if categories are imbalanced\n4. Flag any bookmarks with dead links for removal\n5. Format as a clean, scannable report with emoji category headers\n\nData:\n$(cat)"
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

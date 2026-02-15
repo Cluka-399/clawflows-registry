@@ -53,17 +53,6 @@ steps:
 
   - id: generate-standup
     stdin: $collect-context.stdout
-    prompt: |
-      Generate a daily standup update from the activity log and calendar below.
-
-      Structure it as:
-      - **Yesterday:** What was accomplished (extract key items from the activity log)
-      - **Today:** What's planned (based on calendar + any carry-over items)
-      - **Blockers:** Any identified blockers (or "None" if clear)
-
-      Keep it concise. Use bullet points. Include emoji for readability.
-      If the activity log is sparse, note that and suggest reviewing manually.
-    system: >
-      You are a standup note generator. Extract concrete accomplishments and
-      plans from raw activity logs. Be specific about what was done, not vague.
-      Keep each bullet to one line.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a standup note generator. Extract concrete accomplishments and plans from raw activity logs. Be specific about what was done, not vague. Keep each bullet to one line.\n\nUSER: Generate a daily standup update from the activity log and calendar below.\n\nStructure it as:\n- **Yesterday:** What was accomplished (extract key items from the activity log)\n- **Today:** What's planned (based on calendar + any carry-over items)\n- **Blockers:** Any identified blockers (or \"None\" if clear)\n\nKeep it concise. Use bullet points. Include emoji for readability.\nIf the activity log is sparse, note that and suggest reviewing manually."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }

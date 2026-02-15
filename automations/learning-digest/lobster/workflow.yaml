@@ -82,22 +82,7 @@ steps:
 
   - id: curate-digest
     stdin: $combine-and-rank.stdout
-    prompt: |
-      Curate a learning digest from the resources below.
-
-      Topics of interest: ${topics}
-      Target difficulty: ${difficulty}
-
-      For each resource:
-      1. Rate quality and relevance (skip low-quality or off-topic items)
-      2. Tag difficulty level (beginner/intermediate/advanced)
-      3. Estimate reading time
-      4. Write a 1-2 sentence summary of what you'll learn
-
-      Group by topic, order by quality. Include a "Start Here" recommendation
-      for the single best resource to read first.
-
-      Format as a clean, motivating digest with emoji headers.
-    system: >
-      You are a learning curator. Select the best resources and make learning paths clear and motivating.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a learning curator. Select the best resources and make learning paths clear and motivating.\n\nUSER: Curate a learning digest from the resources below.\n\nTopics of interest: ${topics}\nTarget difficulty: ${difficulty}\n\nFor each resource:\n1. Rate quality and relevance (skip low-quality or off-topic items)\n2. Tag difficulty level (beginner/intermediate/advanced)\n3. Estimate reading time\n4. Write a 1-2 sentence summary of what you'll learn\n\nGroup by topic, order by quality. Include a Start Here recommendation for the single best resource to read first.\n\nFormat as a clean, motivating digest with emoji headers."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 

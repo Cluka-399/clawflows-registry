@@ -1,4 +1,4 @@
-# LLM: Uses prompt step for narrative review generation
+# LLM: Uses llm_task.invoke for narrative review generation
 
 name: "Weekly Review Generator"
 description: "Generate a metrics-focused weekly review: task completion stats, git activity metrics (lines changed, files touched, commit frequency), and structured summary report"
@@ -235,22 +235,9 @@ steps:
 
   - id: format_review
     stdin: $build_review_data.stdout
-    prompt: |
-      Generate a metrics-focused weekly review from the assembled data below.
-
-      Include:
-      1. **Productivity Score** with visual indicator and trend
-      2. **Task Analysis** — completion rate, what got done, what's overdue
-      3. **Code Activity** — commits, lines changed, most active repos and files
-      4. **Patterns** — daily commit frequency, productive days vs quiet days
-      5. **Highlights** — most impactful commits or completed tasks
-      6. **Recommendations** — what to focus on next week based on the data
-
-      Use tables for metrics, emoji for visual scanning.
-      Compare to typical weeks if historical data is available.
-    system: >
-      You are a developer productivity analyst. Create insightful, metrics-driven weekly reviews.
-
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a developer productivity analyst. Create insightful, metrics-driven weekly reviews.\n\nUSER: Generate a metrics-focused weekly review from the assembled data below.\n\nInclude:\n1. **Productivity Score** with visual indicator and trend\n2. **Task Analysis** — completion rate, what got done, what's overdue\n3. **Code Activity** — commits, lines changed, most active repos and files\n4. **Patterns** — daily commit frequency, productive days vs quiet days\n5. **Highlights** — most impactful commits or completed tasks\n6. **Recommendations** — what to focus on next week based on the data\n\nUse tables for metrics, emoji for visual scanning.\nCompare to typical weeks if historical data is available."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 
   - id: save_review
     command: |
@@ -258,6 +245,6 @@ steps:
       mkdir -p "$OUTPUT_DIR"
       TODAY=$(date +%Y-%m-%d)
       OUTFILE="${OUTPUT_DIR}/review-${TODAY}.md"
-      cp /tmp/review_formatted.md "$OUTFILE"
+      echo "$CLAWD_STEP_format_review" > "$OUTFILE"
       echo "Saved to: ${OUTFILE}"
       cat "$OUTFILE"

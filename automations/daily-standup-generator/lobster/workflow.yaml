@@ -128,7 +128,6 @@ steps:
         }'
 
   - id: format_text
-    # Human-readable standup text. Pipe this to an LLM for polish if desired.
     command: |
       REPORT='$build_report.json'
       echo "$REPORT" | jq -r '
@@ -143,3 +142,10 @@ steps:
         "## Blockers",
         (.standup.blockers | if length == 0 then "- None 🎉" else map("- " + .) | join("\n") end)
       '
+
+  - id: llm_polish
+    command: |
+      llm_task.invoke --prompt "You are a concise standup report editor. Take this raw daily standup and polish it into a clean, professional summary. Group related commits into logical themes instead of listing each commit separately. Keep the Yesterday/Today/Blockers structure. Be concise — no fluff. Output markdown."
+    stdin: $format_text.stdout
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

@@ -71,14 +71,34 @@ steps:
         echo "No calendar command configured - skipping"
       fi
 
+  - id: llm_recommend
+    command: |
+      STATS=$(cat /tmp/lb_sleep_stats.json)
+      CAL='$fetch-calendar.stdout'
+      llm_task.invoke <<PROMPT
+      You are a sleep science expert. Given this sleep data and tomorrow's calendar:
+
+      Sleep stats: $STATS
+      Tomorrow's schedule: $CAL
+
+      Provide:
+      - optimal_bedtime: recommended bedtime tonight (considering tomorrow's first event)
+      - optimal_wake: recommended wake time
+      - sleep_target_hrs: ideal hours based on their patterns
+      - pattern_insights: what patterns correlate with their best/worst sleep
+      - consistency_tips: 2-3 specific tips to improve bedtime consistency
+      - tonight_note: any special consideration for tonight (early meeting, etc.)
+
+      Return JSON with those fields.
+      PROMPT
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     stdin: $compute-stats.stdout
     command: |
-      cal_info=$(cat <<'CALEOF'
-      $fetch-calendar.stdout
-      CALEOF
-      )
       cat > /tmp/lb_stats.json
+      REC='$llm_recommend.stdout'
       jq -r '
         "🛏️ Sleep Schedule Analysis (last \(.total_nights) nights)\n" +
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
@@ -92,11 +112,17 @@ steps:
         if (.worst_quality_nights | length) > 0 then
           "\n\n⚠️ Worst nights (quality ≤ 2):\n" +
           (.worst_quality_nights | map("  \(.date): bed \(.bed), wake \(.wake) (\(.sleep_hrs)h)") | join("\n"))
-        else "" end +
-        "\n\n# LLM STEP (not automated):\n" +
-        "# Feed this data + calendar to LLM to get:\n" +
-        "# - Optimal bedtime recommendation based on best-quality patterns\n" +
-        "# - Adjustments for tomorrow'\''s early meetings\n" +
-        "# - Consistency improvement tips"
+        else "" end
       ' /tmp/lb_stats.json
+      echo ""
+      echo "🤖 AI Sleep Recommendations:"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo "$REC" | jq -r '
+        "🌙 Optimal bedtime: \(.optimal_bedtime)\n" +
+        "⏰ Optimal wake time: \(.optimal_wake)\n" +
+        "💤 Sleep target: \(.sleep_target_hrs)h\n" +
+        "\n📈 Pattern insights:\n\(.pattern_insights)\n" +
+        "\n✅ Consistency tips:\n\(.consistency_tips | if type == "array" then map("  • " + .) | join("\n") else . end)\n" +
+        "\n📝 Tonight: \(.tonight_note)"
+      '
       rm -f /tmp/lb_stats.json

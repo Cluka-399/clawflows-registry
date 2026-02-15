@@ -137,9 +137,32 @@ steps:
       ' "${data_dir}/habits.json" > /tmp/lb_w_habits.json
       cat /tmp/lb_w_habits.json
 
+  - id: llm_insights
+    command: |
+      jq -nc --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json '{sleep: $sleep[0], exercise: $ex[0], mood: $mood[0], habits: $habits[0]}' > /tmp/lb_w_all.json
+      DATA=$(cat /tmp/lb_w_all.json)
+      llm_task.invoke <<PROMPT
+      You are a wellness coach. Analyze this week's health data:
+
+      $DATA
+
+      Provide:
+      - correlations: connections between sleep/exercise/mood (e.g., "exercise days correlate with higher mood")
+      - achievements: 2-3 things to celebrate this week
+      - improvements: 2-3 specific, actionable recommendations
+      - focus_area: the ONE thing that would have the biggest impact next week
+      - weekly_grade: A-F overall wellness grade with brief justification
+
+      Return JSON with those fields.
+      PROMPT
+      rm -f /tmp/lb_w_all.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     command: |
-      jq -rn --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json '
+      INSIGHTS=$(cat /tmp/lobster_llm_task_result.json 2>/dev/null || echo '{}')
+      jq -rn --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json --argjson insights "$INSIGHTS" '
         $sleep[0] as $s | $ex[0] as $e | $mood[0] as $m | $habits[0] as $h |
         "🏥 Wellness Weekly Report\n" +
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
@@ -157,11 +180,12 @@ steps:
         "  Water: \($h.avg_water) glasses/day\n" +
         "  Meditation: \($h.meditation_days)/\($h.days_tracked) days (avg \($h.avg_meditation_min)min)\n" +
         "  Steps: \($h.avg_steps)/day (\($h.step_goal_days)/\($h.days_tracked) hit 8k goal)\n\n" +
-        "# LLM STEP (not automated):\n" +
-        "# Feed all aggregated data to LLM for:\n" +
-        "# - Correlations (sleep quality vs mood, exercise vs mood)\n" +
-        "# - Week-over-week trend comparison\n" +
-        "# - Actionable recommendations\n" +
-        "# - Highlight achievements and areas for improvement"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🤖 AI Wellness Insights\n\n" +
+        (if $insights.weekly_grade then "📊 Weekly Grade: \($insights.weekly_grade)\n\n" else "" end) +
+        (if $insights.achievements then "🏆 Achievements\n" + ($insights.achievements | map("  • \(.)") | join("\n")) + "\n\n" else "" end) +
+        (if $insights.correlations then "🔗 Correlations\n" + ($insights.correlations | if type == "array" then map("  • \(.)") | join("\n") else "  • \(.)" end) + "\n\n" else "" end) +
+        (if $insights.improvements then "💡 Recommendations\n" + ($insights.improvements | map("  • \(.)") | join("\n")) + "\n\n" else "" end) +
+        (if $insights.focus_area then "🎯 Focus Next Week: \($insights.focus_area)\n" else "" end)
       '
-      rm -f /tmp/lb_w_sleep.json /tmp/lb_w_exercise.json /tmp/lb_w_mood.json /tmp/lb_w_habits.json
+      rm -f /tmp/lb_w_sleep.json /tmp/lb_w_exercise.json /tmp/lb_w_mood.json /tmp/lb_w_habits.json /tmp/lobster_llm_task_result.json

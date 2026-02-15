@@ -144,14 +144,8 @@ steps:
       }' /tmp/mod_results.json
 
   - id: llm-analysis
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a community moderator with nuanced judgment. Distinguish genuine discussion from spam.\n\nUSER: Review the moderation report below and provide enhanced analysis:\n\n1. For each flagged comment, assess the actual intent (is it truly spam/harmful or a false positive?)\n2. Provide a sentiment score for flagged comments (hostile/neutral/constructive)\n3. Suggest specific moderation actions: approve, delete, shadowban, or escalate\n4. Identify patterns that suggest coordinated spam or bot activity\n5. Recommend any rule adjustments to reduce false positives"
     stdin: $report.stdout
-    prompt: |
-      Review the moderation report below and provide enhanced analysis:
-
-      1. For each flagged comment, assess the actual intent (is it truly spam/harmful or a false positive?)
-      2. Provide a sentiment score for flagged comments (hostile/neutral/constructive)
-      3. Suggest specific moderation actions: approve, delete, shadowban, or escalate
-      4. Identify patterns that suggest coordinated spam or bot activity
-      5. Recommend any rule adjustments to reduce false positives
-    system: >
-      You are a community moderator with nuanced judgment. Distinguish genuine discussion from spam.
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

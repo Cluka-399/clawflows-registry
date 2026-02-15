@@ -353,17 +353,8 @@ steps:
       REPORT_JSON: "$filter-new.stdout"
 
   - id: draft-responses
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a community engagement specialist. Write authentic, helpful responses that naturally showcase your product.\n\nUSER: For each community opportunity below, draft a helpful response that naturally mentions our product as a solution.\n\nGuidelines:\n- Be genuinely helpful first, promotional second\n- Match the tone of the platform (casual for Reddit, professional for LinkedIn)\n- For HOT opportunities, draft a full response\n- For WARM opportunities, suggest a brief comment angle\n- Never sound like astroturfing — be authentic and transparent\n- Reference specific features that solve the user's problem\n\nData:\n$(cat /dev/stdin)"
     stdin: $report.stdout
-    prompt: |
-      For each community opportunity below, draft a helpful response that naturally
-      mentions our product as a solution.
-
-      Guidelines:
-      - Be genuinely helpful first, promotional second
-      - Match the tone of the platform (casual for Reddit, professional for LinkedIn)
-      - For HOT opportunities, draft a full response
-      - For WARM opportunities, suggest a brief comment angle
-      - Never sound like astroturfing — be authentic and transparent
-      - Reference specific features that solve the user's problem
-    system: >
-      You are a community engagement specialist. Write authentic, helpful responses that naturally showcase your product.
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

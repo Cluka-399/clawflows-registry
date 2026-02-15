@@ -218,8 +218,10 @@ steps:
 
   - id: draft-outreach
     stdin: $compile-report.stdout
-    prompt: |
-      Analyze the broken link opportunities below and draft outreach emails.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are an SEO outreach specialist. Write helpful, non-spammy broken link outreach emails.
+
+      USER: Analyze the broken link opportunities below and draft outreach emails.
 
       For each broken link opportunity:
       1. Match the broken URL's likely topic to the most relevant content URL from our list
@@ -227,7 +229,7 @@ steps:
       3. Keep emails professional, helpful, and concise (3-4 paragraphs)
       4. Reference the specific broken link and page where it was found
 
-      Include a summary at the top: total opportunities found, best matches, and recommended priority order.
-    system: >
-      You are an SEO outreach specialist. Write helpful, non-spammy broken link outreach emails.
+      Include a summary at the top: total opportunities found, best matches, and recommended priority order."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

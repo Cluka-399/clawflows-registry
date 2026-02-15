@@ -102,8 +102,16 @@ steps:
       fi
       rm -rf "$TMPDIR_AFF"
 
+  # Step 2b: LLM analyzes page content for deeper affiliate partnership insights
+  - id: llm_analyze_prospects
+    stdin: "$fetch_pages.stdout"
+    command: |
+      llm_task.invoke --prompt "You are an affiliate marketing analyst. Given JSON data about blog pages (affiliate signals, ad signals, word count, outbound links), analyze each prospect and add these fields to each object: 'content_quality' (low/medium/high based on word count and structure), 'partnership_readiness' (low/medium/high based on existing monetization signals), 'competitor_mentions' (likelihood they mention competing products, based on outbound links and affiliate signals), and 'outreach_priority' (1-10 score combining all factors). Return the enhanced JSON array only, no explanation."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
+
   # Step 3: Merge search + page data, compute heuristic prospect score
-  #   existing affiliate relationships, content quality, and competitor mentions."
+  #   Uses LLM analysis from step 2b for enhanced scoring
   - id: score_prospects
     command: |
       TMPDIR_AFF=$(mktemp -d /tmp/aff-score-XXXXXX)
@@ -163,6 +171,14 @@ steps:
       ' "$TMPFILE"
       rm -f "$TMPFILE"
 
+  # Step 4b: LLM generates personalized outreach pitches for qualified prospects
+  - id: llm_generate_pitches
+    stdin: "$build_prospect_report.json"
+    command: |
+      llm_task.invoke --prompt "You are an affiliate recruitment specialist. Given a JSON report with product info, commission details, and qualified prospects, generate a personalized outreach email draft for EACH qualified prospect. Each email should: 1) Reference their specific blog/article by name, 2) Explain why their content is a great fit for the product, 3) Highlight the commission structure, 4) Include a clear CTA. Return JSON array of objects with fields: domain, url, subject_line, email_body. Keep emails concise (150-200 words), professional but friendly."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
+
   # Step 5: Final summary output
   - id: final_output
     stdin: "$build_prospect_report.json"
@@ -186,7 +202,29 @@ steps:
         }],
         next_steps: [
           "Review qualified prospects and verify contact info",
-          "Generate personalized pitches (uses prompt step)",
+          "Review generated outreach pitches and customize as needed",
+          "Send outreach emails via your preferred email tool"
+        ],
+        outreach_pitches: (if $pitches then ($pitches[0] // []) else [] end)
+      }' --slurpfile pitches <(echo '$llm_generate_pitches.stdout') "$TMPFILE" 2>/dev/null || \
+      jq '{
+        status: "complete",
+        summary: .summary,
+        product: .product,
+        commission: .commission,
+        generated_at: .generated_at,
+        qualified_count: .qualified_count,
+        total_found: .total_found,
+        top_prospects: [.qualified_prospects[:5][] | {
+          domain: .domain,
+          url: .url,
+          score: .score,
+          keyword: .keyword,
+          monetization_likely: .monetization_likely
+        }],
+        next_steps: [
+          "Review qualified prospects and verify contact info",
+          "Review generated outreach pitches and customize as needed",
           "Send outreach emails via your preferred email tool"
         ]
       }' "$TMPFILE"

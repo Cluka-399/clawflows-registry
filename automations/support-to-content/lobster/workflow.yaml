@@ -1,4 +1,4 @@
-# LLM: Uses prompt step for content brief enhancement
+# LLM: Uses llm_task.invoke for content brief enhancement
 
 name: "Support-to-Content Pipeline"
 description: >
@@ -257,20 +257,10 @@ steps:
   # ── Step 8b: Enhance briefs with LLM analysis ──────────────
   - id: enhance_briefs
     stdin: $content_opportunities.stdout
-    prompt: |
-      Enhance these content briefs derived from support ticket analysis for ${repo}.
-
-      For each content opportunity:
-      1. Write a detailed article outline (5-7 sections with bullet points)
-      2. Expand the keyword list with long-tail SEO variations
-      3. Suggest a compelling title (optimize for search intent)
-      4. Estimate search volume potential (high/medium/low)
-      5. Recommend content format (tutorial, explainer, troubleshooting guide, comparison)
-      6. Identify related topics to interlink
-
-      Prioritize by: issue frequency × search potential.
-    system: >
-      You are a technical content strategist. Turn support patterns into high-ranking help content.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a technical content strategist. Turn support patterns into high-ranking help content.\n\nUSER: Enhance these content briefs derived from support ticket analysis for ${repo}.\n\nFor each content opportunity:\n1. Write a detailed article outline (5-7 sections with bullet points)\n2. Expand the keyword list with long-tail SEO variations\n3. Suggest a compelling title (optimize for search intent)\n4. Estimate search volume potential (high/medium/low)\n5. Recommend content format (tutorial, explainer, troubleshooting guide, comparison)\n6. Identify related topics to interlink\n\nPrioritize by: issue frequency × search potential."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 
   # ── Step 9: Final summary report ─────────────────────────────────
   - id: summary

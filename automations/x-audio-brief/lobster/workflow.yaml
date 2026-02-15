@@ -161,23 +161,10 @@ steps:
 
   - id: generate-script
     stdin: $format-tweets.stdout
-    prompt: |
-      Create a 5-minute conversational audio briefing about "${topic}" based on
-      the X/Twitter posts and related discussions below.
-
-      Guidelines:
-      - Write for text-to-speech: no URLs, hashtags, or @ symbols in the script
-      - Use natural spoken language with conversational transitions
-      - Start with a greeting, mention the topic
-      - Group by theme, not chronologically
-      - Attribute quotes and insights to specific people by name
-      - End with overall sentiment summary and key takeaways
-      - Target approximately 700 words for 5 minutes
-    system: >
-      You are a tech podcast host creating an engaging audio briefing.
-      Write scripts that sound natural when read aloud. No bullet points,
-      no headers, no visual formatting. Use spoken transitions like
-      "Now let's talk about..." and "What's interesting is..."
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a tech podcast host creating an engaging audio briefing. Write scripts that sound natural when read aloud. No bullet points, no headers, no visual formatting. Use spoken transitions like 'Now let's talk about...' and 'What'\''s interesting is...'\n\nUSER: Create a 5-minute conversational audio briefing about \"${topic}\" based on the X/Twitter posts and related discussions below.\n\nGuidelines:\n- Write for text-to-speech: no URLs, hashtags, or @ symbols in the script\n- Use natural spoken language with conversational transitions\n- Start with a greeting, mention the topic\n- Group by theme, not chronologically\n- Attribute quotes and insights to specific people by name\n- End with overall sentiment summary and key takeaways\n- Target approximately 700 words for 5 minutes\n\nPosts data (from stdin):"
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 
   - id: save-script
     stdin: $generate-script.stdout

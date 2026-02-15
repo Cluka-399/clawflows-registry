@@ -216,25 +216,10 @@ steps:
 
       rm -f /tmp/lb_ps_contacts_final.json /tmp/lb_ps_analyzed_all.json
 
-  # Step 5: Human-readable summary
+  # Step 5: Generate co-marketing pitches via LLM
   - id: generate-pitches
     stdin: $generate-report.stdout
-    prompt: |
-      Analyze the partnership scout data and generate co-marketing pitches.
-
-      Our product: ${your_product}
-      Target audience: ${target_audience}
-
-      For each HIGH and MEDIUM fit company:
-      1. Explain why they're a good partnership fit (shared audience, complementary products)
-      2. Reference their recent content to personalize the pitch
-      3. Suggest 2-3 specific co-marketing ideas (webinar, blog swap, integration, bundle)
-      4. Draft a concise outreach email (3-4 paragraphs)
-      5. Suggest the best contact role to reach out to
-
-      Also provide:
-      - Overall partnership strategy summary
-      - Priority ranking of who to approach first
-    system: >
-      You are a partnership development manager. Write compelling, personalized co-marketing pitches.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a partnership development manager. Write compelling, personalized co-marketing pitches.\n\nUSER: Analyze the partnership scout data and generate co-marketing pitches.\n\nOur product: ${your_product}\nTarget audience: ${target_audience}\n\nFor each HIGH and MEDIUM fit company:\n1. Explain why they're a good partnership fit (shared audience, complementary products)\n2. Reference their recent content to personalize the pitch\n3. Suggest 2-3 specific co-marketing ideas (webinar, blog swap, integration, bundle)\n4. Draft a concise outreach email (3-4 paragraphs)\n5. Suggest the best contact role to reach out to\n\nAlso provide:\n- Overall partnership strategy summary\n- Priority ranking of who to approach first"
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
 

@@ -78,15 +78,17 @@ steps:
 
   - id: analyze-and-suggest
     stdin: $find-patterns.stdout
-    prompt: |
-      Analyze the repeated task patterns detected in agent activity logs.
+    command: >-
+      llm_task.invoke --prompt
+      "SYSTEM: You are a workflow automation consultant. Find repetitive work and design efficient automations.
+
+      USER: Analyze the repeated task patterns detected in agent activity logs.
 
       For each pattern found:
       1. Describe what the agent is repeatedly doing
       2. Estimate time spent per occurrence
       3. Rate automation potential: HIGH / MEDIUM / LOW
-      4. For HIGH patterns, suggest a specific automation approach
-         (cron job, Lobster workflow, shell script, etc.)
+      4. For HIGH patterns, suggest a specific automation approach (cron job, Lobster workflow, shell script, etc.)
       5. Estimate time savings per week if automated
 
       Also identify:
@@ -94,7 +96,7 @@ steps:
       - Patterns that suggest missing tools or integrations
       - Quick wins vs. longer-term automation projects
 
-      Minimum occurrences threshold: ${min_occurrences}
-    system: >
-      You are a workflow automation consultant. Find repetitive work and design efficient automations.
+      Minimum occurrences threshold: ${min_occurrences}"
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

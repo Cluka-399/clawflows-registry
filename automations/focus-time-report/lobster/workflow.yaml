@@ -7,7 +7,7 @@
 #
 # Requires: jq
 #
-# LLM: Uses prompt step for focus time insights and recommendations
+# LLM: Uses llm_task.invoke for focus time insights and recommendations
 
 name: focus-time-report
 description: Track and report on your deep work vs fragmented time
@@ -60,23 +60,14 @@ steps:
         ($meeting_mins / 60 * 10 | round / 10) as $meeting_h |
         (if $focus_h >= $target then "✅" else "❌" end) as $status |
 
-        "⏱️ **Weekly Focus Report**\n\n📊 Time Breakdown:\n• Focus time: **\($focus_h)h** \($status) (target: \($target)h)\n• Meeting time: **\($meeting_h)h**\n• Focus blocks (≥\($min_focus)min): **\($focus_blocks)**\n\n# LLM INSIGHTS STEP (not included)\n# To get AI-generated insights, pass this data to an LLM:\n# Focus: \($focus_h)h, Meetings: \($meeting_h)h, Blocks: \($focus_blocks), Target: \($target)h"
+        "⏱️ **Weekly Focus Report**\n\n📊 Time Breakdown:\n• Focus time: **\($focus_h)h** \($status) (target: \($target)h)\n• Meeting time: **\($meeting_h)h**\n• Focus blocks (≥\($min_focus)min): **\($focus_blocks)**"
       ' /tmp/lb_ft_events.json
 
       rm -f /tmp/lb_ft_events.json
 
   - id: insights
     stdin: $analyze-time.stdout
-    prompt: |
-      Analyze the focus time report below and provide actionable insights.
-
-      Include:
-      1. Assessment of focus time vs target (${target_focus_hours}h/week)
-      2. Meeting load analysis — is it sustainable?
-      3. Specific suggestions to protect/increase focus blocks
-      4. Identify patterns (e.g., fragmented mornings, meeting-heavy days)
-      5. One concrete scheduling change to try this week
-
-      Keep it brief and actionable.
-    system: >
-      You are a productivity coach. Help maximize deep work time with practical, specific advice.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a productivity coach. Help maximize deep work time with practical, specific advice.\n\nUSER: Analyze the focus time report below and provide actionable insights.\n\nInclude:\n1. Assessment of focus time vs target (${target_focus_hours}h/week)\n2. Meeting load analysis — is it sustainable?\n3. Specific suggestions to protect/increase focus blocks\n4. Identify patterns (e.g., fragmented mornings, meeting-heavy days)\n5. One concrete scheduling change to try this week\n\nKeep it brief and actionable."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

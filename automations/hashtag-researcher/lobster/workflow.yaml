@@ -94,17 +94,7 @@ steps:
 
   - id: rank-and-recommend
     stdin: $compile-results.stdout
-    prompt: |
-      Analyze the hashtag research data for "${topic}" on ${platform} and provide:
-
-      1. Rank all discovered hashtags by estimated popularity/competition
-      2. Group into: high competition (broad reach), medium, and niche (low competition, targeted)
-      3. Recommend the ideal mix for a post (e.g., 3 high + 5 medium + 7 niche)
-      4. Suggest 5 additional hashtags not in the data that would work well
-      5. Platform-specific tips for ${platform} hashtag strategy
-      6. Provide a ready-to-copy hashtag set
-
-      Format as a clean, actionable report.
-    system: >
-      You are a social media hashtag strategist. Recommend data-informed hashtag combinations for maximum reach.
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a social media hashtag strategist. Recommend data-informed hashtag combinations for maximum reach.\n\nUSER: Analyze the hashtag research data for \"${topic}\" on ${platform} and provide:\n\n1. Rank all discovered hashtags by estimated popularity/competition\n2. Group into: high competition (broad reach), medium, and niche (low competition, targeted)\n3. Recommend the ideal mix for a post (e.g., 3 high + 5 medium + 7 niche)\n4. Suggest 5 additional hashtags not in the data that would work well\n5. Platform-specific tips for ${platform} hashtag strategy\n6. Provide a ready-to-copy hashtag set\n\nFormat as a clean, actionable report.\n\nInput data:\n$(cat)"
 

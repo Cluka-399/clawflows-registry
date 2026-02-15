@@ -199,6 +199,42 @@ steps:
       PYEOF
       python3 /tmp/ab_gen_variations.py
 
+  - id: llm-generate-variations
+    command: |
+      llm_task.invoke --prompt "You are an A/B test headline copywriter. You will receive JSON with variation_requests, each containing a winning_headline, its lift percentage, and an llm_prompt describing what to generate. For EACH variation request, generate exactly 3 new headline variations that: (1) test a different emotional angle, (2) test a different value proposition, (3) test a different format (e.g. question vs statement). Return valid JSON in this exact format: {\"variation_requests\": [{\"test_id\": \"...\", \"winning_headline\": \"...\", \"lift_pct\": N, \"variants\": [\"headline1\", \"headline2\", \"headline3\"]}], \"count\": N}. If the input has count 0 or empty variation_requests, return {\"variation_requests\":[], \"count\":0}. Output ONLY valid JSON, no explanation."
+    stdin: $collect_for_variations.stdout
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
+
+  - id: save-llm-variations
+    command: |
+      cat > /tmp/ab_save_llm_variants.py << 'PYEOF'
+      import json, sys
+
+      # Read LLM output from stdin
+      llm_raw = sys.stdin.read().strip()
+      try:
+          llm_data = json.loads(llm_raw)
+      except json.JSONDecodeError:
+          # If LLM output isn't valid JSON, fall back to existing context
+          print("WARN: LLM output not valid JSON, using placeholder variants", file=sys.stderr)
+          with open("/tmp/ab_variation_context.json") as f:
+              print(f.read())
+          sys.exit(0)
+
+      # Rewrite variation_context with LLM-generated variants
+      # Map LLM variants into the format create_new_tests expects (placeholder_variants key)
+      for req in llm_data.get("variation_requests", []):
+          if "variants" in req:
+              req["placeholder_variants"] = req.pop("variants")
+
+      json.dump(llm_data, sys.stdout, indent=2)
+      with open("/tmp/ab_variation_context.json", "w") as f:
+          json.dump(llm_data, f, indent=2)
+      PYEOF
+      python3 /tmp/ab_save_llm_variants.py
+    stdin: $llm-generate-variations.stdout
+
   - id: create_new_tests
     # Creates new A/B tests from variation data.
     # Skips internally if no tests were promoted.

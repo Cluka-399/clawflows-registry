@@ -71,17 +71,8 @@ steps:
       rm -f /tmp/lb_nd_hn.json /tmp/lb_nd_search.json
 
   - id: summarize-digest
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a morning news curator. Write concise, scannable digests that help busy people stay informed. Group by theme, highlight what matters, skip the fluff.\n\nUSER: Create a morning news digest from the articles below.\nTopics of interest: ${topics}.\n\nGroup articles by theme. For each group, write a 2-3 sentence summary\nof why it matters. Include the article title and URL for each item.\n\nFormat as a readable briefing with emoji section headers.\nOpen with today's date and a greeting. Keep it concise but informative.\n\nArticles:\n$(cat /dev/stdin)"
     stdin: $combine-and-dedup.stdout
-    prompt: |
-      Create a morning news digest from the articles below.
-      Topics of interest: ${topics}.
-
-      Group articles by theme. For each group, write a 2-3 sentence summary
-      of why it matters. Include the article title and URL for each item.
-
-      Format as a readable briefing with emoji section headers.
-      Open with today's date and a greeting. Keep it concise but informative.
-    system: >
-      You are a morning news curator. Write concise, scannable digests
-      that help busy people stay informed. Group by theme, highlight
-      what matters, skip the fluff.
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

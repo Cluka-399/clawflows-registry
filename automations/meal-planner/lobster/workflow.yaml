@@ -55,6 +55,11 @@ steps:
       }' > /tmp/lb_meal_inputs.json
       cat /tmp/lb_meal_inputs.json
 
+  - id: save-inputs-copy
+    command: |
+      cp /tmp/lb_meal_inputs.json /tmp/lb_meal_inputs_copy.json
+      echo "saved"
+
   - id: compute-week
     command: |
       if [ -n "${week_start}" ]; then
@@ -70,14 +75,35 @@ steps:
       done
       echo "[${days%,}]" | jq -c '.'
 
+  - id: llm_plan
+    command: |
+      INPUTS=$(cat /tmp/lb_meal_inputs_copy.json 2>/dev/null || echo '{}')
+      WEEK='$compute-week.stdout'
+      llm_task.invoke <<PROMPT
+      You are a meal planning chef. Create a weekly meal plan based on:
+
+      Preferences: $INPUTS
+      Week dates: $WEEK
+
+      Generate JSON with:
+      - days: array of 7 objects, each with date, day, breakfast, lunch, dinner (each meal has name, ingredients, prep_time_min, uses_pantry boolean)
+      - shopping_list: items NOT in the pantry
+      - estimated_weekly_cost: rough USD estimate
+      - meal_prep_tips: 2-3 batch cooking suggestions
+      PROMPT
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     stdin: $load-inputs.stdout
     command: |
       cat > /tmp/lb_meal_data.json
       week='$compute-week.stdout'
       echo "$week" > /tmp/lb_week.json
+      PLAN='$llm_plan.stdout'
+      echo "$PLAN" > /tmp/lb_meal_plan.json
       jq -r --slurpfile week /tmp/lb_week.json '
-        "🍽️ Meal Planner — Weekly Setup\n" +
+        "🍽️ Meal Planner — Weekly Plan\n" +
         "━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
         "\n📋 Preferences:\n" +
         "• Diet: \(.preferences.diet)\n" +
@@ -87,15 +113,25 @@ steps:
         "• Servings: \(.preferences.servings)\n" +
         "• Budget: \(.preferences.budget)\n" +
         "\n🗓️ Week: \($week[0][0].date) → \($week[0][6].date)\n" +
-        ($week[0] | map("  \(.day) (\(.date))") | join("\n")) +
-        "\n\n🥫 Pantry (\(.pantry_count) items):\n" +
-        (.pantry | map("  • \(.)") | join("\n")) +
-        "\n\n# LLM STEP (not automated):\n" +
-        "# Feed preferences + pantry + week dates to LLM to generate:\n" +
-        "# - 7-day meal plan (breakfast, lunch, dinner per day)\n" +
-        "# - Recipes using pantry items where possible\n" +
-        "# - Shopping list (items NOT in pantry)\n" +
-        "# - Estimated weekly cost\n" +
-        "# - Meal prep suggestions (batch cooking)"
+        "\n🥫 Pantry (\(.pantry_count) items):\n" +
+        (.pantry | map("  • \(.)") | join("\n"))
       ' /tmp/lb_meal_data.json
-      rm -f /tmp/lb_meal_data.json /tmp/lb_week.json
+      echo ""
+      # Parse and display the LLM-generated meal plan
+      if echo "$PLAN" | jq -e '.days' > /dev/null 2>&1; then
+        echo "📅 Weekly Meal Plan"
+        echo "━━━━━━━━━━━━━━━━━━"
+        echo "$PLAN" | jq -r '.days[] | "\n\(.day) (\(.date)):\n  🌅 Breakfast: \(.breakfast.name)\n  🌞 Lunch: \(.lunch.name)\n  🌙 Dinner: \(.dinner.name)"'
+        echo ""
+        echo "🛒 Shopping List:"
+        echo "$PLAN" | jq -r '.shopping_list[] | "  • \(.)"'
+        echo ""
+        echo "$PLAN" | jq -r '"💰 Estimated Weekly Cost: \(.estimated_weekly_cost)"'
+        echo ""
+        echo "💡 Meal Prep Tips:"
+        echo "$PLAN" | jq -r '.meal_prep_tips[] | "  • \(.)"'
+      else
+        echo "📅 Raw Meal Plan:"
+        echo "$PLAN"
+      fi
+      rm -f /tmp/lb_meal_data.json /tmp/lb_week.json /tmp/lb_meal_plan.json /tmp/lb_meal_inputs_copy.json

@@ -4,8 +4,8 @@
 # Usage:
 #   lobster run --file workflow.yaml --args-json '{"your_newsletter":"My Newsletter","your_niche":"AI agents","subscriber_count":"5000"}'
 #
-# This workflow collects raw data. Steps requiring LLM analysis are marked with
-# "# LLM-STEP" comments — the consumer (agent/human) should process those outputs.
+# This workflow collects data and uses llm_task.invoke for candidate evaluation
+# and churn analysis.
 #
 # Requires: jq, curl
 
@@ -53,11 +53,6 @@ steps:
     command: |
       cat > /tmp/lb_nl_found.json
       # Enrich with our metadata for analysis
-      # LLM-STEP: The consumer should analyze each newsletter for:
-      #   - Audience overlap (complementary to our niche?)
-      #   - Subscriber count similarity
-      #   - Content style match
-      #   - Cross-promotion history
       jq -c --arg our_name "${your_newsletter}" --arg our_niche "${your_niche}" --arg our_subs "${subscriber_count}" '
         {
           our_newsletter: $our_name,
@@ -90,10 +85,6 @@ steps:
           printf "}}"
         }
       ' > "$tmpf"
-      # LLM-STEP: Consumer should analyze churn patterns:
-      #   - Which time periods have highest churn?
-      #   - What are the top reasons?
-      #   - Recommendations for reducing churn
       cat "$tmpf"
       rm -f "$tmpf"
 
@@ -111,20 +102,85 @@ steps:
       cat /tmp/lb_nl_data.json
       rm -f /tmp/lb_nl_data.json
 
+  - id: llm_evaluate
+    stdin: $save-state.stdout
+    command: |
+      cat > /tmp/nl_llm_input.json
+      DATA=$(cat /tmp/nl_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are a newsletter growth strategist. Evaluate these potential cross-promotion partners for "${your_newsletter}" (${subscriber_count} subscribers, niche: ${your_niche}):
+
+      $DATA
+
+      For each candidate, rate swap potential (HIGH/MEDIUM/LOW) based on:
+      - Audience overlap and complementarity
+      - Subscriber count similarity (±50% is ideal)
+      - Niche alignment
+
+      Also generate a personalized outreach pitch for the top 3.
+
+      Return JSON: { "evaluations": [{ "name": "...", "rating": "HIGH|MEDIUM|LOW", "reasoning": "...", "outreach_pitch": "..." }] }
+      PROMPT
+      rm -f /tmp/nl_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
+  - id: llm_churn
+    stdin: $analyze-churn.stdout
+    command: |
+      cat > /tmp/nl_churn_input.json
+      CHURN=$(cat /tmp/nl_churn_input.json)
+      if echo "$CHURN" | jq -e '.churn_analysis == "no_data"' >/dev/null 2>&1; then
+        echo '{"churn_insights": "no_data"}'
+      else
+        llm_task.invoke <<PROMPT
+      Analyze these newsletter churn patterns:
+
+      $CHURN
+
+      Identify: peak churn periods, top reasons, and 3 actionable recommendations to reduce churn.
+      Return JSON: { "peak_periods": [...], "top_reasons": [...], "recommendations": [...] }
+      PROMPT
+      fi
+      rm -f /tmp/nl_churn_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"
+
   - id: report
     stdin: $save-state.stdout
     command: |
-      churn=$(echo '$analyze-churn.stdout')
       cat > /tmp/lb_nl_report.json
-      jq -r --argjson churn "$(cat /tmp/lb_nl_report_churn.json 2>/dev/null || echo '{"churn_analysis":"skipped"}')" '
+      EVALS=$(cat <<'EVALEOF'
+      $llm_evaluate.stdout
+      EVALEOF
+      )
+      CHURN_INSIGHTS=$(cat <<'CHURNEOF'
+      $llm_churn.stdout
+      CHURNEOF
+      )
+      echo "$EVALS" > /tmp/lb_nl_evals.json
+      echo "$CHURN_INSIGHTS" > /tmp/lb_nl_churn.json
+      jq -r --argjson evals "$(cat /tmp/lb_nl_evals.json 2>/dev/null || echo '{"evaluations":[]}')" --argjson churn "$(cat /tmp/lb_nl_churn.json 2>/dev/null || echo '{"churn_insights":"no_data"}')" '
         "📰 Newsletter Growth Report\n" +
         "═══════════════════════════\n" +
         "Newsletter: \(.our_newsletter) (\(.our_subscribers) subs)\n" +
         "Niche: \(.our_niche)\n\n" +
         "🔍 Found \(.candidate_count) potential swap partners:\n" +
-        (.candidates[:10] | map("  • \(.name // "unknown") (\(.platform // "unknown"))" + if .subscriber_count then " ~\(.subscriber_count) subs" else "" end) | join("\n")) +
-        "\n\n⚠️  Note: Candidate evaluation requires LLM analysis.\n" +
-        "Feed the JSON output to an LLM to rate swap potential (HIGH/MEDIUM/LOW)\n" +
-        "and generate personalized outreach proposals."
+        (if ($evals.evaluations // []) | length > 0 then
+          ($evals.evaluations | map(
+            "  • \(.name) [\(.rating)] — \(.reasoning)" +
+            if .outreach_pitch then "\n    📝 Pitch: \(.outreach_pitch)" else "" end
+          ) | join("\n"))
+        else
+          (.candidates[:10] | map("  • \(.name // "unknown") (\(.platform // "unknown"))" + if .subscriber_count then " ~\(.subscriber_count) subs" else "" end) | join("\n"))
+        end) +
+        "\n\n📉 Churn Insights:\n" +
+        (if ($churn.churn_insights // "") == "no_data" then
+          "  No churn data available."
+        else
+          "  Peak periods: " + (($churn.peak_periods // []) | join(", ")) + "\n" +
+          "  Top reasons: " + (($churn.top_reasons // []) | join(", ")) + "\n" +
+          "  Recommendations:\n" + (($churn.recommendations // []) | map("    → \(.)") | join("\n"))
+        end)
       ' /tmp/lb_nl_report.json
-      rm -f /tmp/lb_nl_report.json /tmp/lb_nl_report_churn.json
+      rm -f /tmp/lb_nl_report.json /tmp/lb_nl_evals.json /tmp/lb_nl_churn.json

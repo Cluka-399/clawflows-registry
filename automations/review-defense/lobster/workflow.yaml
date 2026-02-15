@@ -1,5 +1,3 @@
-# LLM: Uses prompt step for sentiment refinement and response drafting
-
 name: "Review Farm Defense System"
 description: >
   Monitor online reviews and mentions for a product using Brave Search.
@@ -192,20 +190,7 @@ steps:
 
   - id: draft-responses
     stdin: $generate_report.stdout
-    prompt: |
-      Review the sentiment analysis report for ${product_name} and:
-
-      1. Re-evaluate sentiment for any results where keyword heuristics may be wrong
-         (sarcasm, mixed sentiment, comparative mentions)
-      2. For each NEGATIVE alert, draft an empathetic, professional response that:
-         - Acknowledges the concern
-         - Offers a solution or asks for more details
-         - Avoids being defensive
-      3. For POSITIVE testimonials, suggest:
-         - Which ones are best for social proof (landing page, ads)
-         - A brief thank-you response
-      4. Identify any patterns in negative feedback that suggest product issues
-
-      Prioritize responses by severity and platform visibility.
-    system: >
-      You are a customer success manager. Draft empathetic responses and extract actionable product feedback.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a customer success manager. Draft empathetic responses and extract actionable product feedback.\n\nUSER: Review the sentiment analysis report for ${product_name} and:\n\n1. Re-evaluate sentiment for any results where keyword heuristics may be wrong (sarcasm, mixed sentiment, comparative mentions)\n2. For each NEGATIVE alert, draft an empathetic, professional response that:\n   - Acknowledges the concern\n   - Offers a solution or asks for more details\n   - Avoids being defensive\n3. For POSITIVE testimonials, suggest:\n   - Which ones are best for social proof (landing page, ads)\n   - A brief thank-you response\n4. Identify any patterns in negative feedback that suggest product issues\n\nPrioritize responses by severity and platform visibility."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"

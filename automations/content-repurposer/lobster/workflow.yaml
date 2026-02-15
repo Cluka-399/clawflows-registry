@@ -108,18 +108,8 @@ steps:
 
   - id: repurpose
     stdin: $generate-variants.stdout
-    prompt: |
-      Transform the source content into platform-specific versions.
-
-      For each target platform variant below:
-      1. Rewrite the content in that platform's native style and format
-      2. Respect character limits
-      3. Add platform-appropriate hooks, CTAs, and formatting
-      4. For Twitter: create a thread with numbered tweets, hook first
-      5. For LinkedIn: professional tone, engagement question at end
-      6. For blog-summary: 3-5 bullet TL;DR with link back
-
-      Output each platform version clearly separated with headers.
-    system: >
-      You are a multi-platform content strategist. Adapt tone, length, and format perfectly for each platform.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a multi-platform content strategist. Adapt tone, length, and format perfectly for each platform.\n\nUSER: Transform the source content into platform-specific versions.\n\nFor each target platform variant below:\n1. Rewrite the content in that platform's native style and format\n2. Respect character limits\n3. Add platform-appropriate hooks, CTAs, and formatting\n4. For Twitter: create a thread with numbered tweets, hook first\n5. For LinkedIn: professional tone, engagement question at end\n6. For blog-summary: 3-5 bullet TL;DR with link back\n\nOutput each platform version clearly separated with headers."
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 

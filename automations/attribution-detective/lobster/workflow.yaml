@@ -161,8 +161,10 @@ steps:
 
   - id: generate_report
     stdin: $build_journey_maps.stdout
-    prompt: |
-      Analyze the customer journey attribution data below and generate an actionable report.
+    command: |
+      llm_task.invoke --prompt "SYSTEM: You are a marketing attribution analyst. Provide data-driven insights and clear budget recommendations.
+
+      USER: Analyze the customer journey attribution data below and generate an actionable report.
 
       Include:
       1. Key metrics summary (conversions, revenue, avg touchpoints)
@@ -172,9 +174,9 @@ steps:
       5. Specific recommendations for budget reallocation
       6. Journey pattern insights (which paths convert best)
 
-      Time period: ${time_period}
-    system: >
-      You are a marketing attribution analyst. Provide data-driven insights and clear budget recommendations.
+      Time period: ${time_period}"
+    env:
+      CLAWD_URL: "http://127.0.0.1:3000"
 
 
   - id: cleanup

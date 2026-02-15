@@ -253,10 +253,6 @@ steps:
       WORK: "$tmpdir.stdout"
 
   # Step 8: Compile the final outreach-ready report
-  # NOTE: The "outreach_angles" field contains raw data for personalization.
-  # To generate actual outreach messages, pipe this JSON to an LLM with a prompt like:
-  #   "For each influencer, write a personalized outreach message referencing their
-  #    specific projects, bio, and recent activity. Be genuine, not templated."
   - id: compile_report
     command: |
       cat > "$WORK/report.js"
@@ -324,3 +320,27 @@ steps:
       FMIN: "${follower_min}"
       FMAX: "${follower_max}"
       MAX_RESULTS: "${max_results}"
+
+  # Step 9: Generate personalized outreach messages using LLM
+  - id: llm_outreach
+    stdin: $compile_report.stdout
+    command: |
+      cat > /tmp/io_llm_input.json
+      REPORT=$(cat /tmp/io_llm_input.json)
+      llm_task.invoke <<PROMPT
+      You are an outreach specialist for the "${niche}" space. Given these influencer profiles:
+
+      $REPORT
+
+      For each influencer, write a personalized outreach message that:
+      1. References their specific projects and recent repos
+      2. Mentions their bio/interests naturally
+      3. Is genuine and non-templated
+      4. Suggests a specific collaboration angle
+      5. Is concise (3-4 sentences max)
+
+      Return JSON: { "outreach": [{ "username": "...", "message": "...", "subject_line": "...", "collaboration_angle": "..." }] }
+      PROMPT
+      rm -f /tmp/io_llm_input.json
+    env:
+      CLAWD_URL: "http://localhost:1691"

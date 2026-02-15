@@ -1,4 +1,4 @@
-# LLM: Uses prompt step for pricing change analysis
+# LLM: Uses llm_task.invoke for pricing change analysis
 
 name: "Pricing Page Intelligence"
 description: "Monitor competitor pricing pages for changes, compute diffs, and produce structured change reports."
@@ -143,19 +143,6 @@ steps:
 
   - id: analyze-changes
     stdin: $build_report.stdout
-    prompt: |
-      Analyze the pricing intelligence report below and provide strategic insights.
-
-      For each URL that changed:
-      1. Summarize what likely changed (new tiers, price increases/decreases, feature changes)
-      2. Assess competitive positioning implications
-      3. Rate urgency: CRITICAL / IMPORTANT / INFORMATIONAL
-
-      Provide recommendations:
-      - Should we adjust our pricing in response?
-      - Any messaging changes needed on our comparison pages?
-      - Content opportunities (blog post about industry pricing trends)
-
-      For unchanged URLs, note if they've been stable for multiple checks.
-    system: >
-      You are a competitive pricing analyst. Detect shifts and recommend strategic responses.
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are a competitive pricing analyst. Detect shifts and recommend strategic responses.\n\nUSER: Analyze the pricing intelligence report below and provide strategic insights.\n\nFor each URL that changed:\n1. Summarize what likely changed (new tiers, price increases/decreases, feature changes)\n2. Assess competitive positioning implications\n3. Rate urgency: CRITICAL / IMPORTANT / INFORMATIONAL\n\nProvide recommendations:\n- Should we adjust our pricing in response?\n- Any messaging changes needed on our comparison pages?\n- Content opportunities (blog post about industry pricing trends)\n\nFor unchanged URLs, note if they've been stable for multiple checks."
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }

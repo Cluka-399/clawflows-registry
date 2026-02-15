@@ -6,7 +6,7 @@
 #
 # Requires: curl, jq
 #
-# LLM: Uses prompt step for title rating and posting strategy
+# LLM: Uses llm_task.invoke for title rating and posting strategy
 
 name: hn-timing-bot
 description: Monitor HN activity patterns and detect optimal posting conditions
@@ -76,19 +76,9 @@ steps:
 
   - id: rate-and-advise
     stdin: $analyze-conditions.stdout
-    prompt: |
-      Based on the HN front page analysis below, provide posting advice.
-
-      1. Rate the current posting window (OPTIMAL/GOOD/WAIT) with reasoning
-      2. If a target URL is provided, suggest 3-5 title variations ranked by likely HN appeal
-      3. Analyze the competing posts — is the topic saturated or is there room?
-      4. Suggest the best posting time in the next 12 hours if now isn't ideal
-      5. Any title/framing tips based on what's currently performing well on HN
-
-      Target URL: ${target_url}
-      Topic keywords: ${topic_keywords}
-    system: >
-      You are an HN posting strategist. Maximize front-page chances with timing and title advice.
+    env: { CLAWD_URL: "http://127.0.0.1:3000" }
+    command: >
+      llm_task.invoke --prompt "SYSTEM: You are an HN posting strategist. Maximize front-page chances with timing and title advice.\n\nUSER: Based on the HN front page analysis below, provide posting advice.\n\n1. Rate the current posting window (OPTIMAL/GOOD/WAIT) with reasoning\n2. If a target URL is provided, suggest 3-5 title variations ranked by likely HN appeal\n3. Analyze the competing posts — is the topic saturated or is there room?\n4. Suggest the best posting time in the next 12 hours if now isn't ideal\n5. Any title/framing tips based on what's currently performing well on HN\n\nTarget URL: ${target_url}\nTopic keywords: ${topic_keywords}"
 
   - id: report
     stdin: $rate-and-advise.stdout
