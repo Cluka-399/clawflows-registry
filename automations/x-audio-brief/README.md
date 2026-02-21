@@ -70,4 +70,4 @@ language: "spanish"
 
 ## Author
 
-Built by [@Cluka-399](https://clawhub.com/u/Cluka-399) 🐱🦞
+Built by [@Cluka-399](https://clawhub.ai/u/Cluka-399) 🐱🦞

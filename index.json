@@ -36,9 +36,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: file-system",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "file-system",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -51,8 +51,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "api",
@@ -69,8 +69,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "business",
@@ -87,7 +87,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http"
+        "http"
       ],
       "tags": [
         "research",
@@ -166,9 +166,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: prediction-markets",
-        "capability: chart-generation",
-        "capability: social-search"
+        "prediction-markets",
+        "chart-generation",
+        "social-search"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -181,10 +181,10 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: file-system",
-        "capability: web-fetch",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "file-system",
+        "web-fetch",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -228,8 +228,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "developer",
@@ -246,7 +246,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http"
+        "http"
       ],
       "tags": [
         "developer",
@@ -263,7 +263,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: shell"
+        "shell"
       ],
       "tags": [
         "developer",
@@ -455,8 +455,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "crypto",
@@ -503,10 +503,10 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: web-search",
-        "capability: rss-reader",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "web-search",
+        "rss-reader",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -537,8 +537,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: shell",
-        "capability: calendar"
+        "shell",
+        "calendar"
       ],
       "tags": [
         "productivity",
@@ -638,7 +638,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: shell"
+        "shell"
       ],
       "tags": [
         "domains",
@@ -655,7 +655,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: email"
+        "email"
       ],
       "tags": [
         "email",
@@ -737,7 +737,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: storage"
+        "storage"
       ],
       "tags": [
         "finance",
@@ -802,9 +802,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: calendar",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "calendar",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -833,7 +833,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: shell"
+        "shell"
       ],
       "tags": [
         "developer",
@@ -866,8 +866,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: github",
-        "capability: notifications"
+        "github",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -880,7 +880,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http"
+        "http"
       ],
       "tags": [
         "developer",
@@ -961,9 +961,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: email",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "email",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1023,9 +1023,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: web-search",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "web-search",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1087,10 +1087,10 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: calendar",
-        "capability: email",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "calendar",
+        "email",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1152,9 +1152,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: calendar",
-        "capability: weather",
-        "capability: tts"
+        "calendar",
+        "weather",
+        "tts"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1231,8 +1231,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "content",
@@ -1331,7 +1331,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http"
+        "http"
       ],
       "tags": [
         "products",
@@ -1365,9 +1365,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: file-system",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "file-system",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1395,7 +1395,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http"
+        "http"
       ],
       "tags": [
         "content",
@@ -1493,7 +1493,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: social-search"
+        "social-search"
       ],
       "tags": [
         "social",
@@ -1525,7 +1525,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: shell"
+        "shell"
       ],
       "tags": [
         "security",
@@ -1542,9 +1542,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: file-system",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "file-system",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1687,8 +1687,8 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: http",
-        "capability: storage"
+        "http",
+        "storage"
       ],
       "tags": [
         "monitoring",
@@ -1720,7 +1720,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: weather"
+        "weather"
       ],
       "tags": [
         "weather",
@@ -1737,10 +1737,10 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: file-system",
-        "capability: calendar",
-        "capability: llm-analysis",
-        "capability: notifications"
+        "file-system",
+        "calendar",
+        "llm-analysis",
+        "notifications"
       ],
       "tags": [],
       "created": "2026-01-31",
@@ -1785,9 +1785,7 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "skill: search-x",
-        "skill: elevenlabs-tts",
-        "capability: llm-analysis"
+        "llm-analysis"
       ],
       "tags": [
         "social-media",
@@ -1806,9 +1804,9 @@
       "author": "cluka",
       "version": "1.0.0",
       "requires": [
-        "capability: youtube-data",
-        "capability: database",
-        "capability: chart-generation"
+        "youtube-data",
+        "database",
+        "chart-generation"
       ],
       "tags": [],
       "created": "2026-01-31",
