@@ -9,6 +9,7 @@
   "license": "MIT",
   "categories": ["agent-management", "alignment", "monitoring"],
   "tags": ["drift", "soul", "identity", "alignment", "personality", "weekly-check"],
+  "requires": ["exec", "discord"],
   "capabilities": [
     "file-system",
     "llm-analysis",

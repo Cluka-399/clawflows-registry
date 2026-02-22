@@ -1,0 +1,12 @@
+{
+  "name": "changelog-monitor",
+  "description": "Monitor GitHub releases and changelogs for projects you use",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["github"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * *",
+  "tags": ["developer", "github", "releases"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

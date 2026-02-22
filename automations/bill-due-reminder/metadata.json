@@ -1,0 +1,12 @@
+{
+  "name": "bill-due-reminder",
+  "description": "Track recurring bills and send reminders before due dates",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron", "discord"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["finance", "reminders"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

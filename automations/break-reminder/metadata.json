@@ -1,0 +1,12 @@
+{
+  "name": "break-reminder",
+  "description": "Remind yourself to take regular breaks (Pomodoro-style)",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "*/50 9-18 * * 1-5",
+  "tags": ["health", "productivity", "pomodoro"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

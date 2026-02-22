@@ -1,0 +1,12 @@
+{
+  "name": "app-store-reviews",
+  "description": "Monitor App Store and Google Play reviews for your app",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 */4 * * *",
+  "tags": ["business", "reviews", "mobile"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

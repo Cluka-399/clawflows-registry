@@ -1,0 +1,12 @@
+{
+  "name": "api-health-check",
+  "description": "Comprehensive API health monitoring with endpoint validation",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "*/15 * * * *",
+  "tags": ["api", "monitoring", "devops"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
