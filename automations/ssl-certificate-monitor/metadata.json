@@ -1,0 +1,12 @@
+{
+  "name": "ssl-certificate-monitor",
+  "description": "Monitor SSL certificate expiration dates",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["security", "ssl", "monitoring"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

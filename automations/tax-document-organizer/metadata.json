@@ -1,0 +1,12 @@
+{
+  "name": "tax-document-organizer",
+  "description": "Auto-sort tax-related documents into categorized folders by year",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email", "exec"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["finance", "tax", "documents"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

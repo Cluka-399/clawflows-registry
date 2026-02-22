@@ -1,0 +1,12 @@
+{
+  "name": "social-mentions",
+  "description": "Track brand mentions across social platforms",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search"],
+  "trigger": "schedule",
+  "schedule": "0 */6 * * *",
+  "tags": ["social", "marketing", "mentions"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

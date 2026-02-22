@@ -8,6 +8,7 @@
   "license": "MIT",
   "categories": ["productivity", "team", "daily"],
   "tags": ["standup", "daily", "scrum", "team", "async"],
+  "requires": ["calendar", "exec"],
   "capabilities": ["file-system", "calendar", "llm-analysis", "notifications"],
   "schedule": "0 9 * * 1-5",
   "createdAt": "2026-01-31"

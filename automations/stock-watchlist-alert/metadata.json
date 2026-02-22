@@ -1,0 +1,12 @@
+{
+  "name": "stock-watchlist-alert",
+  "description": "Monitor stock prices and alert on significant moves or target prices",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search"],
+  "trigger": "schedule",
+  "schedule": "0 16 * * 1-5",
+  "tags": ["finance", "investing", "stocks"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

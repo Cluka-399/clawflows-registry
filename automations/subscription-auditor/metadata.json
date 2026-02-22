@@ -1,0 +1,12 @@
+{
+  "name": "subscription-auditor",
+  "description": "Monthly audit of active subscriptions, flag unused or duplicate services",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email", "exec"],
+  "trigger": "schedule",
+  "schedule": "0 9 1 * *",
+  "tags": ["finance", "subscriptions", "audit"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

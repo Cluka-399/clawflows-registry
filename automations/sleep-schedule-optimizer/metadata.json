@@ -1,0 +1,12 @@
+{
+  "name": "sleep-schedule-optimizer",
+  "description": "Analyze sleep patterns and suggest optimal bedtimes based on calendar",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar", "exec"],
+  "trigger": "schedule",
+  "schedule": "0 21 * * *",
+  "tags": ["health", "sleep", "wellness"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

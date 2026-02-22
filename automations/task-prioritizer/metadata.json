@@ -1,0 +1,12 @@
+{
+  "name": "task-prioritizer",
+  "description": "Daily task sorting using Eisenhower matrix based on deadlines and importance",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * *",
+  "tags": ["productivity", "tasks", "planning"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

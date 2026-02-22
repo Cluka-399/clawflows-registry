@@ -1,0 +1,12 @@
+{
+  "name": "security-advisory-monitor",
+  "description": "Monitor security advisories for your tech stack",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "exec"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["developer", "security", "monitoring"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
