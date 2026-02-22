@@ -1,0 +1,12 @@
+{
+  "name": "deep-work-protector",
+  "description": "Auto-decline meetings during protected focus hours, suggest alternatives",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar", "email"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * 1-5",
+  "tags": ["productivity", "focus", "calendar"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

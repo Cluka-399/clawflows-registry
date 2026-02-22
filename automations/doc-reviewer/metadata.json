@@ -1,0 +1,11 @@
+{
+  "name": "doc-reviewer",
+  "description": "Upload a document and get a plain-English summary with flagged clauses and key takeaways",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": [],
+  "trigger": "manual",
+  "tags": ["productivity", "legal", "documents"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

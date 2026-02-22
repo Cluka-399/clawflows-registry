@@ -1,0 +1,12 @@
+{
+  "name": "daily-standup-prep",
+  "description": "Prepare your daily standup by summarizing recent activity",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "calendar"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1-5",
+  "tags": ["productivity", "standup", "daily"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

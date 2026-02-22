@@ -1,0 +1,12 @@
+{
+  "name": "database-backup-verifier",
+  "description": "Verify database backups exist and can be restored",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 6 * * *",
+  "tags": ["developer", "devops", "database", "backup"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

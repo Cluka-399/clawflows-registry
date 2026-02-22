@@ -1,0 +1,12 @@
+{
+  "name": "dependency-updater",
+  "description": "Weekly check for outdated dependencies with PR creation",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "github"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 1",
+  "tags": ["developer", "security", "dependencies"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "daily-affirmation",
+  "description": "Start your day with a positive affirmation",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "0 7 * * *",
+  "tags": ["wellness", "motivation", "daily"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

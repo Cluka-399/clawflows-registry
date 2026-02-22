@@ -1,0 +1,12 @@
+{
+  "name": "deadline-tracker",
+  "description": "Escalating reminders as deadlines approach - 7d, 3d, 1d, same day",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["productivity", "reminders", "deadlines"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

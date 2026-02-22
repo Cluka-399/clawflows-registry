@@ -1,0 +1,12 @@
+{
+  "name": "daily-standup-generator",
+  "description": "Generate standup update from git commits, completed tasks, and calendar",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "calendar"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1-5",
+  "tags": ["productivity", "developer", "standup"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
