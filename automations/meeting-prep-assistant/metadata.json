@@ -1,0 +1,12 @@
+{
+  "name": "meeting-prep-assistant",
+  "description": "Generate meeting briefs 30 min before - attendees, agenda, relevant docs",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar"],
+  "trigger": "schedule",
+  "schedule": "*/30 8-18 * * 1-5",
+  "tags": ["productivity", "meetings", "calendar"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

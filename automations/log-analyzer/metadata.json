@@ -1,0 +1,12 @@
+{
+  "name": "log-analyzer",
+  "description": "Analyze application logs for errors, patterns, and anomalies",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 */6 * * *",
+  "tags": ["developer", "monitoring", "logs", "devops"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

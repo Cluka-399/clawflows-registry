@@ -1,0 +1,12 @@
+{
+  "name": "meal-planner",
+  "description": "Weekly meal planning with shopping list generation",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": [],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 0",
+  "tags": ["health", "planning", "meals", "shopping"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

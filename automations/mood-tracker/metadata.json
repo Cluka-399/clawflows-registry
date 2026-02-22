@@ -1,0 +1,12 @@
+{
+  "name": "mood-tracker",
+  "description": "Daily mood check-ins with pattern analysis and insights",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["discord"],
+  "trigger": "schedule",
+  "schedule": "0 21 * * *",
+  "tags": ["health", "wellness", "mood", "tracking"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

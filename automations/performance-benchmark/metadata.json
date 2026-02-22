@@ -1,0 +1,12 @@
+{
+  "name": "performance-benchmark",
+  "description": "Run scheduled performance benchmarks and track trends",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 3 * * *",
+  "tags": ["developer", "performance", "benchmarks", "monitoring"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

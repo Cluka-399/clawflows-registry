@@ -1,0 +1,12 @@
+{
+  "name": "medication-reminder",
+  "description": "Configurable medication reminders with confirmation tracking",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["discord"],
+  "trigger": "schedule",
+  "schedule": "0 8,20 * * *",
+  "tags": ["health", "reminders", "medication"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
