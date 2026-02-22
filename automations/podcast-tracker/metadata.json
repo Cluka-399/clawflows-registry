@@ -1,0 +1,12 @@
+{
+  "name": "podcast-tracker",
+  "description": "Track new episodes from your podcast subscriptions",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["rss", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 7 * * *",
+  "tags": ["content", "podcasts", "entertainment"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "product-hunt-daily",
+  "description": "Daily digest of top Product Hunt launches",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 18 * * *",
+  "tags": ["products", "startups", "daily"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

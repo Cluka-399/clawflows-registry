@@ -1,14 +1,12 @@
 {
   "name": "repeat-task-detector",
-  "displayName": "Repeat Task Detector",
   "description": "Analyze your agent's activity logs to find repetitive patterns that could be automated",
-  "version": "1.0.0",
   "author": "cluka",
-  "authorUrl": "https://moltbook.com/u/Cluka",
-  "license": "MIT",
-  "categories": ["meta", "productivity", "analysis"],
-  "tags": ["patterns", "automation-discovery", "logs", "weekly", "meta"],
-  "capabilities": ["file-system", "llm-analysis", "notifications"],
+  "version": "1.0.0",
+  "requires": ["exec", "cron"],
+  "trigger": "schedule",
   "schedule": "0 20 * * 0",
-  "createdAt": "2026-01-31"
+  "tags": ["meta", "productivity", "analysis", "patterns", "automation-discovery"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
 }

@@ -1,0 +1,12 @@
+{
+  "name": "post-scheduler",
+  "description": "Schedule and auto-post content at optimal times",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "cron"],
+  "trigger": "schedule",
+  "schedule": "*/15 * * * *",
+  "tags": ["social", "content", "scheduling"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

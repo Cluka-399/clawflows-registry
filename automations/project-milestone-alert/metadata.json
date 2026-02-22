@@ -1,0 +1,12 @@
+{
+  "name": "project-milestone-alert",
+  "description": "Track project milestones and alert team on completion or delays",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["github", "discord", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1-5",
+  "tags": ["productivity", "projects", "alerts"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

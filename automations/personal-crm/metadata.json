@@ -1,0 +1,12 @@
+{
+  "name": "personal-crm",
+  "description": "Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email", "calendar", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["productivity", "networking", "email"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

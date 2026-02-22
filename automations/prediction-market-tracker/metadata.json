@@ -1,0 +1,12 @@
+{
+  "name": "prediction-market-tracker",
+  "description": "Monitor Polymarket prediction markets by topic, track probability changes, alert on significant moves",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["polymarket", "web-search", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 */4 * * *",
+  "tags": ["finance", "prediction-markets", "polymarket", "monitoring"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

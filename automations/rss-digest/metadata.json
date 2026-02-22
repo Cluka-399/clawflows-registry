@@ -1,0 +1,12 @@
+{
+  "name": "rss-digest",
+  "description": "Aggregate multiple RSS feeds into a daily digest",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["rss", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * *",
+  "tags": ["content", "news", "rss"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

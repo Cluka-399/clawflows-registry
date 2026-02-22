@@ -1,0 +1,12 @@
+{
+  "name": "savings-goal-tracker",
+  "description": "Track progress toward savings goals with milestone celebrations",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "discord", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["finance", "savings", "goals"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
