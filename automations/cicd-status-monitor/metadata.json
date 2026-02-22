@@ -1,0 +1,12 @@
+{
+  "name": "cicd-status-monitor",
+  "description": "Monitor CI/CD pipeline status and alert on failures",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["github", "cron"],
+  "trigger": "schedule",
+  "schedule": "*/30 * * * *",
+  "tags": ["developer", "ci-cd", "monitoring"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

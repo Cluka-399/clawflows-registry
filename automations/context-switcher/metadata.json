@@ -1,0 +1,11 @@
+{
+  "name": "context-switcher",
+  "description": "Save and restore workspace state when switching between projects",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "manual",
+  "tags": ["productivity", "developer"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

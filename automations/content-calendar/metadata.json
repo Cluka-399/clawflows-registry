@@ -1,0 +1,12 @@
+{
+  "name": "content-calendar",
+  "description": "Plan and schedule content across platforms with reminders",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["social", "content"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

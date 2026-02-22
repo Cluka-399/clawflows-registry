@@ -1,0 +1,12 @@
+{
+  "name": "crypto-portfolio",
+  "description": "Track your crypto portfolio value and alert on significant changes",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 */4 * * *",
+  "tags": ["crypto", "finance", "portfolio"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

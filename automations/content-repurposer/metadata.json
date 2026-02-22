@@ -1,0 +1,11 @@
+{
+  "name": "content-repurposer",
+  "description": "Generate multi-platform content from single source",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "manual",
+  "tags": ["social", "content"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

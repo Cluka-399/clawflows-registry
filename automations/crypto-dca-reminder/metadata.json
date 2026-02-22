@@ -1,0 +1,12 @@
+{
+  "name": "crypto-dca-reminder",
+  "description": "Dollar-cost averaging reminders on your schedule with current prices",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["finance", "crypto"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

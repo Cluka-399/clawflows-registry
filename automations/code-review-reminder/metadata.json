@@ -1,0 +1,12 @@
+{
+  "name": "code-review-reminder",
+  "description": "Remind about pending code reviews older than threshold",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["github", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 1-5",
+  "tags": ["developer"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

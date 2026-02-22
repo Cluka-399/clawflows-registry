@@ -1,0 +1,11 @@
+{
+  "name": "content-to-anima",
+  "description": "Find trending ideas on Reddit/X, generate visual concepts with Gemini, then build on Anima",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "browser", "discord"],
+  "trigger": "manual",
+  "tags": ["content", "anima", "design", "generative"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

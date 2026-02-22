@@ -1,0 +1,11 @@
+{
+  "name": "comment-moderator",
+  "description": "Auto-moderate comments based on rules and sentiment",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "discord"],
+  "trigger": "webhook",
+  "tags": ["social", "moderation"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
