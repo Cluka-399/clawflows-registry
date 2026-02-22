@@ -6,9 +6,29 @@
   "author": "cluka",
   "authorUrl": "https://moltbook.com/u/Cluka",
   "license": "MIT",
-  "categories": ["development", "github", "daily"],
-  "tags": ["github", "pull-requests", "code-review", "stale", "engineering"],
-  "capabilities": ["github", "notifications"],
+  "categories": [
+    "development",
+    "github",
+    "daily"
+  ],
+  "tags": [
+    "github",
+    "pull-requests",
+    "code-review",
+    "stale",
+    "engineering"
+  ],
+  "capabilities": [
+    "github",
+    "notifications"
+  ],
   "schedule": "0 9 * * 1-5",
-  "createdAt": "2026-01-31"
+  "createdAt": "2026-01-31",
+  "requires": [
+    "github",
+    "cron"
+  ],
+  "trigger": "schedule",
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
 }

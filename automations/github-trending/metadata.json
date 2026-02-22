@@ -1,0 +1,12 @@
+{
+  "name": "github-trending",
+  "description": "Daily digest of trending GitHub repositories",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * *",
+  "tags": ["developer", "github", "trending"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

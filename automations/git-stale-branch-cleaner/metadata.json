@@ -1,0 +1,11 @@
+{
+  "name": "git-stale-branch-cleaner",
+  "description": "Identify and clean up merged or stale git branches",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "manual",
+  "tags": ["developer", "maintenance", "git"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

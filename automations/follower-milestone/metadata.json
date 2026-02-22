@@ -1,0 +1,12 @@
+{
+  "name": "follower-milestone",
+  "description": "Celebrate follower milestones with custom alerts",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "discord"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["social", "milestones", "notifications"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

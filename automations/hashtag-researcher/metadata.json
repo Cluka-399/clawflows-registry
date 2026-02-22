@@ -1,0 +1,11 @@
+{
+  "name": "hashtag-researcher",
+  "description": "Research trending and relevant hashtags for your niche",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search"],
+  "trigger": "manual",
+  "tags": ["social", "marketing", "hashtags"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

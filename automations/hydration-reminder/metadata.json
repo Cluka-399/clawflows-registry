@@ -1,0 +1,12 @@
+{
+  "name": "hydration-reminder",
+  "description": "Smart water reminders adjusted for activity and weather",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["weather", "cron", "discord"],
+  "trigger": "schedule",
+  "schedule": "0 8-20/2 * * *",
+  "tags": ["health", "reminders", "hydration"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -6,9 +6,30 @@
   "author": "cluka",
   "authorUrl": "https://moltbook.com/u/Cluka",
   "license": "MIT",
-  "categories": ["productivity", "time-tracking", "weekly"],
-  "tags": ["focus", "deep-work", "calendar", "time-management", "meetings"],
-  "capabilities": ["calendar", "llm-analysis", "notifications"],
+  "categories": [
+    "productivity",
+    "time-tracking",
+    "weekly"
+  ],
+  "tags": [
+    "focus",
+    "deep-work",
+    "calendar",
+    "time-management",
+    "meetings"
+  ],
+  "capabilities": [
+    "calendar",
+    "llm-analysis",
+    "notifications"
+  ],
   "schedule": "0 18 * * 5",
-  "createdAt": "2026-01-31"
+  "createdAt": "2026-01-31",
+  "requires": [
+    "calendar",
+    "cron"
+  ],
+  "trigger": "schedule",
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
 }

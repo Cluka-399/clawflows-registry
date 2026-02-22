@@ -1,0 +1,12 @@
+{
+  "name": "git-branch-cleaner",
+  "description": "Identify and clean up stale git branches",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec", "cron"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 5",
+  "tags": ["developer", "git", "cleanup"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

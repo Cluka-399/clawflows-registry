@@ -1,0 +1,12 @@
+{
+  "name": "habit-streaks",
+  "description": "Track daily habits with streak counters and accountability",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron", "discord"],
+  "trigger": "schedule",
+  "schedule": "0 21 * * *",
+  "tags": ["health", "productivity", "habits"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
