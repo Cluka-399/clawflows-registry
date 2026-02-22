@@ -1,0 +1,12 @@
+{
+  "name": "trending-topic-alert",
+  "description": "Alert when topics in your niche start trending",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search"],
+  "trigger": "schedule",
+  "schedule": "0 */4 * * *",
+  "tags": ["social", "marketing", "trends"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

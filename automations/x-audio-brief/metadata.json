@@ -1,0 +1,11 @@
+{
+  "name": "x-audio-brief",
+  "description": "Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "tts"],
+  "trigger": "manual",
+  "tags": ["social-media", "audio", "research", "tts", "x-twitter"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

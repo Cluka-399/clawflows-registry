@@ -1,0 +1,12 @@
+{
+  "name": "water-reminder",
+  "description": "Periodic reminders to stay hydrated",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "0 9-18/2 * * 1-5",
+  "tags": ["health", "wellness", "reminder"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

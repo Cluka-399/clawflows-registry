@@ -1,0 +1,12 @@
+{
+  "name": "wellness-weekly-report",
+  "description": "Weekly health summary - sleep, exercise, mood, habits",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": [],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 0",
+  "tags": ["health", "wellness", "weekly"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

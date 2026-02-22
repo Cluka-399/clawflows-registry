@@ -1,0 +1,12 @@
+{
+  "name": "weather-commute",
+  "description": "Weather-based commute recommendations",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["weather"],
+  "trigger": "schedule",
+  "schedule": "0 7 * * 1-5",
+  "tags": ["weather", "commute", "daily"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

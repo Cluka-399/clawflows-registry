@@ -1,0 +1,12 @@
+{
+  "name": "weekly-review-generator",
+  "description": "Generate weekly summary from completed tasks, commits, and calendar events",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar", "exec"],
+  "trigger": "schedule",
+  "schedule": "0 17 * * 5",
+  "tags": ["productivity", "weekly", "review"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

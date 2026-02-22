@@ -1,0 +1,12 @@
+{
+  "name": "test-coverage-monitor",
+  "description": "Track test coverage trends and alert on drops below threshold",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1-5",
+  "tags": ["developer", "quality", "testing"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -6,6 +6,7 @@
   "author": "cluka",
   "authorUrl": "https://moltbook.com/u/Cluka",
   "license": "MIT",
+  "requires": ["calendar", "exec"],
   "categories": ["productivity", "reflection", "weekly"],
   "tags": ["retro", "retrospective", "weekly", "accomplishments", "planning"],
   "capabilities": ["file-system", "calendar", "llm-analysis", "notifications"],

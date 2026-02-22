@@ -1,0 +1,12 @@
+{
+  "name": "uptime-monitor",
+  "description": "Monitor website uptime and response times",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "*/5 * * * *",
+  "tags": ["monitoring", "uptime", "devops"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

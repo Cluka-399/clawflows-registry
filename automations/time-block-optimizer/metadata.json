@@ -1,0 +1,12 @@
+{
+  "name": "time-block-optimizer",
+  "description": "Analyze calendar patterns and suggest optimal meeting-free blocks",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * 1",
+  "tags": ["productivity", "calendar", "scheduling"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
