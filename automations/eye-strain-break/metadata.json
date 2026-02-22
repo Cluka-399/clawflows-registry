@@ -1,0 +1,12 @@
+{
+  "name": "eye-strain-break",
+  "description": "20-20-20 rule reminders - every 20 min look 20 feet away for 20 sec",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "*/20 * * * *",
+  "tags": ["health", "ergonomics"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "engagement-analyzer",
+  "description": "Analyze which content types get best engagement",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 1",
+  "tags": ["social", "analytics"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "expense-tracker",
+  "description": "Track and categorize expenses with weekly summaries",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "0 18 * * 0",
+  "tags": ["finance", "expenses", "budget"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

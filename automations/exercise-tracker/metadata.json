@@ -1,0 +1,11 @@
+{
+  "name": "exercise-tracker",
+  "description": "Log workouts, track streaks, celebrate milestones",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "manual",
+  "tags": ["health", "fitness"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

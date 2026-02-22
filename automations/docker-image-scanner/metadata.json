@@ -1,0 +1,12 @@
+{
+  "name": "docker-image-scanner",
+  "description": "Scan Docker images for vulnerabilities on schedule",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["exec"],
+  "trigger": "schedule",
+  "schedule": "0 3 * * *",
+  "tags": ["developer", "security"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

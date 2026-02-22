@@ -1,0 +1,12 @@
+{
+  "name": "email-digest",
+  "description": "Summarize unread emails into a daily digest",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * *",
+  "tags": ["email", "productivity", "digest"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

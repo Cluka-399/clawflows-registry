@@ -1,0 +1,12 @@
+{
+  "name": "expense-categorizer",
+  "description": "Auto-categorize expenses from email receipts and bank notifications",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email"],
+  "trigger": "schedule",
+  "schedule": "0 20 * * *",
+  "tags": ["finance"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

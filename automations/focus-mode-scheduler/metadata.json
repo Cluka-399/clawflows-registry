@@ -1,0 +1,12 @@
+{
+  "name": "focus-mode-scheduler",
+  "description": "Automatically enable DND/focus mode during calendar deep work blocks",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["calendar"],
+  "trigger": "schedule",
+  "schedule": "*/15 * * * *",
+  "tags": ["productivity", "calendar"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}

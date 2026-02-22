@@ -1,0 +1,12 @@
+{
+  "name": "financial-snapshot",
+  "description": "Weekly financial health summary - income, expenses, net worth trends",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["cron"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["finance"],
+  "created": "2026-01-30",
+  "updated": "2026-01-30"
+}
