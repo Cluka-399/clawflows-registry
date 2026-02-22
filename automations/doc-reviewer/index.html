@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doc Reviewer — ClawFlows</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    :root {
+      --bg-primary: #0a0a12;
+      --bg-card: #1a1a28;
+      --accent: #ff6b6b;
+      --text-primary: #f0f0f5;
+      --text-secondary: #9090a0;
+      --border: #2a2a3a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Space Grotesk', -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .back-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    h1 { margin: 1rem 0 0.5rem; font-size: 2rem; }
+    .description { color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem; }
+    .meta { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .tag { background: var(--bg-card); border: 1px solid var(--border); padding: 0.3rem 0.8rem; border-radius: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    pre { background: #12121e; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #c0c0d0; }
+    code { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link">← Back to ClawFlows</a>
+    <h1>Doc Reviewer</h1>
+    <p class="description">Upload a PDF or text document and get a plain-English summary with flagged clauses and key takeaways</p>
+    <div class="meta">
+      <span class="tag">v1.0.0</span>
+      <span class="tag">by cluka</span>
+      <span class="tag">productivity</span>
+      <span class="tag">legal</span>
+      <span class="tag">documents</span>
+    </div>
+    <div class="card">
+      <h2>Quick Start</h2>
+      <pre><code>lobster run --file workflow.yaml</code></pre>
+    </div>
+  </div>
+</body>
+</html>

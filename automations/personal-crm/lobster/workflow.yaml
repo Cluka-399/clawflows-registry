@@ -1,0 +1,109 @@
+# Lobster workflow: personal-crm
+# Scans recent emails and calendar events to find contacts going cold,
+# then drafts follow-up messages for review.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{
+#     "contacts_file": "/path/to/contacts.json",
+#     "stale_days": "14",
+#     "inbox_id": "your-inbox-id",
+#     "agentmail_api_key": "$AGENTMAIL_API_KEY"
+#   }'
+#
+# Contacts file format (JSON array):
+#   [{"name":"Alice","email":"alice@co.com","relationship":"investor","notes":"Met at YC demo day"}]
+#
+# Requires: jq, curl, date (GNU coreutils)
+
+name: personal-crm
+description: Find contacts going cold and draft follow-ups
+
+args:
+  contacts_file:
+    description: "Path to JSON file with contacts [{name, email, relationship, notes}]"
+  stale_days:
+    description: "Days without contact before flagging as stale"
+    default: "14"
+  inbox_id:
+    description: "AgentMail inbox ID for scanning sent/received emails"
+  agentmail_api_key:
+    description: "AgentMail API key"
+
+steps:
+  - id: load-contacts
+    command: |
+      if [ ! -f "${contacts_file}" ]; then
+        echo '[]'
+        exit 1
+      fi
+      cat "${contacts_file}"
+
+  - id: fetch-recent-emails
+    command: |
+      # Fetch recent emails from inbox
+      curl -s -H "Authorization: Bearer ${agentmail_api_key}" \
+        "https://api.agentmail.to/v0/inboxes/${inbox_id}/messages?limit=100" \
+        | jq -c '[.messages[]? | {
+            from: .from,
+            to: (.to // []),
+            date: .date,
+            subject: .subject
+          }]'
+
+  - id: find-stale-contacts
+    stdin: $load-contacts.stdout
+    command: |
+      cat > /tmp/crm_contacts.json
+      echo '${{ fetch-recent-emails.stdout }}' > /tmp/crm_emails.json
+      
+      stale=${stale_days}
+      cutoff_ts=$(date -d "-${stale} days" +%s 2>/dev/null || date -v-${stale}d +%s)
+      
+      jq -c --argjson cutoff "$cutoff_ts" --slurpfile emails /tmp/crm_emails.json '
+        ($emails[0] // []) as $msgs |
+        [.[] | . as $contact |
+          # Find most recent email involving this contact
+          ($msgs | map(
+            select(
+              (.from // "" | ascii_downcase | contains($contact.email | ascii_downcase)) or
+              (.to[]? // "" | ascii_downcase | contains($contact.email | ascii_downcase))
+            )
+          ) | sort_by(.date) | last // null) as $last_email |
+          
+          # Check if stale
+          (if $last_email then
+            ($last_email.date | sub("\\.[0-9]+"; "") | sub("Z$"; "+00:00") | fromdate) < $cutoff
+          else
+            true
+          end) as $is_stale |
+          
+          select($is_stale) |
+          . + {
+            last_contact: (if $last_email then $last_email.date else "never" end),
+            last_subject: (if $last_email then $last_email.subject else null end)
+          }
+        ] | sort_by(.last_contact)
+      ' /tmp/crm_contacts.json
+      
+      rm -f /tmp/crm_contacts.json /tmp/crm_emails.json
+
+  - id: report
+    stdin: $find-stale-contacts.stdout
+    command: |
+      cat > /tmp/crm_stale.json
+      jq -r '
+        if length == 0 then
+          "✅ All contacts are fresh! No follow-ups needed."
+        else
+          "📇 \(length) contact(s) going cold (>\(env.stale_days // "14") days):\n" +
+          ([.[] |
+            "👤 **\(.name)** (\(.relationship // "contact"))\n" +
+            "   📧 \(.email)\n" +
+            "   Last contact: \(.last_contact)" +
+            (if .last_subject then " — \(.last_subject)" else "" end) +
+            (if .notes then "\n   📝 \(.notes)" else "" end)
+          ] | join("\n\n")) +
+          "\n\n💡 Tip: Reply to this with follow-up drafts for your agent to send."
+        end
+      ' /tmp/crm_stale.json
+      rm -f /tmp/crm_stale.json

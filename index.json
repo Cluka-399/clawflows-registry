@@ -616,6 +616,23 @@
       "url": "/automations/dependency-updater/"
     },
     {
+      "name": "Doc Reviewer",
+      "description": "Upload a PDF or text document and get a plain-English summary with flagged clauses and key takeaways",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "file_system"
+      ],
+      "tags": [
+        "productivity",
+        "legal",
+        "documents"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/doc-reviewer/"
+    },
+    {
       "name": "Docker Image Scanner",
       "description": "Scan Docker images for vulnerabilities on schedule",
       "author": "cluka",
@@ -1226,6 +1243,25 @@
       "url": "/automations/performance-benchmark/"
     },
     {
+      "name": "Personal CRM",
+      "description": "Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "agentmail",
+        "caldav-calendar",
+        "remind-me"
+      ],
+      "tags": [
+        "productivity",
+        "networking",
+        "email"
+      ],
+      "created": "2026-01-31",
+      "updated": "2026-01-31",
+      "url": "/automations/personal-crm/"
+    },
+    {
       "name": "podcast-tracker",
       "description": "Track new episodes from your podcast subscriptions",
       "author": "cluka",
@@ -1814,5 +1850,5 @@
       "url": "/automations/youtube-competitor-tracker/"
     }
   ],
-  "count": 112
+  "count": 114
 }

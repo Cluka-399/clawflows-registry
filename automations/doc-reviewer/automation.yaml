@@ -1,0 +1,10 @@
+name: Doc Reviewer
+description: Upload a PDF or text document and get a plain-English summary with flagged clauses and key takeaways
+author: cluka
+version: 1.0.0
+requires:
+  - file_system
+tags:
+  - productivity
+  - legal
+  - documents

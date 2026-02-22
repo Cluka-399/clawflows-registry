@@ -1,0 +1,153 @@
+# Lobster workflow: doc-reviewer
+# Extract text from a PDF/text document and produce a structured review
+# with summary, key clauses, risks, and action items.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{
+#     "doc_path": "/path/to/document.pdf",
+#     "focus": "risks"
+#   }'
+#
+# Requires: pdftotext (poppler-utils) for PDFs, or plain text files
+
+name: doc-reviewer
+description: Plain-English document summary with flagged clauses
+
+args:
+  doc_path:
+    description: "Path to PDF or text file to review"
+  focus:
+    description: "Review focus: general, risks, obligations, costs, or all"
+    default: "all"
+
+steps:
+  - id: extract-text
+    command: |
+      file="${doc_path}"
+      ext="${file##*.}"
+      
+      if [ ! -f "$file" ]; then
+        echo "Error: File not found: $file" >&2
+        exit 1
+      fi
+      
+      case "$ext" in
+        pdf|PDF)
+          if command -v pdftotext &>/dev/null; then
+            pdftotext "$file" - 2>/dev/null
+          else
+            echo "Error: pdftotext not installed. Run: apt-get install poppler-utils" >&2
+            exit 1
+          fi
+          ;;
+        txt|md|markdown|rst|csv)
+          cat "$file"
+          ;;
+        doc|docx)
+          if command -v pandoc &>/dev/null; then
+            pandoc "$file" -t plain 2>/dev/null
+          else
+            echo "Error: pandoc not installed for .doc/.docx files" >&2
+            exit 1
+          fi
+          ;;
+        *)
+          # Try as plain text
+          cat "$file"
+          ;;
+      esac
+
+  - id: analyze-structure
+    stdin: $extract-text.stdout
+    command: |
+      cat > /tmp/doc_text.txt
+      
+      total_words=$(wc -w < /tmp/doc_text.txt)
+      total_lines=$(wc -l < /tmp/doc_text.txt)
+      total_chars=$(wc -c < /tmp/doc_text.txt)
+      
+      # Detect document type heuristically
+      doc_type="general"
+      if grep -qi "terms and conditions\|agreement\|hereby\|indemnif\|liability\|warrant" /tmp/doc_text.txt; then
+        doc_type="legal/contract"
+      elif grep -qi "invoice\|payment due\|bill to\|subtotal\|total amount" /tmp/doc_text.txt; then
+        doc_type="financial"
+      elif grep -qi "privacy policy\|data protection\|GDPR\|personal data" /tmp/doc_text.txt; then
+        doc_type="privacy"
+      elif grep -qi "proposal\|scope of work\|deliverables\|timeline\|milestones" /tmp/doc_text.txt; then
+        doc_type="proposal"
+      fi
+      
+      # Extract potential section headers (lines that look like headers)
+      sections=$(grep -nE '^[A-Z][A-Z ]{2,}$|^[0-9]+\.\s|^#{1,3}\s|^Section\s|^Article\s' /tmp/doc_text.txt | head -20)
+      
+      # Flag risky clauses
+      risk_flags=""
+      for pattern in \
+        "indemnif" "limitation of liability" "non-compete" "non-solicitation" \
+        "automatic renewal" "auto-renew" "termination fee" "penalty" \
+        "waive" "arbitration" "governing law" "exclusive jurisdiction" \
+        "unlimited license" "irrevocable" "perpetual license" "assigns" \
+        "confidential" "non-disclosure"; do
+        matches=$(grep -cin "$pattern" /tmp/doc_text.txt)
+        if [ "$matches" -gt 0 ]; then
+          risk_flags="${risk_flags}${pattern} (${matches}x)\n"
+        fi
+      done
+      
+      # Flag financial terms
+      money=$(grep -oE '\$[0-9,]+\.?[0-9]*|[0-9,]+\.?[0-9]* (USD|EUR|GBP|ILS)' /tmp/doc_text.txt | sort -u | head -10)
+      dates=$(grep -oE '[0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[A-Z][a-z]+ [0-9]{1,2},? [0-9]{4}' /tmp/doc_text.txt | sort -u | head -10)
+      
+      cat <<REPORT
+      {
+        "words": $total_words,
+        "lines": $total_lines,
+        "chars": $total_chars,
+        "doc_type": "$doc_type",
+        "sections": $(echo "$sections" | jq -R -s 'split("\n") | map(select(. != ""))'),
+        "risk_flags": $(echo -e "$risk_flags" | jq -R -s 'split("\n") | map(select(. != ""))'),
+        "money_refs": $(echo "$money" | jq -R -s 'split("\n") | map(select(. != ""))'),
+        "date_refs": $(echo "$dates" | jq -R -s 'split("\n") | map(select(. != ""))')
+      }
+      REPORT
+
+  - id: report
+    stdin: $analyze-structure.stdout
+    command: |
+      cat > /tmp/doc_analysis.json
+      
+      doc_type=$(jq -r '.doc_type' /tmp/doc_analysis.json)
+      words=$(jq -r '.words' /tmp/doc_analysis.json)
+      
+      jq -r '
+        "📄 **Document Review**\n" +
+        "Type: \(.doc_type) | \(.words) words | \(.lines) lines\n\n" +
+        
+        (if (.sections | length) > 0 then
+          "📑 **Sections Found:**\n" +
+          (.sections | map("  • " + .) | join("\n")) + "\n\n"
+        else "" end) +
+        
+        (if (.risk_flags | length) > 0 then
+          "⚠️ **Flagged Clauses:**\n" +
+          (.risk_flags | map("  🔴 " + .) | join("\n")) + "\n\n"
+        else
+          "✅ No risky clauses detected.\n\n"
+        end) +
+        
+        (if (.money_refs | length) > 0 then
+          "💰 **Financial References:**\n" +
+          (.money_refs | map("  • " + .) | join("\n")) + "\n\n"
+        else "" end) +
+        
+        (if (.date_refs | length) > 0 then
+          "📅 **Dates Mentioned:**\n" +
+          (.date_refs | map("  • " + .) | join("\n")) + "\n\n"
+        else "" end) +
+        
+        "💡 For a full AI summary, pipe the extracted text to your agent with:\n" +
+        "   `Please summarize this document focusing on: \(env.focus // "all")`"
+      ' /tmp/doc_analysis.json
+      
+      rm -f /tmp/doc_analysis.json

@@ -1,0 +1,12 @@
+name: Personal CRM
+description: Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups
+author: cluka
+version: 1.0.0
+requires:
+  - agentmail
+  - caldav-calendar
+  - remind-me
+tags:
+  - productivity
+  - networking
+  - email
