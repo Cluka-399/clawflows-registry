@@ -1,0 +1,92 @@
+# Lobster workflow: lead-qualifier
+# Fetches emails from AgentMail and scores them as leads
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{
+#     "inbox_id":"xxx","agentmail_api_key":"xxx",
+#     "scoring_rules":"{\"hot_keywords\":[\"urgent\",\"budget\",\"ready to buy\"],\"warm_keywords\":[\"interested\",\"demo\",\"pricing\"],\"spam_domains\":[\"spam.com\"],\"hot_domains\":[\"enterprise.com\"],\"limit\":20}"
+#   }'
+#
+# Requires: curl, jq
+
+name: lead-qualifier
+description: Email scoring workflow that fetches from AgentMail and categorizes leads
+
+args:
+  inbox_id:
+    description: "AgentMail inbox ID"
+  agentmail_api_key:
+    description: "AgentMail API key"
+  scoring_rules:
+    description: "JSON string with hot_keywords, warm_keywords, spam_domains, hot_domains, limit"
+    default: '{"hot_keywords":["urgent","budget","purchase","contract","ready"],"warm_keywords":["interested","demo","pricing","trial","meeting"],"spam_domains":["spam.com","noreply"],"hot_domains":[],"limit":20}'
+
+steps:
+  - id: fetch-emails
+    command: |
+      limit=$(echo '${scoring_rules}' | jq -r '.limit // 20')
+      curl -s -H "Authorization: Bearer ${agentmail_api_key}" \
+        "https://api.agentmail.to/v0/inboxes/${inbox_id}/messages?limit=$limit"
+
+  - id: score-emails
+    stdin: $fetch-emails.stdout
+    command: |
+      raw=$(cat)
+      rules='${scoring_rules}'
+      # Extract messages array (handle {messages:[...]} or plain [...])
+      emails=$(echo "$raw" | jq -c 'if type == "array" then .[] elif .messages then .messages[] else empty end')
+      echo "$emails" | while IFS= read -r email; do
+        [ -z "$email" ] && continue
+        echo "$email" | jq --argjson rules "$rules" '
+          (.from // .sender // "" | ascii_downcase) as $from |
+          (.subject // "" | ascii_downcase) as $subj |
+          (.body // .text // "" | ascii_downcase) as $body |
+          ($subj + " " + $body) as $content |
+          ($from | capture("@(?<d>[^>\\s]+)") // {d:""} | .d) as $domain |
+          ([$rules.hot_keywords[] | . as $kw | if ($content | contains($kw)) then $kw else empty end] | length * 10) as $hot_score |
+          ([$rules.warm_keywords[] | . as $kw | if ($content | contains($kw)) then $kw else empty end] | length * 5) as $warm_score |
+          (if ([$rules.hot_domains[] | . as $d | if ($domain == $d) then $d else empty end] | length > 0) then 20 else 0 end) as $dom_bonus |
+          (if ([$rules.spam_domains[] | . as $d | if ($domain | contains($d)) then $d else empty end] | length > 0) then -100 else 0 end) as $spam_pen |
+          ($hot_score + $warm_score + $dom_bonus + $spam_pen) as $score |
+          (if $score <= -50 then "spam"
+           elif $score >= 20 then "hot_lead"
+           elif $score >= 10 then "warm_lead"
+           else "cold" end) as $category |
+          (if $category == "hot_lead" then "Reply within 1 hour — high intent signals"
+           elif $category == "warm_lead" then "Follow up within 24 hours with more info"
+           elif $category == "cold" then "Add to nurture sequence"
+           else "Mark as spam / ignore" end) as $action |
+          {
+            from: $from,
+            domain: $domain,
+            subject: (.subject // ""),
+            score: $score,
+            category: $category,
+            suggested_action: $action
+          }
+        '
+      done | jq -s 'sort_by(-.score)'
+
+  - id: report
+    stdin: $score-emails.stdout
+    command: |
+      results=$(cat)
+      echo "$results" | jq -r '
+        (map(select(.category == "hot_lead")) | length) as $hot |
+        (map(select(.category == "warm_lead")) | length) as $warm |
+        (map(select(.category == "cold")) | length) as $cold |
+        (map(select(.category == "spam")) | length) as $spam |
+        "📧 Lead Qualification Report\n" +
+        "════════════════════════════\n" +
+        "🔥 Hot: \($hot)  🟡 Warm: \($warm)  ❄️ Cold: \($cold)  🗑️ Spam: \($spam)\n\n" +
+        (map(
+          (if .category == "hot_lead" then "🔥"
+           elif .category == "warm_lead" then "🟡"
+           elif .category == "cold" then "❄️"
+           else "🗑️" end) +
+          " [\(.score)] \(.from) — \(.subject)\n  → \(.suggested_action)"
+        ) | join("\n"))
+      '
+      echo ""
+      echo "---JSON---"
+      echo "$results"

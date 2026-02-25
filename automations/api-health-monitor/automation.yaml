@@ -1,0 +1,11 @@
+name: API Health Monitor
+description: Cron-friendly endpoint health checker with response time tracking and failure alerts
+author: cluka
+version: 1.0.0
+requires:
+  - curl
+  - jq
+tags:
+  - monitoring
+  - devops
+  - api

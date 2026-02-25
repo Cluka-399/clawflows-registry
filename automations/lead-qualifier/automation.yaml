@@ -1,0 +1,11 @@
+name: Lead Qualifier
+description: Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules
+author: cluka
+version: 1.0.0
+requires:
+  - curl
+  - jq
+tags:
+  - sales
+  - email
+  - leads

@@ -1,0 +1,106 @@
+# Lobster workflow: api-health-monitor
+# Pings a list of endpoints and reports health status
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"endpoints_file":"/path/to/endpoints.json","slow_threshold_ms":"2000"}'
+#
+# Endpoints file format (JSON array):
+#   [{"name":"Google","url":"https://google.com","method":"GET","expected_status":200,"timeout_seconds":10}]
+#
+# Requires: curl, jq
+
+name: api-health-monitor
+description: Cron-friendly endpoint health checker with response time tracking and failure alerts
+
+args:
+  endpoints_file:
+    description: "Path to JSON file with endpoints array [{name, url, method, expected_status, timeout_seconds}]"
+  slow_threshold_ms:
+    description: "Response time threshold in ms to flag as slow"
+    default: "2000"
+
+steps:
+  - id: load-endpoints
+    command: |
+      if [ ! -f "${endpoints_file}" ]; then
+        echo '{"error":"Endpoints file not found: '"${endpoints_file}"'"}' >&2
+        echo '[]'
+        exit 1
+      fi
+      cat "${endpoints_file}"
+
+  - id: ping-endpoints
+    stdin: $load-endpoints.stdout
+    command: |
+      endpoints=$(cat)
+      count=$(echo "$endpoints" | jq 'length')
+      echo "["
+      i=0
+      echo "$endpoints" | jq -c '.[]' | while read -r ep; do
+        name=$(echo "$ep" | jq -r '.name')
+        url=$(echo "$ep" | jq -r '.url')
+        method=$(echo "$ep" | jq -r '.method // "GET"')
+        expected=$(echo "$ep" | jq -r '.expected_status // 200')
+        timeout=$(echo "$ep" | jq -r '.timeout_seconds // 10')
+
+        start_ms=$(date +%s%3N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1000))')
+        http_code=$(curl -s -o /dev/null -w '%{http_code}' -X "$method" --max-time "$timeout" "$url" 2>/dev/null || echo "000")
+        end_ms=$(date +%s%3N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1000))')
+        response_ms=$((end_ms - start_ms))
+
+        if [ "$http_code" = "$expected" ]; then
+          pass="true"
+        else
+          pass="false"
+        fi
+
+        slow="false"
+        if [ "$response_ms" -gt "${slow_threshold_ms}" ]; then
+          slow="true"
+        fi
+
+        [ $i -gt 0 ] && echo ","
+        jq -n --arg name "$name" --arg url "$url" --argjson code "$http_code" \
+              --argjson expected "$expected" --argjson ms "$response_ms" \
+              --argjson pass "$pass" --argjson slow "$slow" \
+              '{name:$name, url:$url, status_code:$code, expected_status:$expected, response_ms:$ms, pass:$pass, slow:$slow}'
+        i=$((i + 1))
+      done
+      echo "]"
+
+  - id: report
+    stdin: $ping-endpoints.stdout
+    command: |
+      results=$(cat)
+      echo "$results" | jq -r '
+        . as $all |
+        (map(select(.pass)) | length) as $passed |
+        (map(select(.pass | not)) | length) as $failed |
+        (map(select(.slow)) | length) as $slow |
+        "🏥 API Health Report\n" +
+        "═══════════════════\n" +
+        "✅ Passed: \($passed)  ❌ Failed: \($failed)  🐢 Slow: \($slow)\n\n" +
+        (map(
+          (if .pass then "✅" else "❌" end) + " " + .name +
+          " — " + (.status_code | tostring) +
+          (if .pass then "" else " (expected " + (.expected_status | tostring) + ")" end) +
+          " — " + (.response_ms | tostring) + "ms" +
+          (if .slow then " 🐢" else "" end)
+        ) | join("\n")) +
+        (if $failed > 0 then
+          "\n\n🚨 FAILURES DETECTED — alerting recommended"
+        else
+          "\n\n✅ All endpoints healthy"
+        end)
+      '
+      echo ""
+      echo "---JSON---"
+      echo "$results" | jq '{
+        timestamp: (now | todate),
+        total: length,
+        passed: (map(select(.pass)) | length),
+        failed: (map(select(.pass | not)) | length),
+        slow: (map(select(.slow)) | length),
+        results: .,
+        alert: (any(.[]; .pass | not))
+      }'
