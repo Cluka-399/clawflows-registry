@@ -828,7 +828,7 @@
   </nav>
   
   <main>
-    <section class="hero">
+    <section class="hero" data-aa-impression="hero_section">
       <div class="container">
         <img src="./hero.png" alt="ClawFlows mascot" class="hero-mascot">
         <h1>Claw<span>Flows</span></h1>
@@ -839,19 +839,19 @@
         </p>
         
         <div class="hero-cta">
-          <a href="#automations" class="btn btn-primary" onclick="if(window.aa) aa.track('cta_click', {button: 'browse_automations'})">Browse Automations</a>
-          <a href="https://github.com/openclaw/lobster" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'lobster_engine'})">⭐ Lobster Engine</a>
-          <a href="#contribute" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'add_your_own'})">Add Your Own</a>
+          <a href="#automations" class="btn btn-primary" data-aa-event="cta_click" data-aa-event-button="browse_automations" data-aa-event-section="hero">Browse Automations</a>
+          <a href="https://github.com/openclaw/lobster" class="btn btn-secondary" data-aa-event="cta_click" data-aa-event-button="lobster_engine" data-aa-event-section="hero">⭐ Lobster Engine</a>
+          <a href="#contribute" class="btn btn-secondary" data-aa-event="cta_click" data-aa-event-button="add_your_own" data-aa-event-section="hero">Add Your Own</a>
         </div>
         
-        <div class="install-box" onclick="navigator.clipboard.writeText('install clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!'; if(window.aa) aa.track('copy_install', {command: 'install clawflows'});">
+        <div class="install-box" data-aa-event="copy_install" data-aa-event-command="install clawflows" onclick="navigator.clipboard.writeText('install clawflows'); this.querySelector('.copy-hint').textContent = 'Copied!';">
           <code>install clawflows</code>
           <span class="copy-hint">Tell your OpenClaw bot</span>
         </div>
       </div>
     </section>
     
-    <section id="automations">
+    <section id="automations" data-aa-impression="automations_section">
       <div class="container">
         <div class="section-header">
           <h2>🚀 All Automations <span id="automation-count" class="badge">109</span></h2>
@@ -872,7 +872,7 @@
     </section>
     
     <!-- Lobster Engine Section -->
-    <section id="lobster" class="value-section">
+    <section id="lobster" class="value-section" data-aa-impression="lobster_section">
       <div class="container" style="padding: 3rem 2rem;">
         <h2 class="section-title">🦞 Powered by Lobster</h2>
         <p class="section-subtitle">The open-source workflow engine that makes ClawFlows automations <strong>actually run</strong>.</p>
@@ -914,10 +914,10 @@
             Lobster is the <strong>execution engine</strong>. ClawFlows is the <strong>registry</strong>.<br>
             Together: npm + node for AI agent automations.
           </p>
-          <a href="https://github.com/openclaw/lobster" class="btn btn-primary" style="margin-right: 0.75rem;" onclick="if(window.aa) aa.track('cta_click', {button: 'lobster_github', section: 'lobster'})">
+          <a href="https://github.com/openclaw/lobster" class="btn btn-primary" style="margin-right: 0.75rem;" data-aa-event="cta_click" data-aa-event-button="lobster_github" data-aa-event-section="lobster">
             ⭐ Lobster on GitHub
           </a>
-          <a href="./docs/lobster-guide.md" class="btn btn-secondary" onclick="if(window.aa) aa.track('cta_click', {button: 'integration_guide', section: 'lobster'})">
+          <a href="./docs/lobster-guide.md" class="btn btn-secondary" data-aa-event="cta_click" data-aa-event-button="integration_guide" data-aa-event-section="lobster">
             Integration Guide
           </a>
         </div>
@@ -999,7 +999,7 @@
       </div>
     </section>
     
-    <section id="contribute">
+    <section id="contribute" data-aa-impression="contribute_section">
       <div class="container">
         <div class="contribute">
           <div class="contribute-content">
@@ -1128,6 +1128,18 @@
     loadAutomations();
   </script>
   <!-- Agent Analytics -->
-  <script src="https://api.agentanalytics.sh/tracker.js" data-project="clawflows" data-token="aat_4662466bf248e709ba678127369e953c5cf8f0de924897e2"></script>
+  <script src="https://api.agentanalytics.sh/tracker.js"
+    data-project="clawflows"
+    data-token="aat_4662466bf248e709ba678127369e953c5cf8f0de924897e2"
+    data-track-scroll-depth="true"
+    data-track-outgoing="true"
+    data-track-performance="true"
+    data-track-vitals="true"
+    data-track-errors="true"
+    data-track-downloads="true"
+    data-track-forms="true"
+    data-heartbeat="30"
+    data-do-not-track="true"
+    data-link-domains="clawflows.com"></script>
 </body>
 </html>
