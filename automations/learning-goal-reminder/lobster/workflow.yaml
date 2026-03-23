@@ -44,7 +44,9 @@ steps:
   - id: evaluate-progress
     stdin: $load-goals.stdout
     command: |
-      cat > /tmp/lb_goals.json
+      tmpfile=$(mktemp /tmp/lb_goals_XXXXXX.json)
+      trap 'rm -f "$tmpfile"' EXIT
+      cat > "$tmpfile"
       today=$(date +%Y-%m-%d)
       lookahead=${lookahead_days}
       jq -c --arg today "$today" --argjson look "$lookahead" '
@@ -88,13 +90,14 @@ steps:
             )
           }
         ]
-      ' /tmp/lb_goals.json
-      rm -f /tmp/lb_goals.json
+      ' "$tmpfile"
 
   - id: report
     stdin: $evaluate-progress.stdout
     command: |
-      cat > /tmp/lb_eval.json
+      tmpfile=$(mktemp /tmp/lb_eval_XXXXXX.json)
+      trap 'rm -f "$tmpfile"' EXIT
+      cat > "$tmpfile"
       jq -r '
         def goal_icon:
           if .status == "OVERDUE" then "🔴"
@@ -164,5 +167,4 @@ steps:
             "📈 Average progress: \(([.[] | .progress_pct] | add / length | floor))%"
           else "" end)
         end
-      ' /tmp/lb_eval.json
-      rm -f /tmp/lb_eval.json
+      ' "$tmpfile"

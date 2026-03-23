@@ -15,10 +15,6 @@ config:
     description: "Path to JSON file with learning goals, milestones, and deadlines"
     default: "~/.learning-goals.json"
 
-  reminder_style:
-    description: "Reminder escalation: gentle, moderate, or urgent as deadlines approach"
-    default: "moderate"
-
   lookahead_days:
     description: "Days ahead to warn about upcoming milestones"
     default: 7
@@ -42,11 +38,17 @@ steps:
     action: evaluate
     script: |
       const today = new Date().toISOString().slice(0, 10);
-      const goals = JSON.parse('${goalsData}');
-      return goals.goals.map(goal => {
+      let parsed;
+      try {
+        parsed = JSON.parse(goalsData);
+      } catch (e) {
+        return [];
+      }
+      const goalsList = parsed.goals || [];
+      return goalsList.map(goal => {
         const totalMilestones = goal.milestones.length;
         const completed = goal.milestones.filter(m => m.completed).length;
-        const pct = Math.round((completed / totalMilestones) * 100);
+        const pct = totalMilestones === 0 ? 0 : Math.round((completed / totalMilestones) * 100);
         const deadlineDate = new Date(goal.deadline);
         const todayDate = new Date(today);
         const daysLeft = Math.ceil((deadlineDate - todayDate) / 86400000);
@@ -64,7 +66,7 @@ steps:
           status: daysLeft < 0 ? "OVERDUE" :
                   daysLeft === 0 ? "DUE TODAY" :
                   daysLeft <= 3 ? "URGENT" :
-                  daysLeft <= 7 ? "SOON" : "ON TRACK"
+                  daysLeft <= ${config.lookahead_days} ? "SOON" : "ON TRACK"
         };
       });
     capture: evaluated
@@ -72,7 +74,7 @@ steps:
   - name: format-report
     action: evaluate
     script: |
-      const goals = ${evaluated};
+      const goals = evaluated;
       const urgent = goals.filter(g => ["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
       const onTrack = goals.filter(g => !["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
       let msg = "📚 Learning Goal Tracker\n═══════════════════════\n\n";

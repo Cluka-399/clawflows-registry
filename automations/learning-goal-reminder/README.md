@@ -88,3 +88,7 @@ Runs daily at 9:00 AM UTC. Adjust the cron schedule to match your preferred remi
 ```bash
 openclaw install learning-goal-reminder
 ```
+
+## Author
+
+[Rustem Abdrakhmanov](https://rustem.pro) ([@smartrus](https://github.com/smartrus))
