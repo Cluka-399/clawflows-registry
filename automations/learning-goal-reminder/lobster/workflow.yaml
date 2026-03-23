@@ -52,20 +52,21 @@ steps:
       jq -c --arg today "$today" --argjson look "$lookahead" '
         # Exact days between two YYYY-MM-DD dates using epoch seconds
         def days_between($d1; $d2):
-          (
+          try (
             ($d1 | strptime("%Y-%m-%d") | mktime)
             -
             ($d2 | strptime("%Y-%m-%d") | mktime)
           ) / 86400
-          | floor;
+          | floor
+          catch null;
 
         .goals | [.[] |
           ((.milestones // []) | length) as $total |
           ([(.milestones // [])[] | select(.completed == true)] | length) as $done |
           (if $total > 0 then (($done * 100) / $total | floor) else 0 end) as $pct |
           days_between(.deadline; $today) as $days_left |
-          # Find next incomplete milestone
-          ([(.milestones // [])[] | select(.completed != true)] | first) as $next_ms |
+          # Find next incomplete milestone (earliest due date first)
+          ([(.milestones // [])[] | select(.completed != true)] | sort_by(.due) | first) as $next_ms |
           # Days until next milestone
           (if $next_ms then days_between($next_ms.due; $today) else null end) as $ms_days |
           {
