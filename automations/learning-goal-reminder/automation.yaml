@@ -4,7 +4,7 @@ author: smartrus
 version: 1.0.0
 
 requires:
-  - file_system
+  - file-system
   - notifications
 
 trigger:
@@ -28,8 +28,8 @@ tags:
 
 steps:
   - name: load-goals
-    capability: file_system
-    method: read
+    capability: file-system
+    method: readFile
     args:
       path: "${config.goals_file}"
     capture: goalsData
@@ -46,13 +46,14 @@ steps:
       }
       const goalsList = parsed.goals || [];
       return goalsList.map(goal => {
-        const totalMilestones = goal.milestones.length;
-        const completed = goal.milestones.filter(m => m.completed).length;
+        const milestones = Array.isArray(goal.milestones) ? goal.milestones : [];
+        const totalMilestones = milestones.length;
+        const completed = milestones.filter(m => m.completed).length;
         const pct = totalMilestones === 0 ? 0 : Math.round((completed / totalMilestones) * 100);
         const deadlineDate = new Date(goal.deadline);
         const todayDate = new Date(today);
         const daysLeft = Math.ceil((deadlineDate - todayDate) / 86400000);
-        const nextMilestone = goal.milestones.find(m => !m.completed);
+        const nextMilestone = milestones.find(m => !m.completed);
         return {
           name: goal.name,
           progress: pct,
@@ -75,6 +76,9 @@ steps:
     action: evaluate
     script: |
       const goals = evaluated;
+      if (goals.length === 0) {
+        return "📚 No learning goals configured yet.\nCreate a goals JSON file and try again!";
+      }
       const urgent = goals.filter(g => ["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
       const onTrack = goals.filter(g => !["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
       let msg = "📚 Learning Goal Tracker\n═══════════════════════\n\n";

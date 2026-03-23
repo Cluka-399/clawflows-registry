@@ -35,7 +35,7 @@ steps:
   - id: load-goals
     command: |
       if [ ! -f "${goals_file}" ]; then
-        echo '{"error":"Goals file not found: ${goals_file}"}' >&2
+        echo "{\"error\":\"Goals file not found: ${goals_file}\"}" >&2
         echo '{"goals":[]}'
         exit 1
       fi
@@ -50,10 +50,14 @@ steps:
       today=$(date +%Y-%m-%d)
       lookahead=${lookahead_days}
       jq -c --arg today "$today" --argjson look "$lookahead" '
-        # Helper: approximate days between two YYYY-MM-DD dates
+        # Exact days between two YYYY-MM-DD dates using epoch seconds
         def days_between($d1; $d2):
-          (($d1 | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber)) -
-           ($d2 | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber)));
+          (
+            ($d1 | strptime("%Y-%m-%d") | mktime)
+            -
+            ($d2 | strptime("%Y-%m-%d") | mktime)
+          ) / 86400
+          | floor;
 
         .goals | [.[] |
           (.milestones | length) as $total |
@@ -163,8 +167,6 @@ steps:
           "📊 Summary: \(length) goal(s) | " +
           "\([.[] | select(.status == "OVERDUE")] | length) overdue | " +
           "\([.[] | select(.status == "ON_TRACK" or .status == "SOON")] | length) on track\n" +
-          (if ([.[] | .progress_pct] | add / length) > 0 then
-            "📈 Average progress: \(([.[] | .progress_pct] | add / length | floor))%"
-          else "" end)
+          "📈 Average progress: \(([.[] | .progress_pct] | add / length | floor))%"
         end
       ' "$tmpfile"

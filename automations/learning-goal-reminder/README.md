@@ -13,7 +13,7 @@ Track your learning goals with progress milestones, deadlines, and escalating re
 
 | Capability | Example Skills |
 |------------|----------------|
-| `file_system` | file read/write |
+| `file-system` | file read/write |
 | `notifications` | discord, slack, email |
 
 ## Goals File Format
@@ -60,26 +60,26 @@ Runs daily at 9:00 AM UTC. Adjust the cron schedule to match your preferred remi
 
 ## Example Output
 
+Given the example goals above, running on 2026-03-23:
+
 ```
 📚 Learning Goal Tracker
 ═══════════════════════════════════
 
-🚨 NEEDS ATTENTION
-───────────────────
-🟡 Learn Rust
-   Progress: ███░░░░░░░ 33% (1/3)
-   Deadline: 2026-06-01 — due in 2 days
-   🟡 Next milestone: Build CLI tool project (due 2026-04-15)
-
 ✅ ON TRACK
 ───────────
+🟢 Learn Rust
+   Progress: ███░░░░░░░ 33% (1/3)
+   Deadline: 2026-06-01 — 69 days left
+   ✅ Next milestone: Build CLI tool project (due 2026-04-15)
+
 🟢 AWS Solutions Architect Cert
    Progress: ░░░░░░░░░░ 0% (0/4)
    Deadline: 2026-08-01 — 130 days left
    ✅ Next milestone: Complete IAM & S3 modules (due 2026-04-15)
 
 ───────────────────────────────────
-📊 Summary: 2 goal(s) | 0 overdue | 1 on track
+📊 Summary: 2 goal(s) | 0 overdue | 2 on track
 📈 Average progress: 16%
 ```
 
