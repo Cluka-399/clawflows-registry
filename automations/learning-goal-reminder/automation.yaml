@@ -4,8 +4,8 @@ author: smartrus
 version: 1.0.0
 
 requires:
-  - file-system
-  - notifications
+  - capability: file-system
+  - capability: notifications
 
 trigger:
   schedule: "0 9 * * *"  # Daily at 9am

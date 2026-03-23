@@ -166,6 +166,7 @@ steps:
           "───────────────────────────────────\n" +
           "📊 Summary: \(length) goal(s) | " +
           "\([.[] | select(.status == "OVERDUE")] | length) overdue | " +
+          "\([.[] | select(.status == "DUE_TODAY" or .status == "URGENT")] | length) needs attention | " +
           "\([.[] | select(.status == "ON_TRACK" or .status == "SOON")] | length) on track\n" +
           "📈 Average progress: \(([.[] | .progress_pct] | add / length | floor))%"
         end
