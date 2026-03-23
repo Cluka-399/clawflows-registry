@@ -51,11 +51,14 @@ steps:
         const completed = milestones.filter(m => m.completed).length;
         const pct = totalMilestones === 0 ? 0 : Math.round((completed / totalMilestones) * 100);
         const deadlineDate = new Date(goal.deadline);
+        if (isNaN(deadlineDate.getTime())) {
+          return { name: goal.name || "Unknown", progress: pct, daysLeft: null, deadline: goal.deadline, nextMilestone: null, nextMilestoneDue: null, totalMilestones, completed, overdue: false, status: "ON TRACK" };
+        }
         const todayDate = new Date(today);
         const daysLeft = Math.ceil((deadlineDate - todayDate) / 86400000);
         const nextMilestone = milestones.find(m => !m.completed);
         return {
-          name: goal.name,
+          name: goal.name || "Unknown",
           progress: pct,
           daysLeft,
           deadline: goal.deadline,
@@ -93,7 +96,8 @@ steps:
       if (onTrack.length) {
         msg += "✅ On Track:\n";
         onTrack.forEach(g => {
-          msg += `  🟢 ${g.name} — ${g.progress}% done, ${g.daysLeft}d left\n`;
+          const icon = g.status === "SOON" ? "🔵" : "🟢";
+          msg += `  ${icon} ${g.name} — ${g.progress}% done, ${g.daysLeft != null ? g.daysLeft + "d left" : "no deadline"}\n`;
           if (g.nextMilestone) msg += `     Next: ${g.nextMilestone}\n`;
         });
       }

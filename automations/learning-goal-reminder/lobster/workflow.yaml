@@ -19,7 +19,7 @@
 #     ]
 #   }
 #
-# Requires: jq, date (GNU coreutils)
+# Requires: jq (>= 1.6 for strptime/mktime), date (GNU coreutils)
 
 name: learning-goal-reminder
 description: Track learning goals with progress milestones, deadlines, and escalating reminders
@@ -60,12 +60,12 @@ steps:
           | floor;
 
         .goals | [.[] |
-          (.milestones | length) as $total |
-          ([.milestones[] | select(.completed == true)] | length) as $done |
+          ((.milestones // []) | length) as $total |
+          ([(.milestones // [])[] | select(.completed == true)] | length) as $done |
           (if $total > 0 then (($done * 100) / $total | floor) else 0 end) as $pct |
           days_between(.deadline; $today) as $days_left |
           # Find next incomplete milestone
-          ([.milestones[] | select(.completed != true)] | first) as $next_ms |
+          ([(.milestones // [])[] | select(.completed != true)] | first) as $next_ms |
           # Days until next milestone
           (if $next_ms then days_between($next_ms.due; $today) else null end) as $ms_days |
           {
