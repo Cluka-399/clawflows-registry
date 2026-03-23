@@ -88,10 +88,11 @@ steps:
               else "ON_TRACK" end
             ),
             ms_status: (
-              if $ms_days == null then "COMPLETE"
+              if $next_ms == null then "COMPLETE"
+              elif $ms_days == null then "MS_NO_DUE"
               elif $ms_days < 0 then "MS_OVERDUE"
               elif $ms_days == 0 then "MS_TODAY"
-              elif $ms_days <= 3 then "MS_SOON"
+              elif $ms_days <= $look then "MS_SOON"
               else "MS_OK" end
             )
           }
@@ -114,6 +115,7 @@ steps:
 
         def ms_icon:
           if .ms_status == "COMPLETE" then "🏆"
+          elif .ms_status == "MS_NO_DUE" then "❓"
           elif .ms_status == "MS_OVERDUE" then "🔴"
           elif .ms_status == "MS_TODAY" then "🟠"
           elif .ms_status == "MS_SOON" then "🟡"
@@ -131,11 +133,12 @@ steps:
           "📚 Learning Goal Tracker\n" +
           "═══════════════════════════════════\n\n" +
 
-          # Urgent section
-          (if [.[] | select(.status == "OVERDUE" or .status == "DUE_TODAY" or .status == "URGENT")] | length > 0 then
+          # Urgent section: includes goals with overdue milestones even if goal deadline is distant
+          def needs_attention: .status == "OVERDUE" or .status == "DUE_TODAY" or .status == "URGENT" or .ms_status == "MS_OVERDUE";
+          (if [.[] | select(needs_attention)] | length > 0 then
             "🚨 NEEDS ATTENTION\n" +
             "───────────────────\n" +
-            ([.[] | select(.status == "OVERDUE" or .status == "DUE_TODAY" or .status == "URGENT") |
+            ([.[] | select(needs_attention) |
               "\(goal_icon) \(.name)\n" +
               "   Progress: \(progress_bar)\n" +
               "   Deadline: \(.deadline) — " +
@@ -150,11 +153,11 @@ steps:
             ] | join("\n")) + "\n"
           else "" end) +
 
-          # On track section
-          (if [.[] | select(.status == "SOON" or .status == "ON_TRACK")] | length > 0 then
+          # On track section: excludes goals already shown in needs-attention
+          (if [.[] | select(needs_attention | not)] | length > 0 then
             "✅ ON TRACK\n" +
             "───────────\n" +
-            ([.[] | select(.status == "SOON" or .status == "ON_TRACK") |
+            ([.[] | select(needs_attention | not) |
               "\(goal_icon) \(.name)\n" +
               "   Progress: \(progress_bar)\n" +
               "   Deadline: \(.deadline) — " +
