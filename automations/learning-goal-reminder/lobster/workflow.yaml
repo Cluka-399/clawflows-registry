@@ -1,0 +1,168 @@
+# Lobster workflow: learning-goal-reminder
+# Track learning goals with progress milestones, deadlines, and escalating reminders
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json '{"goals_file":"/path/to/goals.json"}'
+#
+# Goals file format (JSON):
+#   {
+#     "goals": [
+#       {
+#         "name": "Learn Rust",
+#         "deadline": "2026-06-01",
+#         "milestones": [
+#           {"title": "Complete Rust Book Ch1-5", "due": "2026-04-01", "completed": true},
+#           {"title": "Build CLI tool project", "due": "2026-04-15", "completed": false},
+#           {"title": "Contribute to open-source Rust project", "due": "2026-05-15", "completed": false}
+#         ]
+#       }
+#     ]
+#   }
+#
+# Requires: jq, date (GNU coreutils)
+
+name: learning-goal-reminder
+description: Track learning goals with progress milestones, deadlines, and escalating reminders
+
+args:
+  goals_file:
+    description: "Path to JSON file with learning goals and milestones"
+  lookahead_days:
+    description: "Days ahead to check for upcoming milestones and deadlines"
+    default: "7"
+
+steps:
+  - id: load-goals
+    command: |
+      if [ ! -f "${goals_file}" ]; then
+        echo '{"error":"Goals file not found: ${goals_file}"}' >&2
+        echo '{"goals":[]}'
+        exit 1
+      fi
+      cat "${goals_file}"
+
+  - id: evaluate-progress
+    stdin: $load-goals.stdout
+    command: |
+      cat > /tmp/lb_goals.json
+      today=$(date +%Y-%m-%d)
+      lookahead=${lookahead_days}
+      jq -c --arg today "$today" --argjson look "$lookahead" '
+        # Helper: approximate days between two YYYY-MM-DD dates
+        def days_between($d1; $d2):
+          (($d1 | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber)) -
+           ($d2 | split("-") | (.[0]|tonumber)*365 + (.[1]|tonumber)*30 + (.[2]|tonumber)));
+
+        .goals | [.[] |
+          (.milestones | length) as $total |
+          ([.milestones[] | select(.completed == true)] | length) as $done |
+          (if $total > 0 then (($done * 100) / $total | floor) else 0 end) as $pct |
+          days_between(.deadline; $today) as $days_left |
+          # Find next incomplete milestone
+          ([.milestones[] | select(.completed != true)] | first) as $next_ms |
+          # Days until next milestone
+          (if $next_ms then days_between($next_ms.due; $today) else null end) as $ms_days |
+          {
+            name: .name,
+            deadline: .deadline,
+            progress_pct: $pct,
+            completed: $done,
+            total: $total,
+            days_left: $days_left,
+            next_milestone: ($next_ms.title // null),
+            next_milestone_due: ($next_ms.due // null),
+            next_milestone_days: $ms_days,
+            status: (
+              if $days_left < 0 then "OVERDUE"
+              elif $days_left == 0 then "DUE_TODAY"
+              elif $days_left <= 3 then "URGENT"
+              elif $days_left <= $look then "SOON"
+              else "ON_TRACK" end
+            ),
+            ms_status: (
+              if $ms_days == null then "COMPLETE"
+              elif $ms_days < 0 then "MS_OVERDUE"
+              elif $ms_days == 0 then "MS_TODAY"
+              elif $ms_days <= 3 then "MS_SOON"
+              else "MS_OK" end
+            )
+          }
+        ]
+      ' /tmp/lb_goals.json
+      rm -f /tmp/lb_goals.json
+
+  - id: report
+    stdin: $evaluate-progress.stdout
+    command: |
+      cat > /tmp/lb_eval.json
+      jq -r '
+        def goal_icon:
+          if .status == "OVERDUE" then "🔴"
+          elif .status == "DUE_TODAY" then "🟠"
+          elif .status == "URGENT" then "🟡"
+          elif .status == "SOON" then "🔵"
+          else "🟢" end;
+
+        def ms_icon:
+          if .ms_status == "COMPLETE" then "🏆"
+          elif .ms_status == "MS_OVERDUE" then "🔴"
+          elif .ms_status == "MS_TODAY" then "🟠"
+          elif .ms_status == "MS_SOON" then "🟡"
+          else "✅" end;
+
+        def progress_bar:
+          ((.progress_pct / 10) | floor) as $filled |
+          (10 - $filled) as $empty |
+          ("█" * $filled) + ("░" * $empty) +
+          " \(.progress_pct)% (\(.completed)/\(.total))";
+
+        if length == 0 then
+          "📚 No learning goals configured yet.\nCreate a goals JSON file and try again!"
+        else
+          "📚 Learning Goal Tracker\n" +
+          "═══════════════════════════════════\n\n" +
+
+          # Urgent section
+          (if [.[] | select(.status == "OVERDUE" or .status == "DUE_TODAY" or .status == "URGENT")] | length > 0 then
+            "🚨 NEEDS ATTENTION\n" +
+            "───────────────────\n" +
+            ([.[] | select(.status == "OVERDUE" or .status == "DUE_TODAY" or .status == "URGENT") |
+              "\(goal_icon) \(.name)\n" +
+              "   Progress: \(progress_bar)\n" +
+              "   Deadline: \(.deadline) — " +
+              (if .days_left < 0 then "OVERDUE by \(- .days_left) days!"
+               elif .days_left == 0 then "DUE TODAY!"
+               else "due in \(.days_left) days" end) + "\n" +
+              (if .next_milestone then
+                "   \(ms_icon) Next milestone: \(.next_milestone)" +
+                (if .next_milestone_due then " (due \(.next_milestone_due))" else "" end) + "\n"
+               else "" end)
+            ] | join("\n")) + "\n"
+          else "" end) +
+
+          # On track section
+          (if [.[] | select(.status == "SOON" or .status == "ON_TRACK")] | length > 0 then
+            "✅ ON TRACK\n" +
+            "───────────\n" +
+            ([.[] | select(.status == "SOON" or .status == "ON_TRACK") |
+              "\(goal_icon) \(.name)\n" +
+              "   Progress: \(progress_bar)\n" +
+              "   Deadline: \(.deadline) — \(.days_left) days left\n" +
+              (if .next_milestone then
+                "   \(ms_icon) Next milestone: \(.next_milestone)" +
+                (if .next_milestone_due then " (due \(.next_milestone_due))" else "" end) + "\n"
+               else "" end)
+            ] | join("\n")) + "\n"
+          else "" end) +
+
+          # Summary
+          "───────────────────────────────────\n" +
+          "📊 Summary: \(length) goal(s) | " +
+          "\([.[] | select(.status == "OVERDUE")] | length) overdue | " +
+          "\([.[] | select(.status == "ON_TRACK" or .status == "SOON")] | length) on track\n" +
+          (if ([.[] | .progress_pct] | add / length) > 0 then
+            "📈 Average progress: \(([.[] | .progress_pct] | add / length | floor))%"
+          else "" end)
+        end
+      ' /tmp/lb_eval.json
+      rm -f /tmp/lb_eval.json
