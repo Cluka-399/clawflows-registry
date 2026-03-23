@@ -80,7 +80,8 @@ steps:
             next_milestone_due: ($next_ms.due // null),
             next_milestone_days: $ms_days,
             status: (
-              if $days_left < 0 then "OVERDUE"
+              if $days_left == null then "ON_TRACK"
+              elif $days_left < 0 then "OVERDUE"
               elif $days_left == 0 then "DUE_TODAY"
               elif $days_left <= 3 then "URGENT"
               elif $days_left <= $look then "SOON"
@@ -138,7 +139,8 @@ steps:
               "\(goal_icon) \(.name)\n" +
               "   Progress: \(progress_bar)\n" +
               "   Deadline: \(.deadline) — " +
-              (if .days_left < 0 then "OVERDUE by \(- .days_left) days!"
+              (if .days_left == null then "unknown deadline"
+               elif .days_left < 0 then "OVERDUE by \(- .days_left) days!"
                elif .days_left == 0 then "DUE TODAY!"
                else "due in \(.days_left) days" end) + "\n" +
               (if .next_milestone then
@@ -155,7 +157,8 @@ steps:
             ([.[] | select(.status == "SOON" or .status == "ON_TRACK") |
               "\(goal_icon) \(.name)\n" +
               "   Progress: \(progress_bar)\n" +
-              "   Deadline: \(.deadline) — \(.days_left) days left\n" +
+              "   Deadline: \(.deadline) — " +
+              (if .days_left == null then "unknown" else "\(.days_left) days left" end) + "\n" +
               (if .next_milestone then
                 "   \(ms_icon) Next milestone: \(.next_milestone)" +
                 (if .next_milestone_due then " (due \(.next_milestone_due))" else "" end) + "\n"

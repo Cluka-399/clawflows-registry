@@ -56,7 +56,7 @@ steps:
         }
         const todayDate = new Date(today);
         const daysLeft = Math.ceil((deadlineDate - todayDate) / 86400000);
-        const nextMilestone = milestones.find(m => !m.completed);
+        const nextMilestone = milestones.filter(m => !m.completed).sort((a, b) => (a.due || "").localeCompare(b.due || ""))[0] || null;
         return {
           name: goal.name || "Unknown",
           progress: pct,
