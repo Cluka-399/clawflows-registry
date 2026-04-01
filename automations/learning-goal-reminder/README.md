@@ -86,7 +86,7 @@ Given the example goals above, running on 2026-03-23:
 ## Install
 
 ```bash
-openclaw install learning-goal-reminder
+clawflows install learning-goal-reminder
 ```
 
 ## Author
