@@ -262,81 +262,70 @@
     }
 
     .aa-promo {
-      padding-top: 1rem;
+      padding-top: 0.75rem;
+      padding-bottom: 1.5rem;
     }
 
     .aa-promo-shell {
-      background: linear-gradient(135deg, rgba(26, 26, 40, 0.95) 0%, rgba(18, 18, 28, 0.98) 100%);
-      border: 1px solid rgba(255, 107, 107, 0.2);
-      border-radius: 18px;
-      padding: 2rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+      background: linear-gradient(135deg, rgba(26, 26, 40, 0.94) 0%, rgba(18, 18, 28, 0.98) 100%);
+      border: 1px solid rgba(255, 107, 107, 0.18);
+      border-radius: 16px;
+      padding: 1.35rem 1.4rem;
     }
 
     .aa-eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.4rem 0.75rem;
+      padding: 0.35rem 0.7rem;
       border-radius: 999px;
-      background: rgba(255, 107, 107, 0.12);
+      background: rgba(255, 107, 107, 0.1);
       color: var(--accent);
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      margin-bottom: 1rem;
+      margin-bottom: 0.85rem;
     }
 
     .aa-promo-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
-      gap: 1.5rem;
-      margin-bottom: 1.25rem;
+      align-items: center;
+      gap: 1rem;
       flex-wrap: wrap;
     }
 
     .aa-promo-header h2 {
-      font-size: 2rem;
-      line-height: 1.1;
-      max-width: 700px;
+      font-size: 1.35rem;
+      line-height: 1.15;
+      max-width: 720px;
     }
 
     .aa-promo-header p {
       color: var(--text-secondary);
       max-width: 760px;
-      font-size: 1rem;
-      margin-top: 0.85rem;
+      font-size: 0.96rem;
+      margin-top: 0.55rem;
     }
 
-    .aa-promo-cta {
-      flex-shrink: 0;
+    .aa-promo-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
     }
 
-    .aa-feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-      margin-top: 1.5rem;
+    .aa-text-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.92rem;
     }
 
-    .aa-feature-card {
-      background: rgba(10, 10, 18, 0.78);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1rem;
-    }
-
-    .aa-feature-card h3 {
-      font-size: 1rem;
-      margin-bottom: 0.35rem;
-    }
-
-    .aa-feature-card p {
-      color: var(--text-secondary);
-      font-size: 0.88rem;
-      line-height: 1.5;
+    .aa-text-link:hover {
+      text-decoration: underline;
     }
     
     .value-grid {
@@ -981,14 +970,12 @@
           <div class="aa-promo-header">
             <div>
               <h2>ClawFlows gives OpenClaw automations. Agent Analytics gives it eyes.</h2>
-              <p>OpenClaw can already run workflows. Agent Analytics lets it see what happened after launch — where users drop, what changed, which experiment is winning, and what to work on next.</p>
+              <p>OpenClaw can run the workflow. Agent Analytics lets it see what happened after launch.</p>
+              <div class="aa-promo-actions">
+                <button class="btn btn-primary" type="button" onclick="browseAnalyticsGrowthFlows()">Browse analytics &amp; growth flows</button>
+                <a href="https://agentanalytics.sh" class="aa-text-link" target="_blank" rel="noopener noreferrer" onclick="mixpanel.track('cta_click', { button: 'agent_analytics_site', section: 'aa_promo' }); if(window.aa) aa.track('cta_click', { button: 'agent_analytics_site', section: 'aa_promo' })">Agent Analytics ↗</a>
+              </div>
             </div>
-            <div class="aa-promo-cta">
-              <button class="btn btn-primary" type="button" onclick="browseAnalyticsGrowthFlows()">Browse analytics &amp; growth flows</button>
-            </div>
-          </div>
-          <div id="aa-feature-grid" class="aa-feature-grid">
-            <div class="loading">Loading analytics &amp; growth flows...</div>
           </div>
         </div>
       </div>
@@ -1206,15 +1193,6 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    const analyticsGrowthFeaturedSlugs = [
-      'ab-test-automator',
-      'attribution-detective',
-      'audience-growth-report',
-      'engagement-analyzer',
-      'newsletter-growth',
-      'social-engagement-tracker'
-    ];
-
     const categoryPriority = [
       'analytics-growth',
       'analytics',
@@ -1286,48 +1264,6 @@
       container.innerHTML = buttons.join('');
     }
 
-    function renderAnalyticsGrowthSection(automations) {
-      const container = document.getElementById('aa-feature-grid');
-      if (!container) return;
-
-      const featureLabels = {
-        'ab-test-automator': 'Run experiments',
-        'attribution-detective': 'See attribution',
-        'audience-growth-report': 'Watch growth',
-        'engagement-analyzer': 'Read engagement',
-        'newsletter-growth': 'Improve lifecycle',
-        'social-engagement-tracker': 'Track social pull'
-      };
-
-      const featured = analyticsGrowthFeaturedSlugs
-        .map(slug => automations.find(a => (a.slug || a.name || '').toLowerCase() === slug))
-        .filter(Boolean)
-        .slice(0, 6);
-
-      if (!featured.length) {
-        container.innerHTML = '<div class="loading">No analytics & growth flows wired yet.</div>';
-        return;
-      }
-
-      container.innerHTML = featured.map(a => {
-        const slug = (a.slug || a.name || '').toLowerCase();
-        const label = featureLabels[slug] || 'Growth ops';
-        return `
-          <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'})">
-            <div class="automation-meta">
-              <span>${escapeHtml(label)}</span>
-              <span>by ${escapeHtml(a.author || 'anonymous')}</span>
-            </div>
-            <h3>${escapeHtml(a.name)}</h3>
-            <p>${escapeHtml(a.description || '')}</p>
-            <div class="tags">
-              ${(a._categories || []).slice(0, 2).map(category => `<span class="tag">${escapeHtml(slugToLabel(category))}</span>`).join('')}
-            </div>
-          </a>
-        `;
-      }).join('');
-    }
-    
     async function loadAutomations() {
       const container = document.getElementById('automations-grid');
       
@@ -1345,7 +1281,6 @@
         
         allAutomations = automations;
         buildCategoryFilters(automations);
-        renderAnalyticsGrowthSection(automations);
         filterAutomations();
         
         // Update counts dynamically
