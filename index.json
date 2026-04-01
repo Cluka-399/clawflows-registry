@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-01T20:15:53.217Z",
+  "generated": "2026-04-01T23:06:44.269Z",
   "version": "1.0.0",
   "count": 115,
   "automations": [
@@ -46,6 +46,7 @@
         "optimization"
       ],
       "requires": [
+        "agent-analytics",
         "ab-testing",
         "conversion",
         "optimization"
@@ -213,6 +214,7 @@
         "growth"
       ],
       "requires": [
+        "agent-analytics",
         "web-search",
         "chart-image"
       ],
@@ -1131,6 +1133,7 @@
         "growth"
       ],
       "requires": [
+        "agent-analytics",
         "web-search"
       ],
       "trigger": "schedule",
@@ -1387,6 +1390,7 @@
         "growth"
       ],
       "requires": [
+        "agent-analytics",
         "attribution",
         "analytics",
         "customer-journey"
@@ -1987,6 +1991,7 @@
         "marketing"
       ],
       "requires": [
+        "agent-analytics",
         "newsletter",
         "growth",
         "cross-promotion"
@@ -2561,6 +2566,7 @@
         "marketing"
       ],
       "requires": [
+        "agent-analytics",
         "web-search",
         "exec"
       ],

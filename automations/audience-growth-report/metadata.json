@@ -3,11 +3,21 @@
   "description": "Weekly report on audience growth and demographics",
   "author": "cluka",
   "version": "1.0.0",
-  "categories": ["analytics", "growth"],
-  "requires": ["web-search", "chart-image"],
+  "categories": [
+    "analytics",
+    "growth"
+  ],
+  "requires": [
+    "agent-analytics",
+    "web-search",
+    "chart-image"
+  ],
   "trigger": "schedule",
   "schedule": "0 9 * * 1",
-  "tags": ["social", "analytics"],
+  "tags": [
+    "social",
+    "analytics"
+  ],
   "created": "2026-01-30",
   "updated": "2026-01-30"
 }

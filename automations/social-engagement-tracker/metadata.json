@@ -3,11 +3,23 @@
   "description": "Track engagement metrics across social platforms",
   "author": "cluka",
   "version": "1.0.0",
-  "categories": ["analytics", "growth", "marketing"],
-  "requires": ["web-search", "exec"],
+  "categories": [
+    "analytics",
+    "growth",
+    "marketing"
+  ],
+  "requires": [
+    "agent-analytics",
+    "web-search",
+    "exec"
+  ],
   "trigger": "schedule",
   "schedule": "0 8 * * *",
-  "tags": ["social", "analytics", "marketing"],
+  "tags": [
+    "social",
+    "analytics",
+    "marketing"
+  ],
   "created": "2026-01-30",
   "updated": "2026-01-30"
 }

@@ -20,6 +20,7 @@
   "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
   "version": "1.0.0",
   "requires": [
+    "agent-analytics",
     "ab-testing",
     "conversion",
     "optimization"

@@ -20,6 +20,7 @@
   "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
   "version": "1.0.0",
   "requires": [
+    "agent-analytics",
     "newsletter",
     "growth",
     "cross-promotion"

@@ -19,6 +19,7 @@
   "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
   "version": "1.0.0",
   "requires": [
+    "agent-analytics",
     "attribution",
     "analytics",
     "customer-journey"

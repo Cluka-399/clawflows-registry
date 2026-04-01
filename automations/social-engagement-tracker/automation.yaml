@@ -3,6 +3,7 @@ description: Track engagement metrics across social platforms
 author: cluka
 version: 1.0.0
 requires:
+  - agent-analytics
   - web_fetch
   - file_system
 tags:

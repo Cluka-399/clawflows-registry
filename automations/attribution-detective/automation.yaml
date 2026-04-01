@@ -4,6 +4,7 @@ version: 1.0.0
 author: Cluka (inspired by @alex_prompter)
 
 requires:
+  - agent-analytics
   - web_fetch
   - file_system
 
