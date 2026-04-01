@@ -479,6 +479,51 @@
     .view-all:hover { text-decoration: underline; }
     
     /* Automations Grid */
+    .category-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .category-chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border-radius: 999px;
+      padding: 0.55rem 0.9rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .category-chip:hover {
+      border-color: var(--border-light);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .category-chip.active {
+      background: rgba(255, 107, 107, 0.14);
+      border-color: rgba(255, 107, 107, 0.45);
+      color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.12) inset;
+    }
+
+    .category-chip-count {
+      color: var(--text-dim);
+      margin-left: 0.35rem;
+      font-size: 0.78rem;
+    }
+
+    .category-chip.active .category-chip-count {
+      color: inherit;
+      opacity: 0.8;
+    }
+
     .automations-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -857,12 +902,16 @@
           <h2>🚀 All Automations <span id="automation-count" class="badge">109</span></h2>
         </div>
         
-        <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
           <input type="text" id="search-box" placeholder="Search automations..." style="
             width: 100%; padding: 0.75rem 1rem; border-radius: 8px;
             background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
             font-family: inherit; font-size: 0.95rem; outline: none; box-sizing: border-box;
           " oninput="filterAutomations()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div id="category-filters" class="category-filters">
+          <button class="category-chip active" type="button">All <span class="category-chip-count">…</span></button>
         </div>
         
         <div id="automations-grid" class="automations-grid">
@@ -1058,6 +1107,53 @@
     function escapeHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+
+    function slugToLabel(value) {
+      return String(value || '')
+        .split('-')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+    }
+
+    function normalizeCategories(automation) {
+      const raw = [];
+      if (Array.isArray(automation.categories)) raw.push(...automation.categories);
+      if (automation.category) raw.push(automation.category);
+      const cleaned = [...new Set(raw.filter(Boolean).map(c => String(c).trim().toLowerCase()))];
+      return cleaned.length ? cleaned : ['uncategorized'];
+    }
+
+    function buildCategoryFilters(automations) {
+      const container = document.getElementById('category-filters');
+      const counts = new Map();
+
+      automations.forEach(a => {
+        normalizeCategories(a).forEach(category => {
+          counts.set(category, (counts.get(category) || 0) + 1);
+        });
+      });
+
+      const ordered = [...counts.entries()].sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        return a[0].localeCompare(b[0]);
+      });
+
+      const buttons = [
+        `<button class="category-chip ${activeCategory === 'all' ? 'active' : ''}" type="button" onclick="setActiveCategory('all')">All <span class="category-chip-count">${automations.length}</span></button>`
+      ];
+
+      ordered.forEach(([category, count]) => {
+        buttons.push(`
+          <button class="category-chip ${activeCategory === category ? 'active' : ''}" type="button" onclick="setActiveCategory('${escapeHtml(category)}')">
+            ${escapeHtml(slugToLabel(category))}
+            <span class="category-chip-count">${count}</span>
+          </button>
+        `);
+      });
+
+      container.innerHTML = buttons.join('');
+    }
     
     async function loadAutomations() {
       const container = document.getElementById('automations-grid');
@@ -1065,7 +1161,9 @@
       try {
         const res = await fetch('./index.json');
         const data = await res.json();
-        const automations = (Array.isArray(data) ? data : (data.automations || [])).sort((a, b) => (b.lobster_ready ? 1 : 0) - (a.lobster_ready ? 1 : 0));
+        const automations = (Array.isArray(data) ? data : (data.automations || []))
+          .map(a => ({ ...a, _categories: normalizeCategories(a) }))
+          .sort((a, b) => (b.lobster_ready ? 1 : 0) - (a.lobster_ready ? 1 : 0));
         
         if (!automations.length) {
           container.innerHTML = '<p class="loading">No automations yet. Be the first to contribute!</p>';
@@ -1073,12 +1171,12 @@
         }
         
         allAutomations = automations;
-        renderAutomations(automations);
+        buildCategoryFilters(automations);
+        filterAutomations();
         
         // Update counts dynamically
         const count = automations.length;
         const lobsterCount = automations.filter(a => a.lobster_ready).length;
-        document.getElementById('automation-count').textContent = count;
         document.getElementById('hero-count').textContent = `🚀 ${count}+ automations (${lobsterCount} Lobster-ready) and growing!`;
         
         mixpanel.track('page_loaded', { automation_count: count });
@@ -1091,27 +1189,44 @@
     }
     
     let allAutomations = [];
+    let activeCategory = 'all';
+
+    function setActiveCategory(category) {
+      activeCategory = category;
+      buildCategoryFilters(allAutomations);
+      filterAutomations();
+      mixpanel.track('category_filter', { category });
+      if (window.aa) aa.track('category_filter', { category });
+    }
+
     function filterAutomations() {
       const query = (document.getElementById('search-box').value || '').toLowerCase();
       const filtered = allAutomations.filter(a => {
-        return !query || 
+        const matchesQuery = !query || 
           (a.name || '').toLowerCase().includes(query) || 
           (a.description || '').toLowerCase().includes(query) ||
-          (a.tags || []).some(t => t.toLowerCase().includes(query));
+          (a.tags || []).some(t => t.toLowerCase().includes(query)) ||
+          (a._categories || []).some(c => c.includes(query));
+
+        const matchesCategory = activeCategory === 'all' || (a._categories || []).includes(activeCategory);
+        return matchesQuery && matchesCategory;
       });
       renderAutomations(filtered);
       document.getElementById('automation-count').textContent = filtered.length;
-      if (query && window.aa) aa.track('search', { query: query, results: filtered.length });
+      if (query && window.aa) aa.track('search', { query: query, results: filtered.length, category: activeCategory });
     }
     
     function renderAutomations(automations) {
       const container = document.getElementById('automations-grid');
       if (!automations.length) {
-        container.innerHTML = '<p class="loading">No automations match your search.</p>';
+        const message = activeCategory === 'all'
+          ? 'No automations match your search.'
+          : `No automations match this filter in ${slugToLabel(activeCategory)}.`;
+        container.innerHTML = `<p class="loading">${escapeHtml(message)}</p>`;
         return;
       }
       container.innerHTML = automations.map(a => `
-        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('automation_click', {name: '${escapeHtml(a.name)}', lobster_ready: ${!!a.lobster_ready}})">
+        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('automation_click', {name: '${escapeHtml(a.name)}', category: '${escapeHtml((a._categories || [])[0] || 'uncategorized')}' }); if(window.aa) aa.track('automation_click', {name: '${escapeHtml(a.name)}', lobster_ready: ${!!a.lobster_ready}, category: '${escapeHtml((a._categories || [])[0] || 'uncategorized')}'})">
           <div class="automation-meta">
             <span>v${a.version || '1.0.0'}</span>
             <span>by ${escapeHtml(a.author || 'anonymous')}</span>
@@ -1119,7 +1234,8 @@
           <h3>${escapeHtml(a.name)}</h3>
           <p>${escapeHtml(a.description || '')}</p>
           <div class="tags">
-            ${(Array.isArray(a.requires) ? a.requires : []).map(c => `<span class="tag capability">${c}</span>`).join('')}
+            ${(a._categories || []).slice(0, 2).map(category => `<span class="tag">${escapeHtml(slugToLabel(category))}</span>`).join('')}
+            ${(Array.isArray(a.requires) ? a.requires : []).slice(0, 3).map(c => `<span class="tag capability">${c}</span>`).join('')}
           </div>
         </a>
       `).join('');
