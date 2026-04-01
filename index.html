@@ -1207,12 +1207,22 @@
     }
 
     const analyticsGrowthFeaturedSlugs = [
-      'attribution-detective',
       'ab-test-automator',
+      'attribution-detective',
       'audience-growth-report',
       'engagement-analyzer',
-      'social-engagement-tracker',
-      'newsletter-growth'
+      'newsletter-growth',
+      'social-engagement-tracker'
+    ];
+
+    const categoryPriority = [
+      'analytics-growth',
+      'analytics',
+      'growth',
+      'marketing',
+      'seo',
+      'content',
+      'optimization'
     ];
 
     function slugToLabel(value) {
@@ -1241,16 +1251,30 @@
         });
       });
 
+      const analyticsGrowthCount = automations.filter(a => {
+        const categories = normalizeCategories(a);
+        return categories.includes('analytics') || categories.includes('growth');
+      }).length;
+
       const ordered = [...counts.entries()].sort((a, b) => {
+        const aPriority = categoryPriority.indexOf(a[0]);
+        const bPriority = categoryPriority.indexOf(b[0]);
+        if (aPriority !== -1 || bPriority !== -1) {
+          if (aPriority === -1) return 1;
+          if (bPriority === -1) return -1;
+          if (aPriority !== bPriority) return aPriority - bPriority;
+        }
         if (b[1] !== a[1]) return b[1] - a[1];
         return a[0].localeCompare(b[0]);
       });
 
       const buttons = [
-        `<button class="category-chip ${activeCategory === 'all' ? 'active' : ''}" type="button" onclick="setActiveCategory('all')">All <span class="category-chip-count">${automations.length}</span></button>`
+        `<button class="category-chip ${activeCategory === 'all' ? 'active' : ''}" type="button" onclick="setActiveCategory('all')">All <span class="category-chip-count">${automations.length}</span></button>`,
+        `<button class="category-chip ${activeCategory === 'analytics-growth' ? 'active' : ''}" type="button" onclick="setActiveCategory('analytics-growth')">Analytics &amp; Growth <span class="category-chip-count">${analyticsGrowthCount}</span></button>`
       ];
 
       ordered.forEach(([category, count]) => {
+        if (category === 'analytics' || category === 'growth') return;
         buttons.push(`
           <button class="category-chip ${activeCategory === category ? 'active' : ''}" type="button" onclick="setActiveCategory('${escapeHtml(category)}')">
             ${escapeHtml(slugToLabel(category))}
@@ -1266,6 +1290,15 @@
       const container = document.getElementById('aa-feature-grid');
       if (!container) return;
 
+      const featureLabels = {
+        'ab-test-automator': 'Experiments',
+        'attribution-detective': 'Attribution',
+        'audience-growth-report': 'Growth briefs',
+        'engagement-analyzer': 'Content signals',
+        'newsletter-growth': 'Lifecycle growth',
+        'social-engagement-tracker': 'Social metrics'
+      };
+
       const featured = analyticsGrowthFeaturedSlugs
         .map(slug => automations.find(a => (a.slug || a.name || '').toLowerCase() === slug))
         .filter(Boolean)
@@ -1276,19 +1309,23 @@
         return;
       }
 
-      container.innerHTML = featured.map(a => `
-        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'})">
-          <div class="automation-meta">
-            <span>${(a._categories || []).slice(0, 2).map(category => escapeHtml(slugToLabel(category))).join(' · ')}</span>
-            <span>by ${escapeHtml(a.author || 'anonymous')}</span>
-          </div>
-          <h3>${escapeHtml(a.name)}</h3>
-          <p>${escapeHtml(a.description || '')}</p>
-          <div class="tags">
-            ${(a._categories || []).slice(0, 2).map(category => `<span class="tag">${escapeHtml(slugToLabel(category))}</span>`).join('')}
-          </div>
-        </a>
-      `).join('');
+      container.innerHTML = featured.map(a => {
+        const slug = (a.slug || a.name || '').toLowerCase();
+        const label = featureLabels[slug] || 'Growth ops';
+        return `
+          <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'})">
+            <div class="automation-meta">
+              <span>${escapeHtml(label)}</span>
+              <span>by ${escapeHtml(a.author || 'anonymous')}</span>
+            </div>
+            <h3>${escapeHtml(a.name)}</h3>
+            <p>${escapeHtml(a.description || '')}</p>
+            <div class="tags">
+              ${(a._categories || []).slice(0, 2).map(category => `<span class="tag">${escapeHtml(slugToLabel(category))}</span>`).join('')}
+            </div>
+          </a>
+        `;
+      }).join('');
     }
     
     async function loadAutomations() {
@@ -1337,7 +1374,7 @@
     }
 
     function browseAnalyticsGrowthFlows() {
-      setActiveCategory('analytics');
+      setActiveCategory('analytics-growth');
       const automationsSection = document.getElementById('automations');
       if (automationsSection) automationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       mixpanel.track('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
@@ -1353,7 +1390,10 @@
           (a.tags || []).some(t => t.toLowerCase().includes(query)) ||
           (a._categories || []).some(c => c.includes(query));
 
-        const matchesCategory = activeCategory === 'all' || (a._categories || []).includes(activeCategory);
+        const categories = a._categories || [];
+        const matchesCategory = activeCategory === 'all'
+          || (activeCategory === 'analytics-growth' && (categories.includes('analytics') || categories.includes('growth')))
+          || categories.includes(activeCategory);
         return matchesQuery && matchesCategory;
       });
       renderAutomations(filtered);
@@ -1364,9 +1404,10 @@
     function renderAutomations(automations) {
       const container = document.getElementById('automations-grid');
       if (!automations.length) {
+        const label = activeCategory === 'analytics-growth' ? 'Analytics & Growth' : slugToLabel(activeCategory);
         const message = activeCategory === 'all'
           ? 'No automations match your search.'
-          : `No automations match this filter in ${slugToLabel(activeCategory)}.`;
+          : `No automations match this filter in ${label}.`;
         container.innerHTML = `<p class="loading">${escapeHtml(message)}</p>`;
         return;
       }
