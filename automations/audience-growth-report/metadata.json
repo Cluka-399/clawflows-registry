@@ -3,6 +3,7 @@
   "description": "Weekly report on audience growth and demographics",
   "author": "cluka",
   "version": "1.0.0",
+  "categories": ["analytics", "growth"],
   "requires": ["web-search", "chart-image"],
   "trigger": "schedule",
   "schedule": "0 9 * * 1",

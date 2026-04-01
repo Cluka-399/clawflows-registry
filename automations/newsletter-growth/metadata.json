@@ -1,7 +1,11 @@
 {
   "name": "Newsletter Growth Engine",
   "slug": "newsletter-growth",
-  "category": "content",
+  "categories": [
+    "growth",
+    "content",
+    "marketing"
+  ],
   "tags": [
     "newsletter",
     "growth",

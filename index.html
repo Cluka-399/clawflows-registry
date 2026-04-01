@@ -260,6 +260,84 @@
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
+
+    .aa-promo {
+      padding-top: 1rem;
+    }
+
+    .aa-promo-shell {
+      background: linear-gradient(135deg, rgba(26, 26, 40, 0.95) 0%, rgba(18, 18, 28, 0.98) 100%);
+      border: 1px solid rgba(255, 107, 107, 0.2);
+      border-radius: 18px;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    }
+
+    .aa-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(255, 107, 107, 0.12);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .aa-promo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .aa-promo-header h2 {
+      font-size: 2rem;
+      line-height: 1.1;
+      max-width: 700px;
+    }
+
+    .aa-promo-header p {
+      color: var(--text-secondary);
+      max-width: 760px;
+      font-size: 1rem;
+      margin-top: 0.85rem;
+    }
+
+    .aa-promo-cta {
+      flex-shrink: 0;
+    }
+
+    .aa-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .aa-feature-card {
+      background: rgba(10, 10, 18, 0.78);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .aa-feature-card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .aa-feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
     
     .value-grid {
       display: grid;
@@ -896,6 +974,26 @@
       </div>
     </section>
     
+    <section id="aa-eyes" class="aa-promo" data-aa-impression="aa_promo_section">
+      <div class="container">
+        <div class="aa-promo-shell">
+          <div class="aa-eyebrow">OpenClaw × Agent Analytics</div>
+          <div class="aa-promo-header">
+            <div>
+              <h2>ClawFlows gives OpenClaw automations. Agent Analytics gives it eyes.</h2>
+              <p>Use OpenClaw to run workflows, measure what users do, spot conversion leaks, and run experiments across your projects. These are the flows that make the Agent Analytics story feel native inside ClawFlows.</p>
+            </div>
+            <div class="aa-promo-cta">
+              <button class="btn btn-primary" type="button" onclick="browseAnalyticsGrowthFlows()">Browse analytics &amp; growth flows</button>
+            </div>
+          </div>
+          <div id="aa-feature-grid" class="aa-feature-grid">
+            <div class="loading">Loading analytics &amp; growth flows...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="automations" data-aa-impression="automations_section">
       <div class="container">
         <div class="section-header">
@@ -1108,6 +1206,15 @@
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    const analyticsGrowthFeaturedSlugs = [
+      'attribution-detective',
+      'ab-test-automator',
+      'audience-growth-report',
+      'engagement-analyzer',
+      'social-engagement-tracker',
+      'newsletter-growth'
+    ];
+
     function slugToLabel(value) {
       return String(value || '')
         .split('-')
@@ -1154,6 +1261,35 @@
 
       container.innerHTML = buttons.join('');
     }
+
+    function renderAnalyticsGrowthSection(automations) {
+      const container = document.getElementById('aa-feature-grid');
+      if (!container) return;
+
+      const featured = analyticsGrowthFeaturedSlugs
+        .map(slug => automations.find(a => (a.slug || a.name || '').toLowerCase() === slug))
+        .filter(Boolean)
+        .slice(0, 6);
+
+      if (!featured.length) {
+        container.innerHTML = '<div class="loading">No analytics & growth flows wired yet.</div>';
+        return;
+      }
+
+      container.innerHTML = featured.map(a => `
+        <a href="${a.url || '#'}" class="automation-card" onclick="mixpanel.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'}); if(window.aa) aa.track('analytics_growth_feature_click', {name: '${escapeHtml(a.name)}'})">
+          <div class="automation-meta">
+            <span>${(a._categories || []).slice(0, 2).map(category => escapeHtml(slugToLabel(category))).join(' · ')}</span>
+            <span>by ${escapeHtml(a.author || 'anonymous')}</span>
+          </div>
+          <h3>${escapeHtml(a.name)}</h3>
+          <p>${escapeHtml(a.description || '')}</p>
+          <div class="tags">
+            ${(a._categories || []).slice(0, 2).map(category => `<span class="tag">${escapeHtml(slugToLabel(category))}</span>`).join('')}
+          </div>
+        </a>
+      `).join('');
+    }
     
     async function loadAutomations() {
       const container = document.getElementById('automations-grid');
@@ -1172,6 +1308,7 @@
         
         allAutomations = automations;
         buildCategoryFilters(automations);
+        renderAnalyticsGrowthSection(automations);
         filterAutomations();
         
         // Update counts dynamically
@@ -1197,6 +1334,14 @@
       filterAutomations();
       mixpanel.track('category_filter', { category });
       if (window.aa) aa.track('category_filter', { category });
+    }
+
+    function browseAnalyticsGrowthFlows() {
+      setActiveCategory('analytics');
+      const automationsSection = document.getElementById('automations');
+      if (automationsSection) automationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      mixpanel.track('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
+      if (window.aa) aa.track('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
     }
 
     function filterAutomations() {

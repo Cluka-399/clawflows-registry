@@ -18,13 +18,19 @@ for (const dir of dirs) {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
       automations.push({
         name: meta.name || dir,
+        slug: meta.slug || dir,
+        displayName: meta.displayName || null,
         description: meta.description || '',
         author: meta.author || 'unknown',
         version: meta.version || '1.0.0',
+        category: meta.category || null,
+        categories: meta.categories || null,
         requires: meta.requires || [],
         trigger: meta.trigger || 'manual',
         schedule: meta.schedule || null,
         tags: meta.tags || [],
+        difficulty: meta.difficulty || null,
+        lobster_ready: meta.lobster_ready || false,
         created: meta.created || new Date().toISOString().split('T')[0],
         updated: meta.updated || new Date().toISOString().split('T')[0],
         url: `/automations/${dir}/`

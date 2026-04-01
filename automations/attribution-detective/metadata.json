@@ -1,7 +1,10 @@
 {
   "name": "Full-Funnel Attribution Detective",
   "slug": "attribution-detective",
-  "category": "analytics",
+  "categories": [
+    "analytics",
+    "growth"
+  ],
   "tags": [
     "attribution",
     "analytics",

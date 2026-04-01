@@ -1,7 +1,11 @@
 {
   "name": "A/B Test Automator",
   "slug": "ab-test-automator",
-  "category": "optimization",
+  "categories": [
+    "analytics",
+    "growth",
+    "optimization"
+  ],
   "tags": [
     "ab-testing",
     "conversion",
