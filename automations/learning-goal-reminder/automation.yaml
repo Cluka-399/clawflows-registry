@@ -1,0 +1,114 @@
+name: Learning Goal Reminder
+description: Track learning goals with progress milestones, deadlines, and escalating reminders
+author: smartrus
+version: 1.0.0
+
+requires:
+  - capability: file-system
+  - capability: notifications
+
+trigger:
+  schedule: "0 9 * * *"  # Daily at 9am
+
+config:
+  goals_file:
+    description: "Path to JSON file with learning goals, milestones, and deadlines"
+    default: "~/.learning-goals.json"
+
+  lookahead_days:
+    description: "Days ahead to warn about upcoming milestones"
+    default: 7
+
+tags:
+  - learning
+  - productivity
+  - education
+  - reminders
+  - goals
+
+steps:
+  - name: load-goals
+    capability: file-system
+    method: readFile
+    args:
+      path: "${config.goals_file}"
+    capture: goalsData
+
+  - name: evaluate-progress
+    action: evaluate
+    script: |
+      const today = new Date().toISOString().slice(0, 10);
+      let parsed;
+      try {
+        parsed = JSON.parse(goalsData);
+      } catch (e) {
+        return [];
+      }
+      const goalsList = parsed.goals || [];
+      return goalsList.map(goal => {
+        const milestones = Array.isArray(goal.milestones) ? goal.milestones : [];
+        const totalMilestones = milestones.length;
+        const completed = milestones.filter(m => m.completed).length;
+        const pct = totalMilestones === 0 ? 0 : Math.round((completed / totalMilestones) * 100);
+        const deadlineDate = new Date(goal.deadline);
+        if (isNaN(deadlineDate.getTime())) {
+          return { name: goal.name || "Unknown", progress: pct, daysLeft: null, deadline: goal.deadline, nextMilestone: null, nextMilestoneDue: null, totalMilestones, completed, overdue: false, status: "ON TRACK" };
+        }
+        const todayDate = new Date(today);
+        const daysLeft = Math.ceil((deadlineDate - todayDate) / 86400000);
+        const nextMilestone = milestones.filter(m => !m.completed).sort((a, b) => {
+          if (!a.due && !b.due) return 0;
+          if (!a.due) return 1;
+          if (!b.due) return -1;
+          return a.due.localeCompare(b.due);
+        })[0] || null;
+        return {
+          name: goal.name || "Unknown",
+          progress: pct,
+          daysLeft,
+          deadline: goal.deadline,
+          nextMilestone: nextMilestone ? nextMilestone.title : null,
+          nextMilestoneDue: nextMilestone ? nextMilestone.due : null,
+          totalMilestones,
+          completed,
+          overdue: daysLeft < 0,
+          status: daysLeft < 0 ? "OVERDUE" :
+                  daysLeft === 0 ? "DUE TODAY" :
+                  daysLeft <= 3 ? "URGENT" :
+                  daysLeft <= ${config.lookahead_days} ? "SOON" : "ON TRACK"
+        };
+      });
+    capture: evaluated
+
+  - name: format-report
+    action: evaluate
+    script: |
+      const goals = evaluated;
+      if (goals.length === 0) {
+        return "📚 No learning goals configured yet.\nCreate a goals JSON file and try again!";
+      }
+      const urgent = goals.filter(g => ["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
+      const onTrack = goals.filter(g => !["OVERDUE","DUE TODAY","URGENT"].includes(g.status));
+      let msg = "📚 Learning Goal Tracker\n═══════════════════════\n\n";
+      if (urgent.length) {
+        msg += "🚨 Needs Attention:\n";
+        urgent.forEach(g => {
+          msg += `  ${g.status === "OVERDUE" ? "🔴" : g.status === "DUE TODAY" ? "🟠" : "🟡"} ${g.name} — ${g.progress}% done, ${g.status}\n`;
+          if (g.nextMilestone) msg += `     Next: ${g.nextMilestone}\n`;
+        });
+        msg += "\n";
+      }
+      if (onTrack.length) {
+        msg += "✅ On Track:\n";
+        onTrack.forEach(g => {
+          const icon = g.status === "SOON" ? "🔵" : "🟢";
+          msg += `  ${icon} ${g.name} — ${g.progress}% done, ${g.daysLeft != null ? g.daysLeft + "d left" : "no deadline"}\n`;
+          if (g.nextMilestone) msg += `     Next: ${g.nextMilestone}\n`;
+        });
+      }
+      return msg;
+    capture: report
+
+  - name: notify
+    action: notify
+    message: "${report}"

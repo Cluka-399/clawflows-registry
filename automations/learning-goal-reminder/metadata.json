@@ -1,0 +1,13 @@
+{
+  "name": "learning-goal-reminder",
+  "description": "Track learning goals with progress milestones, deadlines, and escalating reminders",
+  "author": "smartrus",
+  "version": "1.0.0",
+  "requires": ["cron", "file-system", "notifications"],
+  "capabilities": ["file-system", "notifications"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["learning", "productivity", "education", "reminders", "goals"],
+  "created": "2026-03-23",
+  "updated": "2026-03-23"
+}

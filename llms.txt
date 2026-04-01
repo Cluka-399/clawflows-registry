@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (114 total)
+## Current Automations (115 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -377,6 +377,12 @@ Curate educational content based on your interests and learning goals
 - Requires: web-search
 - Schedule: 0 7 * * 1,4
 - URL: https://clawflows.com/automations/learning-digest/
+
+### learning-goal-reminder
+Track learning goals with progress milestones, deadlines, and escalating reminders
+- Requires: cron, file-system, notifications
+- Schedule: 0 9 * * *
+- URL: https://clawflows.com/automations/learning-goal-reminder/
 
 ### log-analyzer
 Analyze application logs for errors, patterns, and anomalies
