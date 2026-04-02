@@ -973,7 +973,7 @@
               <p>OpenClaw can run the workflow. Agent Analytics lets it see what happened after launch.</p>
               <div class="aa-promo-actions">
                 <button class="btn btn-primary" type="button" onclick="browseAnalyticsGrowthFlows()">Browse analytics &amp; growth flows</button>
-                <a href="https://agentanalytics.sh" class="aa-text-link" target="_blank" rel="noopener noreferrer" onclick="mixpanel.track('cta_click', { button: 'agent_analytics_site', section: 'aa_promo' }); if(window.aa) aa.track('cta_click', { button: 'agent_analytics_site', section: 'aa_promo' })">Agent Analytics ↗</a>
+                <a href="https://agentanalytics.sh" class="aa-text-link" target="_blank" rel="noopener noreferrer" onclick="trackEvent('aa_promo_site_click', { button: 'agent_analytics_site', section: 'aa_promo' }); trackEvent('cta_click', { button: 'agent_analytics_site', section: 'aa_promo' })">Agent Analytics ↗</a>
               </div>
             </div>
           </div>
@@ -1219,6 +1219,44 @@
       return cleaned.length ? cleaned : ['uncategorized'];
     }
 
+    let aaPromoSeenTracked = false;
+
+    function trackEvent(name, props = {}) {
+      if (typeof mixpanel !== 'undefined' && mixpanel.track) {
+        mixpanel.track(name, props);
+      }
+      if (window.aa) {
+        aa.track(name, props);
+      }
+    }
+
+    function setupAaPromoTracking() {
+      const section = document.getElementById('aa-eyes');
+      if (!section || aaPromoSeenTracked) return;
+
+      const markSeen = () => {
+        if (aaPromoSeenTracked) return;
+        aaPromoSeenTracked = true;
+        trackEvent('aa_promo_seen', { section: 'aa_promo' });
+      };
+
+      if (!('IntersectionObserver' in window)) {
+        markSeen();
+        return;
+      }
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+            markSeen();
+            observer.disconnect();
+          }
+        });
+      }, { threshold: [0.35] });
+
+      observer.observe(section);
+    }
+
     function buildCategoryFilters(automations) {
       const container = document.getElementById('category-filters');
       const counts = new Map();
@@ -1304,16 +1342,15 @@
       activeCategory = category;
       buildCategoryFilters(allAutomations);
       filterAutomations();
-      mixpanel.track('category_filter', { category });
-      if (window.aa) aa.track('category_filter', { category });
+      trackEvent('category_filter', { category });
     }
 
     function browseAnalyticsGrowthFlows() {
       setActiveCategory('analytics-growth');
       const automationsSection = document.getElementById('automations');
       if (automationsSection) automationsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      mixpanel.track('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
-      if (window.aa) aa.track('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
+      trackEvent('aa_promo_browse_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
+      trackEvent('cta_click', { button: 'browse_analytics_growth_flows', section: 'aa_promo' });
     }
 
     function filterAutomations() {
@@ -1363,6 +1400,7 @@
     }
     
     loadAutomations();
+    setupAaPromoTracking();
   </script>
   <!-- Agent Analytics -->
   <script src="https://api.agentanalytics.sh/tracker.js"
