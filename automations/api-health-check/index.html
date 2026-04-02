@@ -3,82 +3,316 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>api-health-check — ClawFlows</title>
+  <title>Api Health Check — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>api-health-check</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Comprehensive API health monitoring with endpoint validation</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Api Health Check</h1>
+        <p class="description">Comprehensive API health monitoring with endpoint validation</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule */15 * * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">api</span><span class="pill">monitoring</span><span class="pill">devops</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install api-health-check</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">http</span><span class="tag">storage</span><span class="tag">exec</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">capability: http</span><span class="tag">capability: storage</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>**Checks endpoints** - Sends HTTP requests to configured API endpoints every 15 minutes</li><li>**Tracks state** - Remembers previous health status to detect transitions</li><li>**Alerts on changes** - Notifies when endpoints go down or recover</li><li>**Measures latency** - Captures response times for each endpoint</li></ol>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-state</div><div class="step-detail">storage</div></div><div class="step"><div class="step-title">2. check-endpoints</div><div class="step-detail">http</div></div><div class="step"><div class="step-title">3. ep.name || ep.url</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">4. save-state</div><div class="step-detail">storage</div></div><div class="step"><div class="step-title">5. alert</div><div class="step-detail">notify</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install api-health-check</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">endpoints</div><div class="kv-meta">JSON array of endpoint configs [{url, method, expected_status, name}] · required</div></div><div class="kv"><div class="kv-name">timeout_ms</div><div class="kv-meta">Request timeout in milliseconds · default: 5000</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">File to track health history · default: api-health-state.json</div></div></div>
+        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
+  endpoints: &#39;[{&quot;url&quot;: &quot;https://api.example.com/health&quot;, &quot;name&quot;: &quot;My API&quot;}]&#39;
+  timeout_ms: 5000
+  state_file: &quot;api-health-state.json&quot;</code></pre>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>*/15 * * * *</code></p>
+        <p>Every 15 minutes: <code>*/15 * * * *</code></p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: api health check Monitors API endpoint health with status codes and latency tracking Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. load-state</div></div><div class="step"><div class="step-title">2. check-endpoints</div></div><div class="step"><div class="step-title">3. analyze</div></div><div class="step"><div class="step-title">4. save-state</div></div><div class="step"><div class="step-title">5. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: api-health-check
+# Monitors API endpoint health with status codes and latency tracking
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;endpoints&quot;:&quot;https://api.example.com,https://other.api/health&quot;}&#39;
+#
+# Requires: jq, curl
+
+name: api-health-check
+description: Comprehensive API health monitoring with endpoint validation
+
+args:
+  endpoints:
+    description: &quot;Comma-separated endpoint URLs to check&quot;
+  timeout:
+    description: &quot;Request timeout in seconds&quot;
+    default: &quot;5&quot;
+  state_file:
+    default: &quot;/tmp/clawflows-api-health-state.json&quot;
+
+steps:
+  - id: load-state
+    command: cat &quot;${state_file}&quot; 2&gt;/dev/null || echo &#39;{}&#39;
+
+  - id: check-endpoints
+    command: |
+      tmpf=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpf&quot;
+      for url in $(echo &quot;${endpoints}&quot; | tr &#39;,&#39; &#39; &#39;); do
+        url=$(echo &quot;$url&quot; | xargs)
+        [ -z &quot;$url&quot; ] &amp;&amp; continue
+        result=$(curl -o /dev/null -s -w &#39;%{http_code} %{time_total}&#39; \
+          --max-time ${timeout} &quot;$url&quot; 2&gt;/dev/null) || result=&quot;000 0.000&quot;
+        code=$(echo &quot;$result&quot; | awk &#39;{print $1}&#39;)
+        latency=$(echo &quot;$result&quot; | awk &#39;{print $2}&#39;)
+        healthy=&quot;false&quot;
+        if [ &quot;$code&quot; -ge 200 ] &amp;&amp; [ &quot;$code&quot; -lt 300 ] 2&gt;/dev/null; then
+          healthy=&quot;true&quot;
+        fi
+        jq -nc --arg url &quot;$url&quot; --arg code &quot;$code&quot; --arg latency &quot;$latency&quot; --argjson healthy &quot;$healthy&quot; \
+          &#39;{url:$url, status:($code|tonumber), latency:$latency, healthy:$healthy}&#39; &gt; /tmp/lb_ep.json
+        jq -sc &#39;.[0]+[.[1]]&#39; &quot;$tmpf&quot; /tmp/lb_ep.json &gt; /tmp/lb_ep_merged.json
+        mv /tmp/lb_ep_merged.json &quot;$tmpf&quot;
+      done
+      cat &quot;$tmpf&quot;
+      rm -f &quot;$tmpf&quot; /tmp/lb_ep.json
+
+  - id: analyze
+    stdin: $check-endpoints.stdout
+    command: |
+      cat &gt; /tmp/lb_health_results.json
+      prev=$(cat &quot;${state_file}&quot; 2&gt;/dev/null || echo &#39;{}&#39;)
+      echo &quot;$prev&quot; &gt; /tmp/lb_health_prev.json
+      jq -c --slurpfile prev /tmp/lb_health_prev.json &#39;
+        ($prev[0] // {}) as $old |
+        [.[] | . + {
+          was_healthy: (if $old[.url] then $old[.url].healthy else true end),
+          alert: (
+            ($old[.url] // null) as $prev_entry |
+            ($prev_entry | if . == null then true else .healthy end) as $prev_healthy |
+            if .healthy and ($prev_healthy | not) then &quot;recovered&quot;
+            elif (.healthy | not) and $prev_healthy then &quot;down&quot;
+            else null end
+          )
+        }] |
+        {
+          results: .,
+          alerts: [.[] | select(.alert != null)],
+          healthy_count: ([.[] | select(.healthy)] | length),
+          total_count: length,
+          all_healthy: (all(.healthy))
+        }
+      &#39; /tmp/lb_health_results.json
+      rm -f /tmp/lb_health_results.json /tmp/lb_health_prev.json
+
+  - id: save-state
+    stdin: $analyze.stdout
+    command: |
+      cat &gt; /tmp/lb_health_analysis.json
+      jq &#39;{results: [.results[] | {(.url): {healthy: .healthy, status: .status, last_check: now}}]} | .results | add // {}&#39; \
+        /tmp/lb_health_analysis.json &gt; &quot;${state_file}&quot;
+      cat /tmp/lb_health_analysis.json
+      rm -f /tmp/lb_health_analysis.json
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      jq -r &#39;
+        &quot;🏥 API Health Check — \(.healthy_count)/\(.total_count) healthy\n&quot; +
+        (.results | map(
+          (if .healthy then &quot;🟢&quot; else &quot;🔴&quot; end) +
+          &quot; \(.url) — HTTP \(.status) (\(.latency)s)&quot;
+        ) | join(&quot;\n&quot;)) +
+        if (.alerts | length) &gt; 0 then
+          &quot;\n\n⚠️ Alerts:\n&quot; +
+          (.alerts | map(
+            if .alert == &quot;down&quot; then &quot;🔴 DOWN: \(.url) — HTTP \(.status)&quot;
+            else &quot;🟢 RECOVERED: \(.url)&quot; end
+          ) | join(&quot;\n&quot;))
+        else &quot;&quot; end
+      &#39;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Comprehensive API health monitoring with endpoint validation, latency tracking, and state-change alerts.</p>
+<h3>What It Does</h3>
+<ol><li>**Checks endpoints** - Sends HTTP requests to configured API endpoints every 15 minutes</li><li>**Tracks state** - Remembers previous health status to detect transitions</li><li>**Alerts on changes** - Notifies when endpoints go down or recover</li><li>**Measures latency** - Captures response times for each endpoint</li></ol>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>http requests</td></tr></tbody></table></div>
+<h3>Configuration</h3>
+<pre class="code-block"><code data-lang="yaml">config:
+  endpoints: &#39;[{&quot;url&quot;: &quot;https://api.example.com/health&quot;, &quot;name&quot;: &quot;My API&quot;}]&#39;
+  timeout_ms: 5000
+  state_file: &quot;api-health-state.json&quot;</code></pre>
+<h3>Schedule</h3>
+<p>Every 15 minutes: <code>*/15 * * * *</code></p>
+<h3>Author</h3>
+<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

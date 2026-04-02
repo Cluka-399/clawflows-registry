@@ -3,82 +3,524 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>inbox-zero-helper — ClawFlows</title>
+  <title>Inbox Zero Helper — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>inbox-zero-helper</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Categorize, summarize, and draft responses for your email inbox</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Inbox Zero Helper</h1>
+        <p class="description">Categorize, summarize, and draft responses for your email inbox</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule 0 8,14,18 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Productivity</span><span class="tag">Email</span><span class="tag">Daily</span></div>
+        <div class="tag-row"><span class="pill">email</span><span class="pill">inbox-zero</span><span class="pill">categorize</span><span class="pill">drafts</span><span class="pill">summary</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install inbox-zero-helper</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">email</span><span class="tag">llm-analysis</span><span class="tag">notifications</span><span class="tag">cron</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">capability: email</span><span class="tag">capability: llm-analysis</span><span class="tag">capability: notifications</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>**Fetches** unread emails (3x daily)</li><li>**Categorizes** into urgent, action-needed, FYI, promotional, personal</li><li>**Auto-archives** promotional emails (optional)</li><li>**Drafts responses** for action-needed emails</li><li>**Sends summary** with priorities highlighted</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-unread</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">2. categorize-emails</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">3. step</div></div><div class="step"><div class="step-title">4. step</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. group-by-category</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">9. auto-archive-promotional</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">10. draft-responses</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">11. notify-summary</div><div class="step-detail">notify</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install inbox-zero-helper</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">max_emails</div><div class="kv-meta">Maximum emails to process per run · default: 20</div></div><div class="kv"><div class="kv-name">auto_archive</div><div class="kv-meta">Auto-archive low-priority/promotional emails · default: true</div></div><div class="kv"><div class="kv-name">draft_responses</div><div class="kv-meta">Draft responses for action-needed emails · default: true</div></div><div class="kv"><div class="kv-name">categories</div><div class="kv-meta">Email categories to use · default: [&quot;urgent&quot;, &quot;action-needed&quot;, &quot;fyi&quot;, &quot;promotional&quot;, &quot;personal&quot;]</div></div></div>
+        <h3>README configuration</h3><div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`max_emails`</td><td>20</td><td>Emails to process per run</td></tr><tr><td>`auto_archive`</td><td>true</td><td>Archive promotional emails</td></tr><tr><td>`draft_responses`</td><td>true</td><td>Draft replies for action-needed</td></tr></tbody></table></div>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 8,14,18 * * *</code></p>
+        
+        <h3>Example output</h3><pre class="code-block"><code>📬 Inbox Summary
+
+🔴 Urgent (2):
+• Client contract expires tomorrow - needs signature
+• Server alert: Production DB at 95% capacity
+
+🟡 Action Needed (5):
+• Meeting request from Sarah for next week
+• PR review requested on auth-service
+• Invoice from AWS needs approval
+
+🔵 FYI (8):
+• Weekly product metrics report
+• Team standup notes
+• ...and 6 more
+
+🗑️ Auto-archived 12 promotional emails
+
+✏️ Drafted 3 responses (review in drafts folder)</code></pre>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses prompt step for smart email triage and draft replies</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. fetch_emails</div></div><div class="step"><div class="step-title">2. categorize_emails</div></div><div class="step"><div class="step-title">3. group_and_summarize</div></div><div class="step"><div class="step-title">4. archive_promotional</div></div><div class="step"><div class="step-title">5. draft_hints</div></div><div class="step"><div class="step-title">6. final_report</div></div><div class="step"><div class="step-title">7. smart-triage</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses prompt step for smart email triage and draft replies
+
+name: inbox-zero-helper
+description: &quot;Categorize, summarize, and draft response hints for your email inbox&quot;
+
+args:
+  inbox:
+    desc: &quot;Inbox address or ID (e.g. user@agentmail.to)&quot;
+    default: &quot;demo@agentmail.to&quot;
+  api_base:
+    desc: &quot;Email API base URL&quot;
+    default: &quot;https://api.agentmail.to/v0&quot;
+  max_emails:
+    desc: &quot;Maximum emails to process per run&quot;
+    default: &quot;20&quot;
+  auto_archive:
+    desc: &quot;Auto-archive promotional emails (true/false)&quot;
+    default: &quot;true&quot;
+
+steps:
+  # ── Step 1: Fetch unread emails from the inbox API ──
+  # For real usage: curl -s -H &quot;Authorization: Bearer $AGENTMAIL_API_KEY&quot; &quot;${api_base}/inboxes/${inbox}/messages?limit=${max_emails}&quot;
+  # Falling back to mock data for testing / when API is unavailable.
+  - id: fetch_emails
+    command: |
+      if [ -n &quot;$AGENTMAIL_API_KEY&quot; ] &amp;&amp; [ &quot;${api_base}&quot; != &quot;__mock__&quot; ]; then
+        curl -sf -H &quot;Authorization: Bearer $AGENTMAIL_API_KEY&quot; \
+          &quot;${api_base}/inboxes/${inbox}/messages?limit=${max_emails}&quot; 2&gt;/dev/null
+        if [ $? -ne 0 ]; then
+          echo &quot;API_UNAVAILABLE&quot; &gt;&amp;2
+        fi
+      fi
+      # If we got nothing from the API (or mock mode), generate mock data for testing
+      cat &lt;&lt;&#39;MOCK&#39;
+      {
+        &quot;messages&quot;: [
+          {&quot;id&quot;:&quot;m1&quot;,&quot;from&quot;:&quot;ceo@company.com&quot;,&quot;subject&quot;:&quot;URGENT: Board meeting moved to tomorrow&quot;,&quot;snippet&quot;:&quot;The board meeting has been rescheduled to tomorrow 9am. Please prepare your slides ASAP.&quot;,&quot;date&quot;:&quot;2026-02-04T08:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m2&quot;,&quot;from&quot;:&quot;alice@team.com&quot;,&quot;subject&quot;:&quot;Code review needed for PR #421&quot;,&quot;snippet&quot;:&quot;Hey, can you review my pull request when you get a chance? It&#39;s the auth refactor we discussed.&quot;,&quot;date&quot;:&quot;2026-02-04T07:30:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m3&quot;,&quot;from&quot;:&quot;noreply@newsletter.io&quot;,&quot;subject&quot;:&quot;🎉 50% off everything this week!&quot;,&quot;snippet&quot;:&quot;Don&#39;t miss our biggest sale of the year. Use code SAVE50 at checkout.&quot;,&quot;date&quot;:&quot;2026-02-04T06:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m4&quot;,&quot;from&quot;:&quot;hr@company.com&quot;,&quot;subject&quot;:&quot;Reminder: Submit timesheets by Friday&quot;,&quot;snippet&quot;:&quot;Please remember to submit your timesheets for this pay period by end of day Friday.&quot;,&quot;date&quot;:&quot;2026-02-03T16:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m5&quot;,&quot;from&quot;:&quot;mom@family.net&quot;,&quot;subject&quot;:&quot;Dinner Sunday?&quot;,&quot;snippet&quot;:&quot;Hi sweetie, would you like to come over for dinner this Sunday? Dad is making his famous lasagna.&quot;,&quot;date&quot;:&quot;2026-02-03T14:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m6&quot;,&quot;from&quot;:&quot;security@github.com&quot;,&quot;subject&quot;:&quot;[GitHub] A new sign-in from Chrome on Linux&quot;,&quot;snippet&quot;:&quot;We noticed a new sign-in to your account from Chrome on Linux.&quot;,&quot;date&quot;:&quot;2026-02-03T12:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m7&quot;,&quot;from&quot;:&quot;deals@store.com&quot;,&quot;subject&quot;:&quot;Your weekly deals are here!&quot;,&quot;snippet&quot;:&quot;Check out this week&#39;s top picks curated just for you. Free shipping on orders over $50.&quot;,&quot;date&quot;:&quot;2026-02-03T10:00:00Z&quot;,&quot;read&quot;:false},
+          {&quot;id&quot;:&quot;m8&quot;,&quot;from&quot;:&quot;boss@company.com&quot;,&quot;subject&quot;:&quot;Re: Q1 Planning - action items&quot;,&quot;snippet&quot;:&quot;Following up on our meeting. Please send me the updated roadmap by Wednesday.&quot;,&quot;date&quot;:&quot;2026-02-03T09:00:00Z&quot;,&quot;read&quot;:false}
+        ]
+      }
+      MOCK
+
+  # ── Step 2: Categorize emails using keyword heuristics ──
+  - id: categorize_emails
+    command: |
+      cat &gt; /tmp/inbox_zero_emails.json &lt;&lt;&#39;ENDINPUT&#39;
+      $fetch_emails.stdout
+      ENDINPUT
+
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json, re, sys
+
+      with open(&quot;/tmp/inbox_zero_emails.json&quot;) as f:
+          data = json.load(f)
+
+      messages = data.get(&quot;messages&quot;, data if isinstance(data, list) else [])
+
+      URGENT_KEYWORDS = r&quot;(urgent|asap|emergency|critical|immediately|deadline today|moved to tomorrow)&quot;
+      ACTION_KEYWORDS = r&quot;(action needed|action required|review needed|please send|please submit|follow.?up|can you|could you|by friday|by wednesday|by monday|by end of)&quot;
+      PROMO_KEYWORDS = r&quot;(unsubscribe|% off|sale|deals|newsletter|noreply|no-reply|marketing|checkout|free shipping|promo|coupon|discount)&quot;
+      PERSONAL_KEYWORDS = r&quot;(mom|dad|family|dinner|birthday|sweetie|honey|bro|sis)&quot;
+      FYI_KEYWORDS = r&quot;(fyi|notification|alert|sign.?in|logged in|update|reminder|noticed)&quot;
+
+      categorized = []
+      for msg in messages:
+          text = (msg.get(&quot;subject&quot;,&quot;&quot;) + &quot; &quot; + msg.get(&quot;snippet&quot;,&quot;&quot;) + &quot; &quot; + msg.get(&quot;from&quot;,&quot;&quot;)).lower()
+
+          if re.search(URGENT_KEYWORDS, text):
+              category = &quot;urgent&quot;
+              action = &quot;reply&quot;
+          elif re.search(PROMO_KEYWORDS, text):
+              category = &quot;promotional&quot;
+              action = &quot;archive&quot;
+          elif re.search(PERSONAL_KEYWORDS, text):
+              category = &quot;personal&quot;
+              action = &quot;none&quot;
+          elif re.search(ACTION_KEYWORDS, text):
+              category = &quot;action-needed&quot;
+              action = &quot;reply&quot;
+          elif re.search(FYI_KEYWORDS, text):
+              category = &quot;fyi&quot;
+              action = &quot;none&quot;
+          else:
+              category = &quot;fyi&quot;
+              action = &quot;none&quot;
+
+          # Build one-line summary
+          summary = msg.get(&quot;subject&quot;, &quot;(no subject)&quot;)
+          sender = msg.get(&quot;from&quot;, &quot;unknown&quot;)
+          short_sender = sender.split(&quot;@&quot;)[0] if &quot;@&quot; in sender else sender
+
+          categorized.append({
+              &quot;id&quot;: msg[&quot;id&quot;],
+              &quot;from&quot;: sender,
+              &quot;subject&quot;: msg.get(&quot;subject&quot;, &quot;&quot;),
+              &quot;category&quot;: category,
+              &quot;summary&quot;: f&quot;[{short_sender}] {summary}&quot;,
+              &quot;suggestedAction&quot;: action
+          })
+
+      print(json.dumps(categorized, indent=2))
+      PYEOF
+
+  # ── Step 3: Group by category and build structured report ──
+  - id: group_and_summarize
+    command: |
+      cat &gt; /tmp/inbox_zero_categorized.json &lt;&lt;&#39;ENDINPUT&#39;
+      $categorize_emails.stdout
+      ENDINPUT
+
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json
+
+      with open(&quot;/tmp/inbox_zero_categorized.json&quot;) as f:
+          items = json.load(f)
+
+      groups = {}
+      for item in items:
+          cat = item[&quot;category&quot;]
+          groups.setdefault(cat, []).append(item)
+
+      # Build counts
+      counts = {cat: len(emails) for cat, emails in groups.items()}
+      total = len(items)
+
+      # Identify promotional IDs for archiving
+      promo_ids = [e[&quot;id&quot;] for e in groups.get(&quot;promotional&quot;, [])]
+
+      # Build text summary
+      icons = {&quot;urgent&quot;:&quot;🔴&quot;,&quot;action-needed&quot;:&quot;🟡&quot;,&quot;fyi&quot;:&quot;🔵&quot;,&quot;promotional&quot;:&quot;📦&quot;,&quot;personal&quot;:&quot;💜&quot;}
+      labels = {&quot;urgent&quot;:&quot;Urgent&quot;,&quot;action-needed&quot;:&quot;Action Needed&quot;,&quot;fyi&quot;:&quot;FYI&quot;,&quot;promotional&quot;:&quot;Promotional&quot;,&quot;personal&quot;:&quot;Personal&quot;}
+      order = [&quot;urgent&quot;,&quot;action-needed&quot;,&quot;personal&quot;,&quot;fyi&quot;,&quot;promotional&quot;]
+
+      lines = [f&quot;📬 **Inbox Zero Helper — processed {total} emails**\n&quot;]
+      for cat in order:
+          emails = groups.get(cat, [])
+          if not emails:
+              continue
+          icon = icons.get(cat, &quot;📧&quot;)
+          label = labels.get(cat, cat)
+          lines.append(f&quot;{icon} **{label} ({len(emails)}):**&quot;)
+          for e in emails[:5]:
+              lines.append(f&quot;  • {e[&#39;summary&#39;]} → _{e[&#39;suggestedAction&#39;]}_&quot;)
+          if len(emails) &gt; 5:
+              lines.append(f&quot;  • ...and {len(emails)-5} more&quot;)
+          lines.append(&quot;&quot;)
+
+      result = {
+          &quot;counts&quot;: counts,
+          &quot;total&quot;: total,
+          &quot;promo_ids&quot;: promo_ids,
+          &quot;groups&quot;: groups,
+          &quot;summary_text&quot;: &quot;\n&quot;.join(lines)
+      }
+      print(json.dumps(result, indent=2))
+      PYEOF
+
+  # ── Step 4: Archive promotional emails (if enabled) ──
+  # In production, this would call: POST ${api_base}/inboxes/${inbox}/messages/archive
+  # with the list of promotional email IDs.
+  - id: archive_promotional
+    command: |
+      cat &gt; /tmp/inbox_zero_report.json &lt;&lt;&#39;ENDINPUT&#39;
+      $group_and_summarize.json
+      ENDINPUT
+
+      PROMO_IDS=$(python3 -c &quot;import json; d=json.load(open(&#39;/tmp/inbox_zero_report.json&#39;)); print(json.dumps(d.get(&#39;promo_ids&#39;,[])))&quot;)
+      PROMO_COUNT=$(echo &quot;$PROMO_IDS&quot; | python3 -c &quot;import sys,json; print(len(json.load(sys.stdin)))&quot;)
+
+      if [ &quot;${auto_archive}&quot; = &quot;true&quot; ] &amp;&amp; [ &quot;$PROMO_COUNT&quot; -gt 0 ]; then
+        # Production: curl -sf -X POST -H &quot;Authorization: Bearer $AGENTMAIL_API_KEY&quot; \
+        #   -H &quot;Content-Type: application/json&quot; \
+        #   -d &quot;{\&quot;ids\&quot;: $PROMO_IDS}&quot; \
+        #   &quot;${api_base}/inboxes/${inbox}/messages/archive&quot;
+        echo &quot;{\&quot;archived\&quot;: true, \&quot;count\&quot;: $PROMO_COUNT, \&quot;ids\&quot;: $PROMO_IDS}&quot;
+      else
+        echo &quot;{\&quot;archived\&quot;: false, \&quot;count\&quot;: 0, \&quot;ids\&quot;: []}&quot;
+      fi
+
+  # ── Step 5: Generate response hints for action-needed emails ──
+  - id: draft_hints
+    command: |
+      cat &gt; /tmp/inbox_zero_groups.json &lt;&lt;&#39;ENDINPUT&#39;
+      $group_and_summarize.json
+      ENDINPUT
+
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json
+
+      with open(&quot;/tmp/inbox_zero_groups.json&quot;) as f:
+          data = json.load(f)
+
+      action_emails = data.get(&quot;groups&quot;, {}).get(&quot;action-needed&quot;, [])
+      urgent_emails = data.get(&quot;groups&quot;, {}).get(&quot;urgent&quot;, [])
+
+      # Combine urgent + action-needed for response hints
+      needs_response = urgent_emails + action_emails
+
+      hints = []
+      for e in needs_response[:5]:
+          subject = e.get(&quot;subject&quot;, &quot;&quot;)
+          # Simple heuristic hint (LLM would generate actual draft text here)
+          if &quot;review&quot; in subject.lower():
+              hint = &quot;Acknowledge and provide timeline for review&quot;
+          elif &quot;meeting&quot; in subject.lower():
+              hint = &quot;Confirm attendance and ask for agenda/materials&quot;
+          elif &quot;send&quot; in subject.lower() or &quot;submit&quot; in subject.lower():
+              hint = &quot;Acknowledge deadline and confirm you&#39;ll deliver on time&quot;
+          elif &quot;follow&quot; in subject.lower():
+              hint = &quot;Provide requested update or status&quot;
+          else:
+              hint = &quot;Review and respond with appropriate action&quot;
+
+          hints.append({
+              &quot;id&quot;: e[&quot;id&quot;],
+              &quot;from&quot;: e.get(&quot;from&quot;,&quot;&quot;),
+              &quot;subject&quot;: subject,
+              &quot;response_hint&quot;: hint
+          })
+
+      print(json.dumps({&quot;drafts&quot;: hints, &quot;count&quot;: len(hints)}, indent=2))
+      PYEOF
+
+  # ── Step 6: Final output — combine everything into a report ──
+  - id: final_report
+    command: |
+      cat &gt; /tmp/inbox_zero_summary.json &lt;&lt;&#39;ENDINPUT&#39;
+      $group_and_summarize.json
+      ENDINPUT
+      cat &gt; /tmp/inbox_zero_archive.json &lt;&lt;&#39;ENDINPUT&#39;
+      $archive_promotional.json
+      ENDINPUT
+      cat &gt; /tmp/inbox_zero_drafts.json &lt;&lt;&#39;ENDINPUT&#39;
+      $draft_hints.json
+      ENDINPUT
+
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json
+
+      with open(&quot;/tmp/inbox_zero_summary.json&quot;) as f:
+          summary = json.load(f)
+      with open(&quot;/tmp/inbox_zero_archive.json&quot;) as f:
+          archive = json.load(f)
+      with open(&quot;/tmp/inbox_zero_drafts.json&quot;) as f:
+          drafts = json.load(f)
+
+      text = summary[&quot;summary_text&quot;]
+
+      if archive.get(&quot;archived&quot;) and archive.get(&quot;count&quot;, 0) &gt; 0:
+          text += f&quot;\n🗑️ Auto-archived {archive[&#39;count&#39;]} promotional emails\n&quot;
+
+      if drafts.get(&quot;count&quot;, 0) &gt; 0:
+          text += f&quot;\n✏️ **Response hints ({drafts[&#39;count&#39;]}):**\n&quot;
+          for d in drafts.get(&quot;drafts&quot;, []):
+              text += f&quot;  • [{d[&#39;from&#39;].split(&#39;@&#39;)[0]}] {d[&#39;subject&#39;]}: _{d[&#39;response_hint&#39;]}_\n&quot;
+
+      report = {
+          &quot;summary&quot;: text,
+          &quot;counts&quot;: summary[&quot;counts&quot;],
+          &quot;total&quot;: summary[&quot;total&quot;],
+          &quot;archived&quot;: archive,
+          &quot;drafts&quot;: drafts[&quot;drafts&quot;]
+      }
+      print(json.dumps(report, indent=2))
+      PYEOF
+
+  - id: smart-triage
+    stdin: $final_report.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are an executive assistant. Triage email efficiently and draft quick, appropriate replies.\n\nUSER: Review the inbox triage report below and enhance it:\n\n1. Verify email categorizations — fix any misclassified emails\n2. For each urgent/action-needed email, draft a concise reply (2-3 sentences)\n3. Identify any emails that look like phishing or spam that were missed\n4. Suggest which emails can be batch-handled vs need individual attention\n5. Provide a prioritized action list: what to handle first, what can wait\n\nKeep drafts professional and match the sender&#39;s tone.&quot;
+    env: { CLAWD_URL: &quot;http://127.0.0.1:3000&quot; }
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Categorize, summarize, and draft responses for your email inbox.</p>
+<h3>What It Does</h3>
+<ul><li>**Fetches** unread emails (3x daily)</li><li>**Categorizes** into urgent, action-needed, FYI, promotional, personal</li><li>**Auto-archives** promotional emails (optional)</li><li>**Drafts responses** for action-needed emails</li><li>**Sends summary** with priorities highlighted</li></ul>
+<h3>The Goal</h3>
+<p>Turn a messy inbox into actionable buckets. Know what needs attention NOW vs what can wait.</p>
+<h3>Requirements</h3>
+<ul><li>`email` capability (Gmail, Outlook, IMAP)</li><li>`llm-analysis` capability</li><li>`notifications` capability</li></ul>
+<h3>Configuration</h3>
+<div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`max_emails`</td><td>20</td><td>Emails to process per run</td></tr><tr><td>`auto_archive`</td><td>true</td><td>Archive promotional emails</td></tr><tr><td>`draft_responses`</td><td>true</td><td>Draft replies for action-needed</td></tr></tbody></table></div>
+<h3>Example Output</h3>
+<pre class="code-block"><code>📬 Inbox Summary
+
+🔴 Urgent (2):
+• Client contract expires tomorrow - needs signature
+• Server alert: Production DB at 95% capacity
+
+🟡 Action Needed (5):
+• Meeting request from Sarah for next week
+• PR review requested on auth-service
+• Invoice from AWS needs approval
+
+🔵 FYI (8):
+• Weekly product metrics report
+• Team standup notes
+• ...and 6 more
+
+🗑️ Auto-archived 12 promotional emails
+
+✏️ Drafted 3 responses (review in drafts folder)</code></pre>
+<h3>Author</h3>
+<p>**Cluka** 🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

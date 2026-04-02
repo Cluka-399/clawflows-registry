@@ -5,80 +5,329 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PR Newsjacking Bot — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>PR Newsjacking Bot</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>PR Newsjacking Bot</h1>
+        <p class="description">Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 */2 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Pr</span></div>
+        <div class="tag-row"><span class="pill">pr</span><span class="pill">news</span><span class="pill">journalists</span><span class="pill">media</span><span class="pill">thought-leadership</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install pr-newsjacking</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">messaging</span><span class="tag">pr</span><span class="tag">news</span><span class="tag">journalists</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">messaging</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Monitors breaking news in your industry</li><li>Drafts rapid expert commentary</li><li>Finds journalists who covered similar stories</li><li>Sends personalized pitches within hours</li></ul>
+<p>> "Journalists need expert sources. You become the expert who responds fastest."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. monitor_news</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. filter_relevant</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. Is it breaking/trending?</div></div><div class="step"><div class="step-title">4. Can we add expert commentary?</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. draft_commentary</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">7. 2-3 quotable sound bites</div></div><div class="step"><div class="step-title">8. Unique angle/insight</div></div><div class="step"><div class="step-title">9. What this means for the industry</div></div><div class="step"><div class="step-title">10. find_journalists</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">11. generate_pitch</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. send_pitches</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">13. alert_opportunities</div><div class="step-detail">message</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install pr-newsjacking</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">industry_keywords</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">expert_bio</div><div class="kv-meta">Your expert credentials for journalist pitches · required</div></div><div class="kv"><div class="kv-name">topics_of_expertise</div><div class="kv-meta">No description yet. · required</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 */2 * * *</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: pr newsjacking LLM: Uses prompt step for newsjacking pitch generation Monitor breaking news, collect context, find journalists, produce pitch ready data</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. search-news</div></div><div class="step"><div class="step-title">2. enrich-articles</div></div><div class="step"><div class="step-title">3. search-journalists</div></div><div class="step"><div class="step-title">4. compile-report</div></div><div class="step"><div class="step-title">5. generate-pitches</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: pr-newsjacking
+# LLM: Uses prompt step for newsjacking pitch generation
+# Monitor breaking news, collect context, find journalists, produce pitch-ready data
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;industry_keywords&quot;:&quot;AI developer tools&quot;,&quot;expert_bio&quot;:&quot;CTO with 10 years in devtools&quot;,&quot;topics_of_expertise&quot;:&quot;AI,developer experience,code generation&quot;}&#39;
+#
+# Requires: curl, jq
+# Env: BRAVE_API_KEY
+
+name: pr-newsjacking
+description: Monitor breaking news in your industry, collect context and journalist contacts for rapid newsjacking pitches
+
+args:
+  industry_keywords:
+    description: &quot;Keywords to monitor for breaking news&quot;
+  expert_bio:
+    description: &quot;Your expert credentials for journalist pitches&quot;
+    default: &quot;Industry expert&quot;
+  topics_of_expertise:
+    description: &quot;Comma-separated areas of expertise&quot;
+    default: &quot;technology&quot;
+  freshness:
+    description: &quot;News freshness filter (pd=past day, pw=past week)&quot;
+    default: &quot;pd&quot;
+  max_results:
+    description: &quot;Max news results to process&quot;
+    default: &quot;5&quot;
+
+steps:
+  - id: search-news
+    command: |
+      curl -s &quot;https://api.search.brave.com/res/v1/news/search&quot; \
+        -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+        -H &quot;Accept: application/json&quot; \
+        --data-urlencode &quot;q=${industry_keywords}&quot; \
+        --data-urlencode &quot;freshness=${freshness}&quot; \
+        --data-urlencode &quot;count=${max_results}&quot; \
+        -G \
+      | jq --argjson maxr &quot;${max_results}&quot; &#39;{
+          query: .query.original,
+          result_count: (.results | length),
+          articles: [.results[:$maxr] | .[] | {
+            title: .title,
+            url: .url,
+            description: .description,
+            source: .meta_url.hostname,
+            age: .age
+          }]
+        }&#39;
+
+  - id: enrich-articles
+    stdin: $search-news.stdout
+    command: |
+      cat &gt; /tmp/lb_nj_articles.json
+      count=$(jq &#39;.result_count&#39; /tmp/lb_nj_articles.json)
+      if [ &quot;$count&quot; = &quot;0&quot; ] || [ &quot;$count&quot; = &quot;null&quot; ]; then
+        echo &#39;{&quot;articles&quot;:[]}&#39;
+        rm -f /tmp/lb_nj_articles.json
+        exit 0
+      fi
+      # Fetch page content snippets for top 3 articles
+      jq -c &#39;.articles[:3][]&#39; /tmp/lb_nj_articles.json | while IFS= read -r article; do
+        url=$(echo &quot;$article&quot; | jq -r &#39;.url&#39;)
+        snippet=$(curl -s -L --max-time 8 &quot;$url&quot; 2&gt;/dev/null \
+          | sed &#39;s/&lt;script[^&gt;]*&gt;.*&lt;\/script&gt;//g; s/&lt;style[^&gt;]*&gt;.*&lt;\/style&gt;//g; s/&lt;[^&gt;]*&gt;//g&#39; \
+          | tr -s &#39;[:space:]&#39; &#39; &#39; \
+          | head -c 1200)
+        echo &quot;$article&quot; | jq --arg snippet &quot;$snippet&quot; &#39;. + {snippet: $snippet}&#39;
+      done &gt; /tmp/lb_nj_enriched.json
+      # Append remaining non-enriched
+      jq -c &#39;.articles[3:][]&#39; /tmp/lb_nj_articles.json 2&gt;/dev/null | while IFS= read -r article; do
+        echo &quot;$article&quot; | jq &#39;. + {snippet: &quot;&quot;}&#39;
+      done &gt;&gt; /tmp/lb_nj_enriched.json
+      jq -s &#39;{articles: .}&#39; /tmp/lb_nj_enriched.json
+      rm -f /tmp/lb_nj_articles.json /tmp/lb_nj_enriched.json
+
+  - id: search-journalists
+    command: |
+      # Save journalist data to temp file for compile-report, and also output it
+      curl -s &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+        -H &quot;Accept: application/json&quot; \
+        --data-urlencode &quot;q=${industry_keywords} journalist OR reporter OR editor site:twitter.com OR site:linkedin.com&quot; \
+        --data-urlencode &quot;count=5&quot; \
+        -G \
+      | jq &#39;{
+          journalists: [(.web.results // [])[:5] | .[] | {
+            title: .title,
+            url: .url,
+            description: (.description // &quot;&quot;),
+            source: .meta_url.hostname
+          }]
+        }&#39; | tee /tmp/lb_nj_journalists.json
+
+  - id: compile-report
+    stdin: $enrich-articles.stdout
+    command: |
+      cat &gt; /tmp/lb_nj_ctx.json
+      jq -n \
+        --arg keywords &quot;${industry_keywords}&quot; \
+        --arg bio &quot;${expert_bio}&quot; \
+        --arg expertise &quot;${topics_of_expertise}&quot; \
+        --slurpfile ctx /tmp/lb_nj_ctx.json \
+        --slurpfile journos /tmp/lb_nj_journalists.json \
+        &#39;{
+          workflow: &quot;pr-newsjacking&quot;,
+          keywords: $keywords,
+          expert_bio: $bio,
+          topics_of_expertise: ($expertise | split(&quot;,&quot;)),
+          news_articles: ($ctx[0].articles // []),
+          article_count: (($ctx[0].articles // []) | length),
+          journalist_leads: ($journos[0].journalists // []),
+          journalist_count: (($journos[0].journalists // []) | length),
+          timestamp: (now | todate)
+        }&#39;
+      rm -f /tmp/lb_nj_ctx.json /tmp/lb_nj_journalists.json
+
+  - id: generate-pitches
+    stdin: $compile-report.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a PR strategist specializing in newsjacking. Draft timely, compelling media pitches.\n\nUSER: Analyze the breaking news and journalist data for newsjacking opportunities.\n\nExpert credentials: ${expert_bio}\nAreas of expertise: ${topics_of_expertise}\n\nFor each news article:\n1. Rate newsjacking potential: HOT / WARM / PASS (based on relevance to expertise)\n2. For HOT articles, draft 2-3 quotable expert sound bites\n3. Explain the unique angle our expert brings\n\nFor each journalist lead:\n1. Draft a personalized pitch email referencing the HOT article and their beat\n2. Include the expert&#39;s sound bite as a teaser\n3. Keep pitches concise and newsworthy\n\nPrioritize speed — newsjacking has a short window.\n\nHere is the compiled report data (provided via stdin):&quot;
+    env: { CLAWD_URL: &quot;http://127.0.0.1:3000&quot; }
+
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Be the expert who responds fastest.</p>
+<h3>What It Does</h3>
+<ul><li>Monitors breaking news in your industry</li><li>Drafts rapid expert commentary</li><li>Finds journalists who covered similar stories</li><li>Sends personalized pitches within hours</li></ul>
+<p>> "Journalists need expert sources. You become the expert who responds fastest."</p>
+<h3>Requirements</h3>
+<ul><li>`web_search`, `web_fetch`, `email`, `messaging` capabilities</li><li>Expert bio and credentials</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

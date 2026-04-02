@@ -5,80 +5,415 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SEO Gap Assassin — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>SEO Gap Assassin</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Analyze competitors, find keywords they rank for that you don't, generate content briefs for the top gaps.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>SEO Gap Assassin</h1>
+        <p class="description">Analyze competitors, find keywords they rank for that you do not, generate content briefs for the top gaps.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 6 * * 1</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Seo</span></div>
+        <div class="tag-row"><span class="pill">seo</span><span class="pill">keywords</span><span class="pill">content-strategy</span><span class="pill">competitive-analysis</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install seo-gap-assassin</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">file_system</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">file_system</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>Analyzes your top 10 competitors</li><li>Extracts their ranking keywords</li><li>Identifies gaps where you&#39;re missing</li><li>Prioritizes by volume and difficulty</li><li>Generates content briefs for top 20 gaps</li></ol>
+<p>> "Cross-references with your existing content, identifies the gaps, and generates actionable briefs."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. get_competitor_keywords</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. get_your_keywords</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">3. find_gaps</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">4. At least 2 competitors rank</div></div><div class="step"><div class="step-title">5. You don&#39;t rank in top 50</div></div><div class="step"><div class="step-title">6. Search volume &gt; 100/month</div></div><div class="step"><div class="step-title">7. generate_briefs</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">8. Target keyword + related keywords</div></div><div class="step"><div class="step-title">9. Search intent analysis</div></div><div class="step"><div class="step-title">10. Recommended content format</div></div><div class="step"><div class="step-title">11. Outline with H2/H3 structure</div></div><div class="step"><div class="step-title">12. Competitor content analysis</div></div><div class="step"><div class="step-title">13. Unique angle to differentiate</div></div><div class="step"><div class="step-title">14. save_briefs</div><div class="step-detail">file_write</div></div><div class="step"><div class="step-title">15. alert_summary</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">16. step</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install seo-gap-assassin</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">your_domain</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">competitor_domains</div><div class="kv-meta">Top 10 competitors · required</div></div><div class="kv"><div class="kv-name">top_gaps_count</div><div class="kv-meta">No description yet. · default: 20</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 6 * * 1</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: seo gap assassin Analyze competitors&#39; content vs yours, find topic gaps, produce structured briefs. Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. your-pages</div></div><div class="step"><div class="step-title">2. competitor-pages</div></div><div class="step"><div class="step-title">3. save-your-pages</div></div><div class="step"><div class="step-title">4. find-gaps</div></div><div class="step"><div class="step-title">5. briefs</div><div class="step-detail">Create content covering this topic to close the gap</div></div><div class="step"><div class="step-title">6. llm_briefs</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. step</div></div><div class="step"><div class="step-title">11. step</div></div><div class="step"><div class="step-title">12. step</div></div><div class="step"><div class="step-title">13. step</div></div><div class="step"><div class="step-title">14. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: seo-gap-assassin
+# Analyze competitors&#39; content vs yours, find topic gaps, produce structured briefs.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;your_domain&quot;:&quot;example.com&quot;,&quot;competitors&quot;:&quot;competitor1.com,competitor2.com&quot;}&#39;
+#
+# Requires: curl, jq, bash
+#
+# NOTE: Without Ahrefs/SEMrush APIs, we use Brave Search to discover what
+# pages/topics each domain covers, then compare to find gaps.
+
+name: seo-gap-assassin
+description: &gt;
+  Analyze competitors, find content topics they cover that you don&#39;t,
+  and generate structured content gap reports.
+
+args:
+  your_domain:
+    description: &quot;Your domain (e.g. example.com)&quot;
+  competitors:
+    description: &quot;Comma-separated competitor domains (e.g. comp1.com,comp2.com)&quot;
+  top_gaps_count:
+    description: &quot;Number of top gaps to report&quot;
+    default: &quot;20&quot;
+
+steps:
+  # Step 1: Discover your domain&#39;s indexed pages/topics via Brave Search
+  - id: your-pages
+    command: |
+      domain=&quot;${your_domain}&quot;
+      tmpout=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpout&quot;
+
+      # Search for site pages across a few queries
+      for offset in 0 10; do
+        curl -sf &quot;https://api.search.brave.com/res/v1/web/search?q=site%3A${domain}&amp;count=10&amp;offset=${offset}&quot; \
+          -H &quot;Accept: application/json&quot; \
+          -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+          &gt; /tmp/lb_seo_your_raw.json 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; /tmp/lb_seo_your_raw.json
+
+        jq -c &#39;[.web.results[] // empty | {
+          title: .title,
+          url: .url,
+          description: (.description // &quot;&quot;)
+        }]&#39; /tmp/lb_seo_your_raw.json &gt; /tmp/lb_seo_your_batch.json 2&gt;/dev/null || echo &#39;[]&#39; &gt; /tmp/lb_seo_your_batch.json
+
+        jq -sc &#39;.[0] + .[1]&#39; &quot;$tmpout&quot; /tmp/lb_seo_your_batch.json &gt; /tmp/lb_seo_your_merged.json
+        mv /tmp/lb_seo_your_merged.json &quot;$tmpout&quot;
+        sleep 1
+      done
+
+      cat &quot;$tmpout&quot;
+      rm -f &quot;$tmpout&quot; /tmp/lb_seo_your_raw.json /tmp/lb_seo_your_batch.json
+
+  # Step 2: Discover competitor pages/topics via Brave Search
+  - id: competitor-pages
+    command: |
+      tmpout=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpout&quot;
+
+      for comp in $(echo &quot;${competitors}&quot; | tr &#39;,&#39; &#39;\n&#39;); do
+        comp=$(echo &quot;$comp&quot; | xargs)
+        [ -z &quot;$comp&quot; ] &amp;&amp; continue
+
+        for offset in 0 10; do
+          curl -sf &quot;https://api.search.brave.com/res/v1/web/search?q=site%3A${comp}&amp;count=10&amp;offset=${offset}&quot; \
+            -H &quot;Accept: application/json&quot; \
+            -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+            &gt; /tmp/lb_seo_comp_raw.json 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; /tmp/lb_seo_comp_raw.json
+
+          jq -c --arg comp &quot;$comp&quot; &#39;[.web.results[] // empty | {
+            competitor: $comp,
+            title: .title,
+            url: .url,
+            description: (.description // &quot;&quot;)
+          }]&#39; /tmp/lb_seo_comp_raw.json &gt; /tmp/lb_seo_comp_batch.json 2&gt;/dev/null || echo &#39;[]&#39; &gt; /tmp/lb_seo_comp_batch.json
+
+          jq -sc &#39;.[0] + .[1]&#39; &quot;$tmpout&quot; /tmp/lb_seo_comp_batch.json &gt; /tmp/lb_seo_comp_merged.json
+          mv /tmp/lb_seo_comp_merged.json &quot;$tmpout&quot;
+          sleep 1
+        done
+      done
+
+      cat &quot;$tmpout&quot;
+      rm -f &quot;$tmpout&quot; /tmp/lb_seo_comp_raw.json /tmp/lb_seo_comp_batch.json
+
+  # Step 3: Save your-pages to temp file for use in gap analysis
+  - id: save-your-pages
+    stdin: $your-pages.stdout
+    command: |
+      cat &gt; /tmp/lb_seo_gap_your.json
+      echo &#39;{&quot;saved&quot;:true}&#39;
+
+  # Step 4: Find content gaps — competitor pages/titles not covered by your domain
+  - id: find-gaps
+    stdin: $competitor-pages.stdout
+    command: |
+      cat &gt; /tmp/lb_seo_gap_comp.json
+
+      # Extract your title words as a &quot;coverage&quot; set
+      your_words=$(jq -r &#39;
+        [.[] | .title // &quot;&quot;] | map(
+          gsub(&quot;[^a-zA-Z0-9 ]&quot;; &quot; &quot;) | ascii_downcase | split(&quot; &quot;) | map(select(length &gt; 3))
+        ) | flatten | unique | join(&quot;,&quot;)
+      &#39; /tmp/lb_seo_gap_your.json 2&gt;/dev/null || echo &quot;&quot;)
+
+      top_n=&quot;${top_gaps_count}&quot;
+
+      # Find competitor pages whose title words have low overlap with yours
+      jq -c --arg your_words &quot;$your_words&quot; --arg your_domain &quot;${your_domain}&quot; --argjson top_n &quot;$top_n&quot; &#39;
+        ($your_words | split(&quot;,&quot;) | map(select(length &gt; 0)) | map({(.): true}) | add // {}) as $yours |
+        [.[] | 
+          ((.title // &quot;&quot;) | gsub(&quot;[^a-zA-Z0-9 ]&quot;; &quot; &quot;) | ascii_downcase | split(&quot; &quot;) | map(select(length &gt; 3))) as $words |
+          ($words | map(select($yours[.] == true)) | length) as $overlap |
+          ($words | length) as $total |
+          select($total &gt; 0) |
+          . + {
+            overlap_pct: (if $total &gt; 0 then ($overlap * 100 / $total) else 100 end),
+            unique_words: [$words[] | select($yours[.] != true)]
+          } |
+          select(.overlap_pct &lt; 40)
+        ] |
+        sort_by(.overlap_pct) |
+        .[0:$top_n] |
+        {
+          gap_count: length,
+          your_domain: $your_domain,
+          gaps: [.[] | {
+            competitor: .competitor,
+            title: .title,
+            url: .url,
+            description: .description,
+            overlap_pct: .overlap_pct,
+            unique_topics: (.unique_words | unique | .[0:10])
+          }]
+        }
+      &#39; /tmp/lb_seo_gap_comp.json
+      rm -f /tmp/lb_seo_gap_comp.json /tmp/lb_seo_gap_your.json
+
+  # Step 5: Generate structured gap data for each content gap
+  - id: briefs
+    stdin: $find-gaps.stdout
+    command: |
+      cat &gt; /tmp/lb_seo_gaps.json
+      jq -c &#39;
+        .gaps as $gaps |
+        {
+          gap_count: .gap_count,
+          your_domain: .your_domain,
+          briefs: [
+            $gaps[] | {
+              target_topic: .title,
+              competitor: .competitor,
+              competitor_url: .url,
+              competitor_description: .description,
+              suggested_keywords: .unique_topics,
+              overlap_pct: .overlap_pct,
+              action: &quot;Create content covering this topic to close the gap&quot;
+            }
+          ]
+        }
+      &#39; /tmp/lb_seo_gaps.json
+      rm -f /tmp/lb_seo_gaps.json
+
+  # Step 5b: Use LLM to expand gap data into full content briefs
+  - id: llm_briefs
+    stdin: $briefs.stdout
+    command: |
+      cat &gt; /tmp/lb_seo_llm_input.json
+      DATA=$(cat /tmp/lb_seo_llm_input.json)
+      llm_task.invoke &lt;&lt;PROMPT
+      You are an SEO content strategist. Given these content gaps between ${your_domain} and its competitors:
+
+      $DATA
+
+      For each gap (top 5 max), generate a full content brief:
+      - target_title: SEO-optimized title
+      - search_intent: informational/commercial/transactional
+      - recommended_format: blog post/guide/comparison/tutorial
+      - outline: array of H2/H3 headings
+      - unique_angle: what makes this different from the competitor&#39;s version
+      - estimated_word_count: number
+      - priority: HIGH/MEDIUM/LOW based on gap score and keyword value
+
+      Return JSON: { &quot;content_briefs&quot;: [...] }
+      PROMPT
+      rm -f /tmp/lb_seo_llm_input.json
+    env:
+      CLAWD_URL: &quot;http://localhost:1691&quot;
+
+  # Step 6: Summary report with AI-generated content briefs
+  - id: report
+    stdin: $llm_briefs.stdout
+    command: |
+      jq -r &#39;
+        &quot;🎯 **SEO Gap Analysis Complete**\n\n&quot; +
+        if (.content_briefs | length) == 0 then
+          &quot;No significant gaps found — your content covers competitor topics well!&quot;
+        else
+          &quot;**AI-Generated Content Briefs:**\n\n&quot; +
+          ([.content_briefs[:5][] |
+            &quot;### \(.priority // &quot;—&quot;) | \(.target_title)\n&quot; +
+            &quot;  Intent: \(.search_intent) | Format: \(.recommended_format)\n&quot; +
+            &quot;  Word count: ~\(.estimated_word_count)\n&quot; +
+            &quot;  Unique angle: \(.unique_angle)\n&quot; +
+            &quot;  Outline:\n&quot; +
+            ([.outline[]? | &quot;    - &quot; + .] | join(&quot;\n&quot;))
+          ] | join(&quot;\n\n&quot;))
+        end
+      &#39;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Find keywords your competitors rank for that you don't. Get actionable content briefs.</p>
+<h3>What It Does</h3>
+<ol><li>Analyzes your top 10 competitors</li><li>Extracts their ranking keywords</li><li>Identifies gaps where you&#39;re missing</li><li>Prioritizes by volume and difficulty</li><li>Generates content briefs for top 20 gaps</li></ol>
+<p>> "Cross-references with your existing content, identifies the gaps, and generates actionable briefs."</p>
+<h3>Requirements</h3>
+<ul><li>`web_search`, `web_fetch`, `file_system` capabilities</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

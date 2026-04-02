@@ -3,52 +3,321 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personal CRM — ClawFlows</title>
+  <title>Personal Crm — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
-    h1 { margin: 1rem 0 0.5rem; font-size: 2rem; }
-    .description { color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem; }
-    .meta { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
-    .tag { background: var(--bg-card); border: 1px solid var(--border); padding: 0.3rem 0.8rem; border-radius: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
-    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
-    pre { background: #12121e; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #c0c0d0; }
-    code { font-family: 'JetBrains Mono', monospace; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
+      margin-bottom: 1.5rem;
+    }
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="/" class="back-link">← Back to ClawFlows</a>
-    <h1>Personal CRM</h1>
-    <p class="description">Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups</p>
-    <div class="meta">
-      <span class="tag">v1.0.0</span>
-      <span class="tag">by cluka</span>
-      <span class="tag">productivity</span>
-      <span class="tag">networking</span>
-      <span class="tag">email</span>
+    <a href="../" class="back-link">← All Automations</a>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Personal Crm</h1>
+        <p class="description">Scan emails and calendar to find contacts you haven&#39;t reached out to recently, then draft follow-ups</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">productivity</span><span class="pill">networking</span><span class="pill">email</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install personal-crm</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">agentmail</span><span class="tag">caldav-calendar</span><span class="tag">remind-me</span><span class="tag">email</span><span class="tag">calendar</span><span class="tag">cron</span>
+        </div>
+        
+      </aside>
     </div>
-    <div class="card">
-      <h2>Quick Start</h2>
-      <pre><code>lobster run --file workflow.yaml</code></pre>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>**Scans email history** — finds contacts you&#39;ve communicated with</li><li>**Checks calendar** — identifies people you&#39;ve met recently</li><li>**Finds gaps** — surfaces contacts going cold (no interaction in X days)</li><li>**Drafts follow-ups** — generates personalized reach-out messages</li></ol>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-contacts</div></div><div class="step"><div class="step-title">2. fetch-recent-emails</div></div><div class="step"><div class="step-title">3. find-stale-contacts</div></div><div class="step"><div class="step-title">4. report</div></div></div>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">contacts_file</div><div class="kv-meta">Path to JSON file with contacts [{name, email, relationship, notes}]</div></div><div class="kv"><div class="kv-name">stale_days</div><div class="kv-meta">Days without contact before flagging as stale · default: 14</div></div><div class="kv"><div class="kv-name">inbox_id</div><div class="kv-meta">AgentMail inbox ID for scanning sent/received emails</div></div><div class="kv"><div class="kv-name">agentmail_api_key</div><div class="kv-meta">AgentMail API key</div></div></div>
+        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
+  stale_days: 30          # Days without contact before flagging
+  max_suggestions: 5      # Max follow-ups to suggest per run</code></pre>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        
+        <p>Runs weekly on Monday mornings (<code>0 9 * * 1</code>).</p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: personal crm Scans recent emails and calendar events to find contacts going cold, then drafts follow up messages for review.</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. load-contacts</div></div><div class="step"><div class="step-title">2. fetch-recent-emails</div></div><div class="step"><div class="step-title">3. find-stale-contacts</div></div><div class="step"><div class="step-title">4. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: personal-crm
+# Scans recent emails and calendar events to find contacts going cold,
+# then drafts follow-up messages for review.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{
+#     &quot;contacts_file&quot;: &quot;/path/to/contacts.json&quot;,
+#     &quot;stale_days&quot;: &quot;14&quot;,
+#     &quot;inbox_id&quot;: &quot;your-inbox-id&quot;,
+#     &quot;agentmail_api_key&quot;: &quot;$AGENTMAIL_API_KEY&quot;
+#   }&#39;
+#
+# Contacts file format (JSON array):
+#   [{&quot;name&quot;:&quot;Alice&quot;,&quot;email&quot;:&quot;alice@co.com&quot;,&quot;relationship&quot;:&quot;investor&quot;,&quot;notes&quot;:&quot;Met at YC demo day&quot;}]
+#
+# Requires: jq, curl, date (GNU coreutils)
+
+name: personal-crm
+description: Find contacts going cold and draft follow-ups
+
+args:
+  contacts_file:
+    description: &quot;Path to JSON file with contacts [{name, email, relationship, notes}]&quot;
+  stale_days:
+    description: &quot;Days without contact before flagging as stale&quot;
+    default: &quot;14&quot;
+  inbox_id:
+    description: &quot;AgentMail inbox ID for scanning sent/received emails&quot;
+  agentmail_api_key:
+    description: &quot;AgentMail API key&quot;
+
+steps:
+  - id: load-contacts
+    command: |
+      if [ ! -f &quot;${contacts_file}&quot; ]; then
+        echo &#39;[]&#39;
+        exit 1
+      fi
+      cat &quot;${contacts_file}&quot;
+
+  - id: fetch-recent-emails
+    command: |
+      # Fetch recent emails from inbox
+      curl -s -H &quot;Authorization: Bearer ${agentmail_api_key}&quot; \
+        &quot;https://api.agentmail.to/v0/inboxes/${inbox_id}/messages?limit=100&quot; \
+        | jq -c &#39;[.messages[]? | {
+            from: .from,
+            to: (.to // []),
+            date: .date,
+            subject: .subject
+          }]&#39;
+
+  - id: find-stale-contacts
+    stdin: $load-contacts.stdout
+    command: |
+      cat &gt; /tmp/crm_contacts.json
+      echo &#39;${{ fetch-recent-emails.stdout }}&#39; &gt; /tmp/crm_emails.json
+      
+      stale=${stale_days}
+      cutoff_ts=$(date -d &quot;-${stale} days&quot; +%s 2&gt;/dev/null || date -v-${stale}d +%s)
+      
+      jq -c --argjson cutoff &quot;$cutoff_ts&quot; --slurpfile emails /tmp/crm_emails.json &#39;
+        ($emails[0] // []) as $msgs |
+        [.[] | . as $contact |
+          # Find most recent email involving this contact
+          ($msgs | map(
+            select(
+              (.from // &quot;&quot; | ascii_downcase | contains($contact.email | ascii_downcase)) or
+              (.to[]? // &quot;&quot; | ascii_downcase | contains($contact.email | ascii_downcase))
+            )
+          ) | sort_by(.date) | last // null) as $last_email |
+          
+          # Check if stale
+          (if $last_email then
+            ($last_email.date | sub(&quot;\\.[0-9]+&quot;; &quot;&quot;) | sub(&quot;Z$&quot;; &quot;+00:00&quot;) | fromdate) &lt; $cutoff
+          else
+            true
+          end) as $is_stale |
+          
+          select($is_stale) |
+          . + {
+            last_contact: (if $last_email then $last_email.date else &quot;never&quot; end),
+            last_subject: (if $last_email then $last_email.subject else null end)
+          }
+        ] | sort_by(.last_contact)
+      &#39; /tmp/crm_contacts.json
+      
+      rm -f /tmp/crm_contacts.json /tmp/crm_emails.json
+
+  - id: report
+    stdin: $find-stale-contacts.stdout
+    command: |
+      cat &gt; /tmp/crm_stale.json
+      jq -r &#39;
+        if length == 0 then
+          &quot;✅ All contacts are fresh! No follow-ups needed.&quot;
+        else
+          &quot;📇 \(length) contact(s) going cold (&gt;\(env.stale_days // &quot;14&quot;) days):\n&quot; +
+          ([.[] |
+            &quot;👤 **\(.name)** (\(.relationship // &quot;contact&quot;))\n&quot; +
+            &quot;   📧 \(.email)\n&quot; +
+            &quot;   Last contact: \(.last_contact)&quot; +
+            (if .last_subject then &quot; — \(.last_subject)&quot; else &quot;&quot; end) +
+            (if .notes then &quot;\n   📝 \(.notes)&quot; else &quot;&quot; end)
+          ] | join(&quot;\n\n&quot;)) +
+          &quot;\n\n💡 Tip: Reply to this with follow-up drafts for your agent to send.&quot;
+        end
+      &#39; /tmp/crm_stale.json
+      rm -f /tmp/crm_stale.json
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups.</p>
+<h3>What It Does</h3>
+<ol><li>**Scans email history** — finds contacts you&#39;ve communicated with</li><li>**Checks calendar** — identifies people you&#39;ve met recently</li><li>**Finds gaps** — surfaces contacts going cold (no interaction in X days)</li><li>**Drafts follow-ups** — generates personalized reach-out messages</li></ol>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`email`</td><td>agentmail</td></tr><tr><td>`calendar`</td><td>caldav-calendar</td></tr><tr><td>`cron`</td><td>built-in scheduler</td></tr></tbody></table></div>
+<h3>Configuration</h3>
+<pre class="code-block"><code data-lang="yaml">config:
+  stale_days: 30          # Days without contact before flagging
+  max_suggestions: 5      # Max follow-ups to suggest per run</code></pre>
+<h3>Schedule</h3>
+<p>Runs weekly on Monday mornings (<code>0 9 * * 1</code>).</p>
+<h3>Install</h3>
+<pre class="code-block"><code data-lang="bash">lobster install personal-crm</code></pre></section>
+
+    <div class="footer">
+      <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
     </div>
   </div>
 </body>

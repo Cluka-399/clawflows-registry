@@ -5,80 +5,494 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Support-to-Content Pipeline — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Support-to-Content Pipeline</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Analyze support tickets for patterns, generate help articles and blog posts from common questions.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Support-to-Content Pipeline</h1>
+        <p class="description">Analyze support tickets for patterns, generate help articles and blog posts from common questions.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 9 * * 1</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Content</span></div>
+        <div class="tag-row"><span class="pill">support</span><span class="pill">content</span><span class="pill">documentation</span><span class="pill">customer-success</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install support-to-content</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">file_system</span><span class="tag">messaging</span><span class="tag">support</span><span class="tag">content</span><span class="tag">documentation</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">file_system</span><span class="tag">messaging</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Analyzes support tickets for patterns</li><li>Identifies top questions and frustrations</li><li>Generates content briefs for help articles and blog posts</li><li>Prioritizes by support load reduction potential</li></ul>
+<p>> "40% of tickets mention confusion about X feature. Here's a tutorial draft that addresses the top 5 misunderstandings."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. load_tickets</div><div class="step-detail">file_read</div></div><div class="step"><div class="step-title">2. analyze_patterns</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. Most common questions (with count)</div></div><div class="step"><div class="step-title">4. Most common frustrations</div></div><div class="step"><div class="step-title">5. Feature confusion patterns</div></div><div class="step"><div class="step-title">6. Recurring technical issues</div></div><div class="step"><div class="step-title">7. prioritize_content</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">8. Frequency (how often asked)</div></div><div class="step"><div class="step-title">9. Impact (reduces support load)</div></div><div class="step"><div class="step-title">10. SEO potential (others searching this?)</div></div><div class="step"><div class="step-title">11. generate_briefs</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. Help article (if how-to)</div></div><div class="step"><div class="step-title">13. Blog post (if conceptual)</div></div><div class="step"><div class="step-title">14. Product improvement (if UX issue)</div></div><div class="step"><div class="step-title">15. save_briefs</div><div class="step-detail">file_write</div></div><div class="step"><div class="step-title">16. alert_summary</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">17. {{topic}} ({{count}} tickets)</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install support-to-content</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">support_data_path</div><div class="kv-meta">Path to support tickets export (CSV/JSON) · required</div></div><div class="kv"><div class="kv-name">min_occurrences</div><div class="kv-meta">Minimum times a question must appear · default: 3</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 9 * * 1</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses llm task.invoke for content brief enhancement</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. fetch_issues</div></div><div class="step"><div class="step-title">2. save_issues</div></div><div class="step"><div class="step-title">3. word_frequencies</div></div><div class="step"><div class="step-title">4. bigram_frequencies</div></div><div class="step"><div class="step-title">5. label_clusters</div></div><div class="step"><div class="step-title">6. topic_clusters</div></div><div class="step"><div class="step-title">7. content_opportunities</div></div><div class="step"><div class="step-title">8. generate_briefs</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. step</div></div><div class="step"><div class="step-title">11. step</div></div><div class="step"><div class="step-title">12. step</div></div><div class="step"><div class="step-title">13. step</div></div><div class="step"><div class="step-title">14. step</div></div><div class="step"><div class="step-title">15. enhance_briefs</div></div><div class="step"><div class="step-title">16. summary</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses llm_task.invoke for content brief enhancement
+
+name: &quot;Support-to-Content Pipeline&quot;
+description: &gt;
+  Analyze support tickets (GitHub issues as proxy) for patterns,
+  identify common questions via word frequency and topic clustering,
+  and produce content briefs for help articles and blog posts.
+
+args:
+  repo:
+    desc: &quot;GitHub repo in owner/repo format (issues used as support ticket proxy)&quot;
+    default: &quot;vercel/next.js&quot;
+  label:
+    desc: &quot;Issue label to filter (e.g. bug, question). Empty = all issues&quot;
+    default: &quot;&quot;
+  max_issues:
+    desc: &quot;Maximum number of issues to fetch&quot;
+    default: &quot;100&quot;
+  min_occurrences:
+    desc: &quot;Minimum times a topic must appear to be included&quot;
+    default: &quot;3&quot;
+  output_dir:
+    desc: &quot;Directory to write content briefs&quot;
+    default: &quot;/tmp/support-to-content&quot;
+
+steps:
+  # ── Step 1: Fetch issues from GitHub ──────────────────────────────
+  - id: fetch_issues
+    command: |
+      LABEL_PARAM=&quot;&quot;
+      if [ -n &quot;${label}&quot; ]; then
+        LABEL_PARAM=&quot;&amp;labels=${label}&quot;
+      fi
+      curl -sf \
+        -H &quot;Accept: application/vnd.github+json&quot; \
+        &quot;https://api.github.com/repos/${repo}/issues?state=all&amp;per_page=${max_issues}&amp;sort=created&amp;direction=desc${LABEL_PARAM}&quot; \
+      | jq &#39;[.[] | select(.pull_request == null) | {
+          number: .number,
+          title: .title,
+          body: ((.body // &quot;&quot;) | .[0:500]),
+          labels: [.labels[].name],
+          created_at: .created_at,
+          comments: .comments,
+          state: .state
+        }]&#39;
+
+  # ── Step 2: Save issues to temp file for multi-step processing ────
+  - id: save_issues
+    command: |
+      cat &gt; /tmp/stc_issues.json
+      echo &#39;{&quot;saved&quot;:true,&quot;count&quot;:&#39;$(jq length /tmp/stc_issues.json)&#39;}&#39;
+    stdin: &quot;$fetch_issues.json&quot;
+
+  # ── Step 3: Extract text and compute word frequencies ─────────────
+  - id: word_frequencies
+    command: |
+      jq -r &#39;.[].title&#39; /tmp/stc_issues.json \
+      | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39; \
+      | tr -cs &#39;[:alpha:]&#39; &#39;\n&#39; \
+      | grep -v -E &#39;^(.{0,2}|the|and|for|with|this|that|from|not|are|but|have|has|was|were|been|will|would|could|should|can|does|did|its|you|your|our|when|how|what|why|who|which|into|also|just|than|then|them|they|their|there|here|some|any|all|each|about|after|before|between|such|only|other|more|most|very|much|over|like|use|using|used|get|set|next|new|error|issue|bug|feat|fix|add|work|working|make|need|try|file|page|app|https|com|www)$&#39; \
+      | sort | uniq -c | sort -rn \
+      | head -80 \
+      | awk &#39;{printf &quot;{\&quot;word\&quot;:\&quot;%s\&quot;,\&quot;count\&quot;:%d}\n&quot;,$2,$1}&#39; \
+      | jq -s &#39;.&#39;
+
+  # ── Step 4: Extract bigrams (two-word phrases) for better topics ──
+  - id: bigram_frequencies
+    command: |
+      jq -r &#39;.[].title&#39; /tmp/stc_issues.json \
+      | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39; \
+      | sed &#39;s/[^a-z ]/ /g&#39; \
+      | awk &#39;{
+          for (i=1; i&lt;NF; i++) {
+            w1=$i; w2=$(i+1)
+            if (length(w1)&gt;2 &amp;&amp; length(w2)&gt;2)
+              print w1&quot; &quot;w2
+          }
+        }&#39; \
+      | sort | uniq -c | sort -rn \
+      | awk &#39;$1 &gt;= 2 {printf &quot;{\&quot;bigram\&quot;:\&quot;%s %s\&quot;,\&quot;count\&quot;:%d}\n&quot;,$2,$3,$1}&#39; \
+      | head -40 \
+      | jq -s &#39;.&#39;
+
+  # ── Step 5: Label-based topic clustering ──────────────────────────
+  - id: label_clusters
+    command: |
+      python3 -c &quot;
+      import json
+      with open(&#39;/tmp/stc_issues.json&#39;) as f:
+          issues = json.load(f)
+      from collections import Counter
+      label_counts = Counter()
+      label_samples = {}
+      for iss in issues:
+          lbl = iss[&#39;labels&#39;][0] if iss[&#39;labels&#39;] else &#39;unlabeled&#39;
+          label_counts[lbl] += 1
+          if lbl not in label_samples:
+              label_samples[lbl] = []
+          if len(label_samples[lbl]) &lt; 3:
+              label_samples[lbl].append(iss[&#39;title&#39;])
+      result = [{&#39;label&#39;: l, &#39;count&#39;: c, &#39;sample_titles&#39;: label_samples.get(l,[])}
+                for l, c in label_counts.most_common()]
+      print(json.dumps(result, indent=2))
+      &quot;
+
+  # ── Step 6: Keyword-based topic detection and clustering ──────────
+  - id: topic_clusters
+    command: |
+      python3 -c &quot;
+      import json, sys, re
+      from collections import Counter
+
+      with open(&#39;/tmp/stc_issues.json&#39;) as f:
+          issues = json.load(f)
+
+      # Extract title words
+      word_issues = {}
+      for issue in issues:
+          title = issue[&#39;title&#39;].lower()
+          words = set(re.findall(r&#39;[a-z]{3,}&#39;, title))
+          stopwords = {&#39;the&#39;,&#39;and&#39;,&#39;for&#39;,&#39;with&#39;,&#39;this&#39;,&#39;that&#39;,&#39;from&#39;,&#39;not&#39;,&#39;are&#39;,&#39;but&#39;,
+                       &#39;have&#39;,&#39;has&#39;,&#39;was&#39;,&#39;were&#39;,&#39;been&#39;,&#39;will&#39;,&#39;would&#39;,&#39;could&#39;,&#39;should&#39;,
+                       &#39;can&#39;,&#39;does&#39;,&#39;did&#39;,&#39;its&#39;,&#39;you&#39;,&#39;your&#39;,&#39;when&#39;,&#39;how&#39;,&#39;what&#39;,&#39;why&#39;,
+                       &#39;who&#39;,&#39;which&#39;,&#39;into&#39;,&#39;also&#39;,&#39;just&#39;,&#39;than&#39;,&#39;then&#39;,&#39;them&#39;,&#39;they&#39;,
+                       &#39;their&#39;,&#39;there&#39;,&#39;here&#39;,&#39;some&#39;,&#39;any&#39;,&#39;all&#39;,&#39;each&#39;,&#39;about&#39;,&#39;after&#39;,
+                       &#39;before&#39;,&#39;between&#39;,&#39;such&#39;,&#39;only&#39;,&#39;other&#39;,&#39;more&#39;,&#39;most&#39;,&#39;very&#39;,
+                       &#39;much&#39;,&#39;over&#39;,&#39;like&#39;,&#39;use&#39;,&#39;using&#39;,&#39;used&#39;,&#39;get&#39;,&#39;set&#39;,&#39;next&#39;,
+                       &#39;error&#39;,&#39;issue&#39;,&#39;bug&#39;,&#39;feat&#39;,&#39;fix&#39;,&#39;add&#39;,&#39;work&#39;,&#39;working&#39;,&#39;make&#39;,
+                       &#39;need&#39;,&#39;try&#39;,&#39;file&#39;,&#39;page&#39;,&#39;app&#39;,&#39;https&#39;,&#39;com&#39;,&#39;www&#39;,&#39;new&#39;}
+          words -= stopwords
+          for w in words:
+              word_issues.setdefault(w, []).append(issue[&#39;number&#39;])
+
+      MIN_OCC = int(${min_occurrences})
+      topic_words = {w: nums for w, nums in word_issues.items() if len(nums) &gt;= MIN_OCC}
+
+      # Group overlapping issue sets into clusters
+      clusters = []
+      for word, nums in sorted(topic_words.items(), key=lambda x: -len(x[1])):
+          num_set = set(nums)
+          merged = False
+          for cluster in clusters:
+              overlap = len(num_set &amp; cluster[&#39;issue_nums&#39;]) / max(len(num_set), len(cluster[&#39;issue_nums&#39;]))
+              if overlap &gt; 0.4:
+                  cluster[&#39;keywords&#39;].append(word)
+                  cluster[&#39;issue_nums&#39;] |= num_set
+                  merged = True
+                  break
+          if not merged:
+              clusters.append({&#39;keywords&#39;: [word], &#39;issue_nums&#39;: num_set})
+
+      # Build output with sample titles
+      issue_map = {i[&#39;number&#39;]: i[&#39;title&#39;] for i in issues}
+      result = []
+      for c in sorted(clusters, key=lambda x: -len(x[&#39;issue_nums&#39;])):
+          nums = sorted(c[&#39;issue_nums&#39;])
+          result.append({
+              &#39;topic&#39;: &#39; / &#39;.join(c[&#39;keywords&#39;][:3]),
+              &#39;keywords&#39;: c[&#39;keywords&#39;][:5],
+              &#39;issue_count&#39;: len(nums),
+              &#39;sample_titles&#39;: [issue_map[n] for n in nums[:3] if n in issue_map],
+          })
+      print(json.dumps(result[:15], indent=2))
+      &quot;
+
+  # ── Step 7: Build prioritized content opportunities ───────────────
+  - id: content_opportunities
+    command: |
+      echo &#39;$topic_clusters.stdout&#39; &gt; /tmp/stc_topics.json
+      python3 -c &quot;
+      import json
+
+      with open(&#39;/tmp/stc_topics.json&#39;) as f:
+          topics = json.load(f)
+      opportunities = []
+      for i, t in enumerate(topics):
+          score = t[&#39;issue_count&#39;] * (1 + 0.2 * len(t.get(&#39;keywords&#39;, [])))
+          content_type = &#39;help_article&#39;
+          kws = [k.lower() for k in t.get(&#39;keywords&#39;, [])]
+          if any(k in kws for k in [&#39;concept&#39;,&#39;understand&#39;,&#39;why&#39;,&#39;explain&#39;,&#39;difference&#39;]):
+              content_type = &#39;blog_post&#39;
+          elif any(k in kws for k in [&#39;crash&#39;,&#39;broken&#39;,&#39;fail&#39;,&#39;regression&#39;]):
+              content_type = &#39;product_improvement&#39;
+          opportunities.append({
+              &#39;rank&#39;: i + 1,
+              &#39;topic&#39;: t[&#39;topic&#39;],
+              &#39;keywords&#39;: t.get(&#39;keywords&#39;, []),
+              &#39;issue_count&#39;: t[&#39;issue_count&#39;],
+              &#39;score&#39;: round(score, 1),
+              &#39;content_type&#39;: content_type,
+              &#39;sample_titles&#39;: t.get(&#39;sample_titles&#39;, []),
+          })
+      opportunities.sort(key=lambda x: -x[&#39;score&#39;])
+      for i, o in enumerate(opportunities):
+          o[&#39;rank&#39;] = i + 1
+      print(json.dumps(opportunities[:10], indent=2))
+      &quot;
+
+  # ── Step 8: Generate content briefs as markdown files ─────────────
+  - id: generate_briefs
+    command: |
+      mkdir -p ${output_dir}
+      echo &#39;$content_opportunities.stdout&#39; &gt; /tmp/stc_opportunities.json
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json, os, re
+
+      output_dir = os.environ.get(&#39;OUTPUT_DIR&#39;, &#39;/tmp/support-to-content&#39;)
+      with open(&#39;/tmp/stc_opportunities.json&#39;) as f:
+          opps = json.load(f)
+
+      briefs = []
+      for opp in opps:
+          slug = re.sub(r&#39;[^a-z0-9]+&#39;, &#39;-&#39;, opp[&#39;topic&#39;].lower()).strip(&#39;-&#39;)[:50]
+          filename = slug + &#39;.md&#39;
+          filepath = os.path.join(output_dir, filename)
+          kw_list = &#39;\n&#39;.join(&#39;- &#39; + k for k in opp[&#39;keywords&#39;])
+          sample_list = &#39;\n&#39;.join(&#39;- &#39; + t for t in opp[&#39;sample_titles&#39;])
+          primary_kw = opp[&#39;keywords&#39;][0] if opp[&#39;keywords&#39;] else opp[&#39;topic&#39;]
+          intent = &#39;informational&#39; if opp[&#39;content_type&#39;] == &#39;blog_post&#39; else &#39;transactional&#39;
+          ct = opp[&#39;content_type&#39;].replace(&#39;_&#39;, &#39; &#39;).title()
+
+          brief = f&quot;&quot;&quot;# Content Brief: {opp[&#39;topic&#39;].title()}
+
+      ## Metadata
+      - **Rank:** {opp[&#39;rank&#39;]}
+      - **Content Type:** {ct}
+      - **Priority Score:** {opp[&#39;score&#39;]}
+      - **Based on:** {opp[&#39;issue_count&#39;]} support tickets
+
+      ## Keywords
+      {kw_list}
+
+      ## Sample Questions from Users
+      {sample_list}
+
+      ## Suggested Outline
+      &lt;!-- Enhanced by prompt step (enhance_briefs) --&gt;
+      1. Introduction / Problem Statement
+      2. Root Cause or Explanation
+      3. Step-by-Step Solution
+      4. Common Pitfalls
+      5. Related Resources
+
+      ## SEO Notes
+      - Target keyword: &quot;{primary_kw}&quot;
+      - Search intent: {intent}
+      &quot;&quot;&quot;
+          with open(filepath, &#39;w&#39;) as f:
+              f.write(brief)
+          briefs.append({&#39;file&#39;: filename, &#39;topic&#39;: opp[&#39;topic&#39;], &#39;type&#39;: opp[&#39;content_type&#39;]})
+
+      print(json.dumps(briefs, indent=2))
+      PYEOF
+    env:
+      OUTPUT_DIR: &quot;${output_dir}&quot;
+
+  # ── Step 8b: Enhance briefs with LLM analysis ──────────────
+  - id: enhance_briefs
+    stdin: $content_opportunities.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a technical content strategist. Turn support patterns into high-ranking help content.\n\nUSER: Enhance these content briefs derived from support ticket analysis for ${repo}.\n\nFor each content opportunity:\n1. Write a detailed article outline (5-7 sections with bullet points)\n2. Expand the keyword list with long-tail SEO variations\n3. Suggest a compelling title (optimize for search intent)\n4. Estimate search volume potential (high/medium/low)\n5. Recommend content format (tutorial, explainer, troubleshooting guide, comparison)\n6. Identify related topics to interlink\n\nPrioritize by: issue frequency × search potential.&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+  # ── Step 9: Final summary report ─────────────────────────────────
+  - id: summary
+    command: |
+      ISSUE_COUNT=$(jq length /tmp/stc_issues.json)
+      echo &#39;$content_opportunities.stdout&#39; &gt; /tmp/stc_final_opps.json
+      echo &#39;$generate_briefs.stdout&#39; &gt; /tmp/stc_final_briefs.json
+      TOPIC_COUNT=$(echo &#39;$topic_clusters.stdout&#39; | python3 -c &quot;import json,sys; print(len(json.loads(sys.stdin.read())))&quot;)
+      BRIEF_COUNT=$(python3 -c &quot;import json; print(len(json.load(open(&#39;/tmp/stc_final_briefs.json&#39;))))&quot;)
+      TOP5=$(python3 -c &quot;
+      import json
+      opps = json.load(open(&#39;/tmp/stc_final_opps.json&#39;))
+      print(json.dumps([{&#39;topic&#39;:o[&#39;topic&#39;],&#39;issue_count&#39;:o[&#39;issue_count&#39;],&#39;score&#39;:o[&#39;score&#39;],&#39;content_type&#39;:o[&#39;content_type&#39;]} for o in opps[:5]], indent=2))
+      &quot;)
+      python3 -c &quot;
+      import json
+      print(json.dumps({
+          &#39;status&#39;: &#39;complete&#39;,
+          &#39;repo&#39;: &#39;${repo}&#39;,
+          &#39;total_issues_analyzed&#39;: $ISSUE_COUNT,
+          &#39;topics_discovered&#39;: $TOPIC_COUNT,
+          &#39;briefs_generated&#39;: $BRIEF_COUNT,
+          &#39;top_content_opportunities&#39;: json.loads(&#39;&#39;&#39;$TOP5&#39;&#39;&#39;),
+          &#39;output_directory&#39;: &#39;${output_dir}&#39;
+      }, indent=2))
+      &quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turn support headaches into content wins.</p>
+<h3>What It Does</h3>
+<ul><li>Analyzes support tickets for patterns</li><li>Identifies top questions and frustrations</li><li>Generates content briefs for help articles and blog posts</li><li>Prioritizes by support load reduction potential</li></ul>
+<p>> "40% of tickets mention confusion about X feature. Here's a tutorial draft that addresses the top 5 misunderstandings."</p>
+<h3>Requirements</h3>
+<ul><li>`file_system`, `messaging` capabilities</li><li>Support ticket export (CSV/JSON)</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

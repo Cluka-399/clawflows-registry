@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prediction Market Tracker — ClawFlows</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
+      --accent: #ff6b6b;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
+      margin-bottom: 1.5rem;
+    }
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../" class="back-link">← All Automations</a>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Prediction Market Tracker</h1>
+        <p class="description">Monitor Polymarket prediction markets by topic, track probability changes, alert on significant moves</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">finance</span><span class="pill">prediction-markets</span><span class="pill">polymarket</span><span class="pill">monitoring</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install prediction-market-tracker</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_fetch</span><span class="tag">notifications</span><span class="tag">polymarket</span><span class="tag">web-search</span><span class="tag">cron</span>
+        </div>
+        
+      </aside>
+    </div>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-markets</div></div><div class="step"><div class="step-title">2. filter-markets</div></div><div class="step"><div class="step-title">3. load-state</div></div><div class="step"><div class="step-title">4. analyze-and-save</div></div><div class="step"><div class="step-title">5. generate-bar-chart</div></div><div class="step"><div class="step-title">6. generate-trend-chart</div></div><div class="step"><div class="step-title">7. osint-check</div></div><div class="step"><div class="step-title">8. report</div></div></div>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">keywords</div><div class="kv-meta">Comma-separated keywords to filter markets (case-insensitive, matches any) · default: strike,attack,military,war</div></div><div class="kv"><div class="kv-name">exclude_keywords</div><div class="kv-meta">Comma-separated keywords to exclude markets</div></div><div class="kv"><div class="kv-name">alert_threshold</div><div class="kv-meta">Alert if probability changes more than this percentage since last check · default: 3</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">Path to state file for tracking probability history · default: /tmp/clawflows-prediction-market-state.json</div></div><div class="kv"><div class="kv-name">chart_output</div><div class="kv-meta">Path for generated bar chart image · default: /tmp/prediction-market-chart.png</div></div><div class="kv"><div class="kv-name">trend_chart_output</div><div class="kv-meta">Path for generated trend line chart · default: /tmp/prediction-market-trends.png</div></div><div class="kv"><div class="kv-name">chart_title</div><div class="kv-meta">Title for the bar chart · default: Prediction Markets — Polymarket</div></div><div class="kv"><div class="kv-name">osint_query</div><div class="kv-meta">Optional X/Twitter search query for cross-referencing (empty = skip)</div></div><div class="kv"><div class="kv-name">osint_script</div><div class="kv-meta">Path to X search script · default: /data/skills/search-x/scripts/search.js</div></div><div class="kv"><div class="kv-name">chart_script</div><div class="kv-meta">Path to chart-image script · default: /data/clawd/skills/chart-image/scripts/chart.mjs</div></div><div class="kv"><div class="kv-name">history_days</div><div class="kv-meta">Number of days of history to retain · default: 7</div></div></div>
+        <h3>README configuration</h3><div class="table-wrap"><table><thead><tr><th>Arg</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`keywords`</td><td>`strike,attack,military,war`</td><td>Comma-separated include keywords</td></tr><tr><td>`exclude_keywords`</td><td>_(empty)_</td><td>Comma-separated exclude keywords</td></tr><tr><td>`alert_threshold`</td><td>`3`</td><td>Alert on ≥N% probability change</td></tr><tr><td>`days_ahead`</td><td>`7`</td><td>Only markets within N days</td></tr><tr><td>`state_file`</td><td>`/tmp/clawflows-prediction-market-state.json`</td><td>Persistent state</td></tr><tr><td>`osint_query`</td><td>_(empty)_</td><td>X search query for cross-referencing</td></tr><tr><td>`osint_script`</td><td>`/data/skills/search-x/scripts/search.js`</td><td>Path to search-x script</td></tr></tbody></table></div>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p>No schedule declared. This may be manual-only.</p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: prediction market tracker Monitor Polymarket prediction markets by topic keywords, alert on significant moves Now with historical trend tracking and line charts!</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. fetch-markets</div></div><div class="step"><div class="step-title">2. filter-markets</div></div><div class="step"><div class="step-title">3. load-state</div></div><div class="step"><div class="step-title">4. analyze-and-save</div></div><div class="step"><div class="step-title">5. generate-bar-chart</div></div><div class="step"><div class="step-title">6. generate-trend-chart</div></div><div class="step"><div class="step-title">7. osint-check</div></div><div class="step"><div class="step-title">8. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: prediction-market-tracker
+# Monitor Polymarket prediction markets by topic keywords, alert on significant moves
+# Now with historical trend tracking and line charts!
+#
+# Usage:
+#   lobster run --file workflow.yaml
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;keywords&quot;:&quot;iran,strike&quot;,&quot;alert_threshold&quot;:&quot;3&quot;}&#39;
+#
+# Requires: curl, node
+#
+# APIs used:
+#   - gamma-api.polymarket.com (Polymarket markets, no auth needed)
+
+name: prediction-market-tracker
+description: Monitor Polymarket prediction markets by topic, alert on significant probability changes with trend charts
+
+args:
+  keywords:
+    description: &quot;Comma-separated keywords to filter markets (case-insensitive, matches any)&quot;
+    default: &quot;strike,attack,military,war&quot;
+  exclude_keywords:
+    description: &quot;Comma-separated keywords to exclude markets&quot;
+    default: &quot;&quot;
+  alert_threshold:
+    description: &quot;Alert if probability changes more than this percentage since last check&quot;
+    default: &quot;3&quot;
+  state_file:
+    description: &quot;Path to state file for tracking probability history&quot;
+    default: &quot;/tmp/clawflows-prediction-market-state.json&quot;
+  chart_output:
+    description: &quot;Path for generated bar chart image&quot;
+    default: &quot;/tmp/prediction-market-chart.png&quot;
+  trend_chart_output:
+    description: &quot;Path for generated trend line chart&quot;
+    default: &quot;/tmp/prediction-market-trends.png&quot;
+  chart_title:
+    description: &quot;Title for the bar chart&quot;
+    default: &quot;Prediction Markets — Polymarket&quot;
+  osint_query:
+    description: &quot;Optional X/Twitter search query for cross-referencing (empty = skip)&quot;
+    default: &quot;&quot;
+  osint_script:
+    description: &quot;Path to X search script&quot;
+    default: &quot;/data/skills/search-x/scripts/search.js&quot;
+  chart_script:
+    description: &quot;Path to chart-image script&quot;
+    default: &quot;/data/clawd/skills/chart-image/scripts/chart.mjs&quot;
+  history_days:
+    description: &quot;Number of days of history to retain&quot;
+    default: &quot;7&quot;
+
+steps:
+  - id: fetch-markets
+    command: |
+      tmpf=$(mktemp)
+      curl -sf --max-time 20 \
+        &quot;https://gamma-api.polymarket.com/markets?active=true&amp;closed=false&amp;limit=200&amp;order=volume24hr&amp;ascending=false&quot; \
+        -o &quot;$tmpf&quot; 2&gt;/dev/null
+      if [ -s &quot;$tmpf&quot; ]; then
+        cat &quot;$tmpf&quot;
+      else
+        echo &#39;[]&#39;
+      fi
+      rm -f &quot;$tmpf&quot;
+
+  - id: filter-markets
+    stdin: $fetch-markets.stdout
+    command: |
+      cat &gt; /tmp/lb_pm_raw.json
+      KW=&quot;${keywords}&quot;
+      EX=&quot;${exclude_keywords}&quot;
+      
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const data = JSON.parse(fs.readFileSync(&#39;/tmp/lb_pm_raw.json&#39;, &#39;utf8&#39;));
+        const include = &#39;$KW&#39;.toLowerCase().split(&#39;,&#39;).map(s =&gt; s.trim()).filter(Boolean);
+        const exclude = &#39;$EX&#39; ? &#39;$EX&#39;.toLowerCase().split(&#39;,&#39;).map(s =&gt; s.trim()).filter(Boolean) : [];
+
+        const results = data.filter(m =&gt; {
+          const q = (m.question || &#39;&#39;).toLowerCase();
+          const matchesInclude = include.some(kw =&gt; new RegExp(&#39;\\\\b&#39; + kw + &#39;\\\\b&#39;).test(q));
+          const matchesExclude = exclude.length &gt; 0 &amp;&amp; exclude.some(kw =&gt; new RegExp(&#39;\\\\b&#39; + kw + &#39;\\\\b&#39;).test(q));
+          return matchesInclude &amp;&amp; !matchesExclude;
+        }).map(m =&gt; {
+          const prices = JSON.parse(m.outcomePrices || &#39;[]&#39;);
+          const yesPct = Math.round(parseFloat(prices[0] || 0) * 10000) / 100;
+          return {
+            question: m.question,
+            yes_pct: yesPct,
+            volume: m.volumeNum || 0,
+            slug: m.slug
+          };
+        }).sort((a, b) =&gt; b.yes_pct - a.yes_pct);
+
+        console.log(JSON.stringify(results));
+      &quot;
+      rm -f /tmp/lb_pm_raw.json
+
+  - id: load-state
+    command: |
+      cat &quot;${state_file}&quot; 2&gt;/dev/null || echo &#39;{}&#39;
+
+  - id: analyze-and-save
+    command: |
+      cat &gt; /tmp/lb_markets.json &lt;&lt; &#39;MARKETS_EOF&#39;
+      $filter-markets.stdout
+      MARKETS_EOF
+      
+      cat &gt; /tmp/lb_state.json &lt;&lt; &#39;STATE_EOF&#39;
+      $load-state.stdout
+      STATE_EOF
+      
+      THRESH=&quot;${alert_threshold}&quot;
+      STATE_FILE=&quot;${state_file}&quot;
+      HISTORY_DAYS=&quot;${history_days}&quot;
+
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const markets = JSON.parse(fs.readFileSync(&#39;/tmp/lb_markets.json&#39;, &#39;utf8&#39;).trim());
+        let state = {};
+        try {
+          state = JSON.parse(fs.readFileSync(&#39;/tmp/lb_state.json&#39;, &#39;utf8&#39;).trim());
+        } catch(e) {}
+        
+        const thresh = parseFloat(&#39;$THRESH&#39; || &#39;3&#39;);
+        const historyDays = parseInt(&#39;$HISTORY_DAYS&#39; || &#39;7&#39;);
+        const now = new Date();
+        const cutoff = new Date(now - historyDays * 24 * 60 * 60 * 1000);
+
+        // Analyze markets and update state with history
+        const analyzed = markets.map(m =&gt; {
+          // Get or create market state
+          if (!state[m.slug]) {
+            state[m.slug] = { history: [], question: m.question };
+          }
+          
+          const mktState = state[m.slug];
+          mktState.question = m.question; // Keep question updated
+          
+          // Get last recorded pct
+          const lastEntry = mktState.history[mktState.history.length - 1];
+          const lastPct = lastEntry ? lastEntry.pct : null;
+          
+          // Add new data point
+          mktState.history.push({ t: now.toISOString(), pct: m.yes_pct });
+          
+          // Prune old history
+          mktState.history = mktState.history.filter(h =&gt; new Date(h.t) &gt; cutoff);
+          
+          const delta = lastPct != null ? m.yes_pct - lastPct : null;
+          return {
+            ...m,
+            last_pct: lastPct || m.yes_pct,
+            delta: delta || 0,
+            significant: delta != null &amp;&amp; Math.abs(delta) &gt;= thresh,
+            first_run: lastPct == null,
+            history: mktState.history
+          };
+        });
+
+        // Save updated state
+        fs.writeFileSync(&#39;$STATE_FILE&#39;, JSON.stringify(state, null, 2));
+
+        const result = {
+          markets: analyzed,
+          any_significant: analyzed.some(m =&gt; m.significant),
+          significant_count: analyzed.filter(m =&gt; m.significant).length,
+          total_count: analyzed.length,
+          threshold: thresh
+        };
+        console.log(JSON.stringify(result));
+      &quot;
+      rm -f /tmp/lb_markets.json /tmp/lb_state.json
+
+  - id: generate-bar-chart
+    command: |
+      cat &gt; /tmp/lb_chart_analysis.json &lt;&lt; &#39;ANALYSIS_EOF&#39;
+      $analyze-and-save.stdout
+      ANALYSIS_EOF
+      
+      CHART_SCRIPT=&quot;${chart_script}&quot;
+      CHART_OUTPUT=&quot;${chart_output}&quot;
+      CHART_TITLE=&quot;${chart_title}&quot;
+
+      if [ ! -f &quot;$CHART_SCRIPT&quot; ]; then
+        echo &quot;CHART_SKIP: chart script not found&quot;
+        exit 0
+      fi
+
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const analysis = JSON.parse(fs.readFileSync(&#39;/tmp/lb_chart_analysis.json&#39;, &#39;utf8&#39;).trim());
+        const markets = analysis.markets || [];
+        
+        const chartData = markets.slice(0, 10).map(m =&gt; {
+          let label = m.question.replace(/\\?$/, &#39;&#39;);
+          if (label.length &gt; 25) {
+            const dateMatch = label.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2}/i);
+            const actionMatch = label.match(/^(US strikes|Israel strikes|US x Iran|Khamenei)/i);
+            if (dateMatch &amp;&amp; actionMatch) {
+              label = actionMatch[1].replace(&#39;strikes&#39;, &#39;strike&#39;) + &#39;\\n&#39; + dateMatch[0];
+            } else if (label.length &gt; 30) {
+              label = label.slice(0, 27) + &#39;...&#39;;
+            }
+          }
+          return { x: label, y: m.yes_pct };
+        });
+        console.log(JSON.stringify(chartData));
+      &quot; &gt; /tmp/pm_chart_data.json
+      
+      if [ &quot;$(cat /tmp/pm_chart_data.json)&quot; = &quot;[]&quot; ]; then
+        echo &quot;BAR_CHART_SKIP: no data&quot;
+        rm -f /tmp/pm_chart_data.json /tmp/lb_chart_analysis.json
+        exit 0
+      fi
+
+      hour=$(date -u +%-H)
+      israel_hour=$((hour + 2))
+      [ $israel_hour -ge 24 ] &amp;&amp; israel_hour=$((israel_hour - 24))
+      dark_flag=&quot;&quot;
+      if [ $israel_hour -ge 20 ] || [ $israel_hour -lt 7 ]; then
+        dark_flag=&quot;--dark&quot;
+      fi
+
+      node &quot;$CHART_SCRIPT&quot; \
+        --type bar \
+        --data &quot;$(cat /tmp/pm_chart_data.json)&quot; \
+        --title &quot;$CHART_TITLE&quot; \
+        --y-title &quot;% Probability&quot; \
+        --y-domain &quot;0,100&quot; \
+        --show-values \
+        $dark_flag \
+        --width 850 --height 420 \
+        --output &quot;$CHART_OUTPUT&quot; 2&gt;&amp;1
+
+      rm -f /tmp/pm_chart_data.json /tmp/lb_chart_analysis.json
+      echo &quot;BAR_CHART:$CHART_OUTPUT&quot;
+
+  - id: generate-trend-chart
+    command: |
+      cat &gt; /tmp/lb_trend_analysis.json &lt;&lt; &#39;ANALYSIS_EOF&#39;
+      $analyze-and-save.stdout
+      ANALYSIS_EOF
+      
+      CHART_SCRIPT=&quot;${chart_script}&quot;
+      TREND_OUTPUT=&quot;${trend_chart_output}&quot;
+
+      if [ ! -f &quot;$CHART_SCRIPT&quot; ]; then
+        echo &quot;TREND_SKIP: chart script not found&quot;
+        exit 0
+      fi
+
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const analysis = JSON.parse(fs.readFileSync(&#39;/tmp/lb_trend_analysis.json&#39;, &#39;utf8&#39;).trim());
+        const markets = analysis.markets || [];
+        
+        // Pick top markets by volume/interest that have enough history
+        const withHistory = markets
+          .filter(m =&gt; m.history &amp;&amp; m.history.length &gt;= 2)
+          .slice(0, 6); // Top 6 markets
+        
+        if (withHistory.length === 0) {
+          console.log(&#39;TREND_SKIP: not enough history yet&#39;);
+          process.exit(0);
+        }
+
+        // Create short labels for each market
+        const getLabel = (q) =&gt; {
+          const dateMatch = q.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2}/i);
+          const actionMatch = q.match(/^(US strikes|Israel strikes|US x Iran|Khamenei|meeting)/i);
+          if (dateMatch &amp;&amp; actionMatch) {
+            return (actionMatch[1].replace(&#39;strikes&#39;, &#39;→&#39;) + &#39; &#39; + dateMatch[0]).slice(0, 20);
+          }
+          if (q.includes(&#39;Oman&#39;)) return &#39;Oman meeting&#39;;
+          if (q.includes(&#39;nuclear&#39;)) return &#39;Talks resume&#39;;
+          return q.slice(0, 16) + (q.length &gt; 16 ? &#39;…&#39; : &#39;&#39;);
+        };
+
+        // Build LONG format: [{x: time, market: label, y: pct}, ...]
+        const chartData = [];
+        withHistory.forEach(m =&gt; {
+          const label = getLabel(m.question);
+          m.history.forEach(h =&gt; {
+            // Format timestamp more readably
+            const d = new Date(h.t);
+            const timeStr = (d.getMonth()+1) + &#39;/&#39; + d.getDate() + &#39; &#39; + 
+                          d.getHours().toString().padStart(2,&#39;0&#39;) + &#39;:&#39; + 
+                          d.getMinutes().toString().padStart(2,&#39;0&#39;);
+            chartData.push({ x: timeStr, market: label, y: h.pct });
+          });
+        });
+
+        console.log(JSON.stringify(chartData));
+      &quot; &gt; /tmp/trend_data.json
+      
+      rm -f /tmp/lb_trend_analysis.json
+
+      data=$(cat /tmp/trend_data.json)
+      if [ &quot;$data&quot; = &quot;[]&quot; ] || echo &quot;$data&quot; | grep -q &quot;TREND_SKIP&quot;; then
+        echo &quot;TREND_SKIP: no data&quot;
+        rm -f /tmp/trend_data.json
+        exit 0
+      fi
+
+      hour=$(date -u +%-H)
+      israel_hour=$((hour + 2))
+      [ $israel_hour -ge 24 ] &amp;&amp; israel_hour=$((israel_hour - 24))
+      dark_flag=&quot;&quot;
+      if [ $israel_hour -ge 20 ] || [ $israel_hour -lt 7 ]; then
+        dark_flag=&quot;--dark&quot;
+      fi
+
+      node &quot;$CHART_SCRIPT&quot; \
+        --type line \
+        --data &quot;$data&quot; \
+        --series-field &quot;market&quot; \
+        --title &quot;Probability Trends Over Time&quot; \
+        --y-title &quot;% Probability&quot; \
+        --y-domain &quot;0,100&quot; \
+        $dark_flag \
+        --width 950 --height 500 \
+        --output &quot;$TREND_OUTPUT&quot; 2&gt;&amp;1
+
+      rm -f /tmp/trend_data.json
+      echo &quot;TREND_CHART:$TREND_OUTPUT&quot;
+
+  - id: osint-check
+    command: |
+      query=&quot;${osint_query}&quot;
+      script=&quot;${osint_script}&quot;
+      if [ -n &quot;$query&quot; ] &amp;&amp; [ -f &quot;$script&quot; ]; then
+        node &quot;$script&quot; --days 1 --compact &quot;$query&quot; 2&gt;/dev/null | head -c 1500
+      else
+        echo &quot;&quot;
+      fi
+
+  - id: report
+    command: |
+      cat &gt; /tmp/lb_final_analysis.json &lt;&lt; &#39;ANALYSIS_EOF&#39;
+      $analyze-and-save.stdout
+      ANALYSIS_EOF
+      
+      cat &gt; /tmp/lb_osint.txt &lt;&lt; &#39;OSINT_EOF&#39;
+      $osint-check.stdout
+      OSINT_EOF
+      
+      cat &gt; /tmp/lb_bar_chart.txt &lt;&lt; &#39;CHART_EOF&#39;
+      $generate-bar-chart.stdout
+      CHART_EOF
+
+      cat &gt; /tmp/lb_trend_chart.txt &lt;&lt; &#39;TREND_EOF&#39;
+      $generate-trend-chart.stdout
+      TREND_EOF
+
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const analysis = JSON.parse(fs.readFileSync(&#39;/tmp/lb_final_analysis.json&#39;, &#39;utf8&#39;).trim());
+        const osint = fs.readFileSync(&#39;/tmp/lb_osint.txt&#39;, &#39;utf8&#39;).trim();
+        const barChartResult = fs.readFileSync(&#39;/tmp/lb_bar_chart.txt&#39;, &#39;utf8&#39;).trim();
+        const trendChartResult = fs.readFileSync(&#39;/tmp/lb_trend_chart.txt&#39;, &#39;utf8&#39;).trim();
+
+        let out = [];
+
+        if (analysis.any_significant) {
+          out.push(&#39;🚨 **PREDICTION MARKET ALERT — Significant Moves Detected!**&#39;);
+        } else {
+          out.push(&#39;📊 **Prediction Market Update**&#39;);
+        }
+        out.push(&#39;⚙️ Threshold: ±&#39; + analysis.threshold + &#39;% | Markets tracked: &#39; + analysis.total_count);
+
+        // Bar chart path
+        const barMatch = barChartResult.match(/BAR_CHART:(.+)/);
+        if (barMatch) {
+          out.push(&#39;&#39;);
+          out.push(&#39;BAR_CHART:&#39; + barMatch[1]);
+        }
+
+        // Trend chart path
+        const trendMatch = trendChartResult.match(/TREND_CHART:(.+)/);
+        if (trendMatch) {
+          out.push(&#39;&#39;);
+          out.push(&#39;TREND_CHART:&#39; + trendMatch[1]);
+        }
+
+        if (analysis.any_significant) {
+          out.push(&#39;&#39;);
+          out.push(&#39;**📈 Significant Moves Since Last Check:**&#39;);
+          analysis.markets.filter(m =&gt; m.significant).forEach(m =&gt; {
+            const arrow = m.delta &gt; 0 ? &#39;📈&#39; : &#39;📉&#39;;
+            const sign = m.delta &gt; 0 ? &#39;+&#39; : &#39;&#39;;
+            out.push(&#39;• **&#39; + m.last_pct + &#39;% → &#39; + m.yes_pct + &#39;%** (&#39; + sign + m.delta.toFixed(1) + &#39;%) — &#39; + m.question);
+          });
+        }
+
+        out.push(&#39;&#39;);
+        out.push(&#39;**📋 Top Markets:**&#39;);
+        analysis.markets.slice(0, 10).forEach(m =&gt; {
+          const q = m.question.length &gt; 50 ? m.question.slice(0, 47) + &#39;...&#39; : m.question;
+          out.push(&#39;• **&#39; + m.yes_pct + &#39;%** — &#39; + q);
+        });
+
+        if (osint &amp;&amp; osint.length &gt; 30) {
+          out.push(&#39;&#39;);
+          out.push(&#39;**🔍 OSINT (X):**&#39;);
+          out.push(osint.slice(0, 1200));
+        }
+
+        console.log(out.join(&#39;\\n&#39;));
+      &quot;
+      rm -f /tmp/lb_final_analysis.json /tmp/lb_osint.txt /tmp/lb_bar_chart.txt /tmp/lb_trend_chart.txt
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Monitor Polymarket prediction markets by topic keywords and alert on significant probability changes.</p>
+<h3>Features</h3>
+<ul><li>Filter markets by configurable keywords (include/exclude)</li><li>Track probability changes over time</li><li>Alert on significant moves (configurable threshold)</li><li>Optional X/Twitter OSINT cross-referencing</li><li>Date-aware filtering (focus on near-term markets)</li></ul>
+<h3>Usage</h3>
+<pre class="code-block"><code data-lang="bash"># Default: monitor markets matching &quot;strike,attack,military,war&quot;
+lobster run --file workflow.yaml
+
+# Custom keywords and threshold
+lobster run --file workflow.yaml --args-json &#39;{
+  &quot;keywords&quot;: &quot;bitcoin,crypto,ethereum&quot;,
+  &quot;alert_threshold&quot;: &quot;5&quot;
+}&#39;
+
+# With OSINT cross-referencing
+lobster run --file workflow.yaml --args-json &#39;{
+  &quot;keywords&quot;: &quot;strike,attack&quot;,
+  &quot;osint_query&quot;: &quot;from:Osint613 OR from:sentdefender&quot;,
+  &quot;alert_threshold&quot;: &quot;3&quot;
+}&#39;</code></pre>
+<h3>Configuration</h3>
+<div class="table-wrap"><table><thead><tr><th>Arg</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`keywords`</td><td>`strike,attack,military,war`</td><td>Comma-separated include keywords</td></tr><tr><td>`exclude_keywords`</td><td>_(empty)_</td><td>Comma-separated exclude keywords</td></tr><tr><td>`alert_threshold`</td><td>`3`</td><td>Alert on ≥N% probability change</td></tr><tr><td>`days_ahead`</td><td>`7`</td><td>Only markets within N days</td></tr><tr><td>`state_file`</td><td>`/tmp/clawflows-prediction-market-state.json`</td><td>Persistent state</td></tr><tr><td>`osint_query`</td><td>_(empty)_</td><td>X search query for cross-referencing</td></tr><tr><td>`osint_script`</td><td>`/data/skills/search-x/scripts/search.js`</td><td>Path to search-x script</td></tr></tbody></table></div>
+<h3>Requires</h3>
+<ul><li>`curl`, `jq`</li><li>Optional: `search-x` skill for OSINT</li></ul></section>
+
+    <div class="footer">
+      <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
+    </div>
+  </div>
+</body>
+</html>

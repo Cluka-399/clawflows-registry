@@ -3,82 +3,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>app-store-reviews — ClawFlows</title>
+  <title>App Store Reviews — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>app-store-reviews</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Monitor App Store and Google Play reviews for your app</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>App Store Reviews</h1>
+        <p class="description">Monitor App Store and Google Play reviews for your app</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule 0 */4 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">business</span><span class="pill">reviews</span><span class="pill">mobile</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install app-store-reviews</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">http</span><span class="tag">storage</span><span class="tag">exec</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">capability: http</span><span class="tag">capability: storage</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>**Fetches reviews** - Pulls latest reviews from Apple App Store RSS feed</li><li>**Tracks seen reviews** - Only alerts on new ones</li><li>**Filters by rating** - Highlights low-rating reviews that need attention</li><li>**Sends summaries** - Periodic digest of new reviews</li></ol>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-state</div><div class="step-detail">storage</div></div><div class="step"><div class="step-title">2. fetch-app-store</div><div class="step-detail">http</div></div><div class="step"><div class="step-title">3. analyze</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">4. save-state</div><div class="step-detail">storage</div></div><div class="step"><div class="step-title">5. notify-low</div><div class="step-detail">notify</div></div><div class="step"><div class="step-title">6. notify-summary</div><div class="step-detail">notify</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install app-store-reviews</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">app_store_id</div><div class="kv-meta">Apple App Store app ID</div></div><div class="kv"><div class="kv-name">play_store_id</div><div class="kv-meta">Google Play package name</div></div><div class="kv"><div class="kv-name">country</div><div class="kv-meta">Country code for App Store · default: us</div></div><div class="kv"><div class="kv-name">alert_on_low_rating</div><div class="kv-meta">Alert on reviews &lt;= this rating · default: 3</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">File to track seen reviews · default: app-reviews-state.json</div></div></div>
+        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
+  app_store_id: &quot;123456789&quot;      # Apple App Store ID
+  play_store_id: &quot;com.example&quot;   # Google Play package
+  country: &quot;us&quot;
+  alert_on_low_rating: 3</code></pre>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 */4 * * *</code></p>
+        <p>Every 4 hours: <code>0 */4 * * *</code></p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: app store reviews Monitors Apple App Store reviews for your app (via iTunes RSS feed) Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. load-state</div></div><div class="step"><div class="step-title">2. .id.label,</div></div><div class="step"><div class="step-title">3. find-new</div></div><div class="step"><div class="step-title">4. save-state</div></div><div class="step"><div class="step-title">5. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: app-store-reviews
+# Monitors Apple App Store reviews for your app (via iTunes RSS feed)
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;app_store_id&quot;:&quot;389801252&quot;}&#39;
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;app_store_id&quot;:&quot;389801252&quot;,&quot;country&quot;:&quot;gb&quot;,&quot;alert_on_low_rating&quot;:&quot;2&quot;}&#39;
+#
+# Requires: jq, curl
+# Note: Google Play scraping omitted — no reliable public API/feed.
+#       Use App Store ID only. Find it in the App Store URL:
+#       https://apps.apple.com/app/instagram/id389801252 → 389801252
+
+name: app-store-reviews
+description: Monitor Apple App Store reviews and alert on new/low-rating reviews
+
+args:
+  app_store_id:
+    description: &quot;Apple App Store app ID (numeric, from the App Store URL)&quot;
+  country:
+    description: &quot;Country code for App Store reviews&quot;
+    default: &quot;us&quot;
+  alert_on_low_rating:
+    description: &quot;Alert on reviews with rating &lt;= this value (1-5)&quot;
+    default: &quot;3&quot;
+  state_file:
+    description: &quot;Path to state file tracking seen review IDs&quot;
+    default: &quot;/tmp/clawflows-app-reviews-state.json&quot;
+
+steps:
+  - id: load-state
+    command: cat &quot;${state_file}&quot; 2&gt;/dev/null || echo &#39;[]&#39;
+
+  - id: fetch-reviews
+    command: |
+      url=&quot;https://itunes.apple.com/${country}/rss/customerreviews/id=${app_store_id}/sortBy=mostRecent/json&quot;
+      tmpf=$(mktemp)
+      curl -sf &quot;$url&quot; &gt; &quot;$tmpf&quot; 2&gt;/dev/null
+      if [ ! -s &quot;$tmpf&quot; ]; then
+        echo &#39;[]&#39;
+        rm -f &quot;$tmpf&quot;
+        exit 0
+      fi
+      jq -c &#39;[.feed.entry // [] | .[] | {
+        id: .id.label,
+        rating: (.[&quot;im:rating&quot;].label // &quot;0&quot; | tonumber),
+        title: (.title.label // &quot;&quot;),
+        content: ((.content.label // &quot;&quot;)[:200]),
+        author: (.author.name.label // &quot;unknown&quot;),
+        version: (.[&quot;im:version&quot;].label // &quot;&quot;),
+        updated: (.updated.label // &quot;&quot;)
+      }]&#39; &quot;$tmpf&quot; 2&gt;/dev/null || echo &#39;[]&#39;
+      rm -f &quot;$tmpf&quot;
+
+  - id: find-new
+    stdin: $fetch-reviews.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat &gt; &quot;$tmpf&quot;
+      seen=$(cat &quot;${state_file}&quot; 2&gt;/dev/null || echo &#39;[]&#39;)
+      threshold=${alert_on_low_rating}
+      jq -c --argjson seen &quot;$seen&quot; --argjson threshold &quot;$threshold&quot; &#39;
+        ($seen | if type==&quot;array&quot; then . else [] end) as $seen_list |
+        ($seen_list | map({(.):1}) | add // {}) as $idx |
+        [.[] | select($idx[.id] == null)] as $new |
+        [.[] | select($idx[.id] == null) | select(.rating &lt;= $threshold)] as $low |
+        {
+          new: $new,
+          low: $low,
+          seen: ([$seen_list[], ($new[] | .id)] | unique | .[-500:]),
+          new_count: ($new | length),
+          low_count: ($low | length)
+        }
+      &#39; &quot;$tmpf&quot;
+      rm -f &quot;$tmpf&quot;
+
+  - id: save-state
+    stdin: $find-new.stdout
+    command: |
+      tmpf=$(mktemp)
+      cat &gt; &quot;$tmpf&quot;
+      jq &#39;.seen&#39; &quot;$tmpf&quot; &gt; &quot;${state_file}&quot;
+      cat &quot;$tmpf&quot;
+      rm -f &quot;$tmpf&quot;
+
+  - id: report
+    stdin: $save-state.stdout
+    command: |
+      threshold=&quot;${alert_on_low_rating}&quot;
+      jq -r --arg thr &quot;$threshold&quot; &#39;
+        if .new_count == 0 then
+          &quot;No new reviews.&quot;
+        else
+          &quot;📱 \(.new_count) new App Store review(s)\n&quot; +
+          if .low_count &gt; 0 then
+            &quot;⚠️ \(.low_count) low-rating review(s) (≤\($thr)⭐):\n\n&quot; +
+            (.low | map(&quot;  \(.rating)⭐ — \(.title)\n  \&quot;\(.content)\&quot;\n  — \(.author) (v\(.version))&quot;) | join(&quot;\n\n&quot;)) +
+            &quot;\n\n---\nAll new reviews:\n\n&quot;
+          else &quot;&quot; end +
+          (.new | map(&quot;  \(.rating)⭐ — \(.title)\n  \&quot;\(.content)\&quot;\n  — \(.author) (v\(.version))&quot;) | join(&quot;\n\n&quot;))
+        end
+      &#39;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Monitor App Store and Google Play reviews for your app, with alerts on low ratings.</p>
+<h3>What It Does</h3>
+<ol><li>**Fetches reviews** - Pulls latest reviews from Apple App Store RSS feed</li><li>**Tracks seen reviews** - Only alerts on new ones</li><li>**Filters by rating** - Highlights low-rating reviews that need attention</li><li>**Sends summaries** - Periodic digest of new reviews</li></ol>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>http requests, storage</td></tr></tbody></table></div>
+<h3>Configuration</h3>
+<pre class="code-block"><code data-lang="yaml">config:
+  app_store_id: &quot;123456789&quot;      # Apple App Store ID
+  play_store_id: &quot;com.example&quot;   # Google Play package
+  country: &quot;us&quot;
+  alert_on_low_rating: 3</code></pre>
+<h3>Schedule</h3>
+<p>Every 4 hours: <code>0 */4 * * *</code></p>
+<h3>Author</h3>
+<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

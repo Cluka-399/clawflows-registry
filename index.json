@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-01T23:06:44.269Z",
+  "generated": "2026-04-02T08:42:54.936Z",
   "version": "1.0.0",
   "count": 115,
   "automations": [
@@ -28,8 +28,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/launch-blitz/"
     },
     {
@@ -61,8 +61,8 @@
       ],
       "difficulty": "advanced",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/ab-test-automator/"
     },
     {
@@ -89,8 +89,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/affiliate-builder/"
     },
     {
@@ -122,8 +122,8 @@
       ],
       "difficulty": null,
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/agent-drift-detector/"
     },
     {
@@ -254,8 +254,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/backlink-hunter/"
     },
     {
@@ -342,8 +342,8 @@
       ],
       "difficulty": null,
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/bookmark-organizer/"
     },
     {
@@ -521,8 +521,8 @@
       ],
       "difficulty": "advanced",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/cold-email-personalizer/"
     },
     {
@@ -575,8 +575,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/community-infiltrator/"
     },
     {
@@ -603,8 +603,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/competitor-shadow/"
     },
     {
@@ -631,8 +631,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/content-syndication/"
     },
     {
@@ -1172,8 +1172,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/event-hijacker/"
     },
     {
@@ -1405,8 +1405,8 @@
       ],
       "difficulty": "advanced",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/attribution-detective/"
     },
     {
@@ -1567,8 +1567,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/hn-timing-bot/"
     },
     {
@@ -1886,8 +1886,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/influencer-outreach/"
     },
     {
@@ -2006,8 +2006,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/newsletter-growth/"
     },
     {
@@ -2061,8 +2061,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/partnership-scout/"
     },
     {
@@ -2221,8 +2221,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/pr-newsjacking/"
     },
     {
@@ -2277,8 +2277,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/pricing-intelligence/"
     },
     {
@@ -2386,8 +2386,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/review-defense/"
     },
     {
@@ -2493,8 +2493,8 @@
       ],
       "difficulty": "intermediate",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/seo-gap-assassin/"
     },
     {
@@ -2548,8 +2548,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/social-proof-collector/"
     },
     {
@@ -2661,8 +2661,8 @@
       ],
       "difficulty": null,
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/standup-notes/"
     },
     {
@@ -2740,8 +2740,8 @@
       ],
       "difficulty": "beginner",
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/support-to-content/"
     },
     {
@@ -2973,8 +2973,8 @@
       ],
       "difficulty": null,
       "lobster_ready": false,
-      "created": "2026-04-01",
-      "updated": "2026-04-01",
+      "created": "2026-04-02",
+      "updated": "2026-04-02",
       "url": "/automations/weekly-retro-generator/"
     },
     {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Posture Check — ClawFlows</title>
+  <title>Content To Anima — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,23 +139,23 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>Posture Check</h1>
-        <p class="description">Regular posture reminders during work hours</p>
+        <h1>Content To Anima</h1>
+        <p class="description">Find trending ideas on Reddit/X, generate visual concepts with Gemini, then build on Anima</p>
         <div class="meta">
           <span>v1.0.0</span>
           <span>by cluka</span>
           
-          <span>Lobster workflow available</span>
+          
         </div>
         
-        <div class="tag-row"><span class="pill">health</span><span class="pill">ergonomics</span><span class="pill">reminders</span></div>
+        <div class="tag-row"><span class="pill">content</span><span class="pill">anima</span><span class="pill">design</span><span class="pill">generative</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
-        <div class="install-box">clawflows install posture-check</div>
+        <div class="install-box">clawflows install content-to-anima</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">notifications</span><span class="tag">cron</span><span class="tag">discord</span>
+          <span class="tag">web_search</span><span class="tag">image_generation</span><span class="tag">anima_mcp</span><span class="tag">messaging</span><span class="tag">web-search</span><span class="tag">browser</span><span class="tag">discord</span>
         </div>
         
       </aside>
@@ -164,82 +164,49 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Sends reminders** at regular intervals during work hours</li><li>**Varies messages** to keep them fresh and engaging</li><li>**Respects off-hours** — only runs during configured work times</li></ol>
+        <ol><li>Searches Reddit or X for trending content matching your query</li><li>Generates 3 visual concept images using Gemini (minimal, bold, dark mode)</li><li>User picks their favorite concept</li><li>Deconstructs the chosen design into a detailed prompt</li><li>Sends to Anima to build a live web page</li><li>Publishes and delivers a screenshot + live URL</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. pick-tip</div></div><div class="step"><div class="step-title">2. format-reminder</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. find_idea</div><div class="step-detail">search</div></div><div class="step"><div class="step-title">2. Title/concept</div></div><div class="step"><div class="step-title">3. Why it&#39;s interesting</div></div><div class="step"><div class="step-title">4. Key visual elements that would make it stand out</div></div><div class="step"><div class="step-title">5. generate_concepts</div><div class="step-detail">generate_images</div></div><div class="step"><div class="step-title">6. user_picks</div><div class="step-detail">wait_for_input</div></div><div class="step"><div class="step-title">7. deconstruct_image</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">8. Layout structure (header, sections, grid, sidebar)</div></div><div class="step"><div class="step-title">9. Color palette (specific hex values if visible)</div></div><div class="step"><div class="step-title">10. Typography style (serif/sans-serif, weights, sizes)</div></div><div class="step"><div class="step-title">11. Key UI components (cards, buttons, forms, charts)</div></div><div class="step"><div class="step-title">12. Content sections and their purpose</div></div><div class="step"><div class="step-title">13. Visual style (shadows, borders, gradients, spacing)</div></div><div class="step"><div class="step-title">14. Any icons or imagery patterns</div></div><div class="step"><div class="step-title">15. anima_create</div><div class="step-detail">anima_playground_create</div></div><div class="step"><div class="step-title">16. anima_publish</div><div class="step-detail">anima_publish</div></div><div class="step"><div class="step-title">17. screenshot</div><div class="step-detail">screenshot</div></div><div class="step"><div class="step-title">18. deliver_result</div><div class="step-detail">message</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">tips</div><div class="kv-meta">Comma-separated list of posture tips · default: sit up straight and align your ears over your shoulders,adjust your monitor to eye level,uncross your legs and plant feet flat on the floor,roll your shoulders back and down,check that your wrists are neutral on the keyboard,stand up and stretch for 30 seconds,engage your core muscles while sitting,adjust your chair height so thighs are parallel to the floor</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  work_start: 9        # Start hour
-  work_end: 17          # End hour
-  interval_minutes: 60  # Reminder frequency</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">source</div><div class="kv-meta">Where to find ideas — &quot;reddit&quot;, &quot;x&quot;, or a direct topic/prompt · required</div></div><div class="kv"><div class="kv-name">query</div><div class="kv-meta">Search query or topic (e.g. &quot;SaaS dashboards&quot;, &quot;fitness app landing page&quot;) · required</div></div><div class="kv"><div class="kv-name">subreddit</div><div class="kv-meta">Subreddit to search (if source is reddit)</div></div><div class="kv"><div class="kv-name">framework</div><div class="kv-meta">Anima framework — &quot;react&quot; or &quot;html · default: react</div></div><div class="kv"><div class="kv-name">styling</div><div class="kv-meta">Anima styling — &quot;tailwind&quot;, &quot;css&quot;, &quot;inline_styles · default: tailwind</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p>No schedule declared. This may be manual-only.</p>
         
-        <p>Runs hourly during work hours, weekdays (<code>0 */1 9-17 * * 1-5</code>).</p>
         
       </section>
     </div>
 
-    <div class="section-grid">
+    
       
-      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: posture check Picks a random posture tip and outputs a reminder Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. pick-tip</div></div><div class="step"><div class="step-title">2. format-reminder</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: posture-check
-# Picks a random posture tip and outputs a reminder
-#
-# Usage:
-#   lobster run --file workflow.yaml
-#
-# Requires: (no external deps)
+      
+    
 
-name: posture-check
-description: Regular posture reminders with ergonomic tips
-
-args:
-  tips:
-    description: &quot;Comma-separated list of posture tips&quot;
-    default: &quot;sit up straight and align your ears over your shoulders,adjust your monitor to eye level,uncross your legs and plant feet flat on the floor,roll your shoulders back and down,check that your wrists are neutral on the keyboard,stand up and stretch for 30 seconds,engage your core muscles while sitting,adjust your chair height so thighs are parallel to the floor&quot;
-
-steps:
-  - id: pick-tip
-    command: |
-      echo &quot;${tips}&quot; | tr &#39;,&#39; &#39;\n&#39; | sed &#39;s/^ *//;s/ *$//&#39; | grep -v &#39;^$&#39; | shuf -n1
-
-  - id: format-reminder
-    stdin: $pick-tip.stdout
-    command: |
-      tip=$(cat)
-      cat &lt;&lt;EOF
-      🪑 Posture Check!
-
-      Quick reminder: ${tip}.
-
-      Good posture reduces pain and boosts energy! 💪
-      EOF
-</code></pre></details></section>
-    </div>
-
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Regular posture reminders during work hours to keep you ergonomically healthy.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Find trending ideas on Reddit/X, generate 3 visual concepts with Gemini, let user pick one, then build it on Anima — from idea to live site in minutes.</p>
 <h3>What It Does</h3>
-<ol><li>**Sends reminders** at regular intervals during work hours</li><li>**Varies messages** to keep them fresh and engaging</li><li>**Respects off-hours** — only runs during configured work times</li></ol>
+<ol><li>Searches Reddit or X for trending content matching your query</li><li>Generates 3 visual concept images using Gemini (minimal, bold, dark mode)</li><li>User picks their favorite concept</li><li>Deconstructs the chosen design into a detailed prompt</li><li>Sends to Anima to build a live web page</li><li>Publishes and delivers a screenshot + live URL</li></ol>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`cron`</td><td>built-in scheduler</td></tr><tr><td>`discord`</td><td>discord messaging</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">config:
-  work_start: 9        # Start hour
-  work_end: 17          # End hour
-  interval_minutes: 60  # Reminder frequency</code></pre>
-<h3>Schedule</h3>
-<p>Runs hourly during work hours, weekdays (<code>0 */1 9-17 * * 1-5</code>).</p>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Description</th></tr></thead><tbody><tr><td>`web-search`</td><td>Search Reddit/X for trending ideas</td></tr><tr><td>`browser`</td><td>Screenshot the published result</td></tr><tr><td>`discord`</td><td>Deliver results to user</td></tr></tbody></table></div>
+<h3>Parameters</h3>
+<div class="table-wrap"><table><thead><tr><th>Key</th><th>Required</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`source`</td><td>Yes</td><td>—</td><td>Where to find ideas: `reddit`, `x`, or a direct topic</td></tr><tr><td>`query`</td><td>Yes</td><td>—</td><td>Search query or topic</td></tr><tr><td>`subreddit`</td><td>No</td><td>—</td><td>Subreddit to search (if source is reddit)</td></tr><tr><td>`framework`</td><td>No</td><td>`react`</td><td>Anima framework: `react` or `html`</td></tr><tr><td>`styling`</td><td>No</td><td>`tailwind`</td><td>Anima styling: `tailwind`, `css`, `inline_styles`</td></tr></tbody></table></div>
+<h3>Trigger</h3>
+<p>Manual — user-initiated pipeline.</p>
 <h3>Install</h3>
-<pre class="code-block"><code data-lang="bash">lobster install posture-check</code></pre></section>
+<pre class="code-block"><code data-lang="yaml">automation: content-to-anima
+config:
+  source: &quot;reddit&quot;
+  query: &quot;SaaS dashboards&quot;
+  framework: &quot;react&quot;
+  styling: &quot;tailwind&quot;</code></pre></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

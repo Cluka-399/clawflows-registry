@@ -5,80 +5,401 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Review Farm Defense System — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Review Farm Defense System</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Review Farm Defense System</h1>
+        <p class="description">Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 */4 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Marketing</span></div>
+        <div class="tag-row"><span class="pill">reviews</span><span class="pill">reputation</span><span class="pill">customer-success</span><span class="pill">alerts</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install review-defense</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_fetch</span><span class="tag">messaging</span><span class="tag">file_system</span><span class="tag">reviews</span><span class="tag">reputation</span><span class="tag">customer-success</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_fetch</span><span class="tag">messaging</span><span class="tag">file_system</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Monitors G2, Capterra, TrustPilot, Product Hunt, Twitter</li><li>Positive reviews: Auto-thank within 2 hours, extract for testimonials</li><li>Negative reviews: Instant alert, draft empathetic response, tag team, log to tracker</li></ul>
+<p>> "Response time dropped from 48 hours to 2 hours. Negative reviews get addressed before they spread."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch_reviews</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">2. classify_sentiment</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. handle_positive</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">4. handle_negative</div></div><div class="step"><div class="step-title">5. message</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">6. file_append</div><div class="step-detail">file_append</div></div><div class="step"><div class="step-title">7. extract_testimonial</div><div class="step-detail">file_append</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install review-defense</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">product_name</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">review_platforms</div><div class="kv-meta">No description yet. · default: [&quot;g2&quot;, &quot;capterra&quot;, &quot;trustpilot&quot;, &quot;producthunt&quot;]</div></div><div class="kv"><div class="kv-name">team_handles</div><div class="kv-meta">Team members to tag on negative reviews</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 */4 * * *</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. search_reviews</div></div><div class="step"><div class="step-title">2. classify_sentiment</div></div><div class="step"><div class="step-title">3. generate_report</div></div><div class="step"><div class="step-title">4. draft-responses</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code>name: &quot;Review Farm Defense System&quot;
+description: &gt;
+  Monitor online reviews and mentions for a product using Brave Search.
+  Applies keyword-based sentiment heuristics to classify results as
+  POSITIVE, NEUTRAL, or NEGATIVE. Produces a structured JSON report.
+  NOTE: In production, replace Brave Search with real platform APIs
+  (G2, Capterra, TrustPilot, ProductHunt) for direct review access.
+
+args:
+  product_name:
+    desc: &quot;Product or company name to monitor reviews for&quot;
+  platforms:
+    desc: &quot;Comma-separated review platforms to search&quot;
+    default: &quot;G2,Capterra,Trustpilot,ProductHunt&quot;
+  max_results:
+    desc: &quot;Max search results per platform query&quot;
+    default: &quot;5&quot;
+
+steps:
+  # Step 1: Search for reviews across platforms using Brave Search
+  - id: search_reviews
+    command: |
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json, os, sys, urllib.request, urllib.parse
+
+      product = os.environ.get(&quot;PRODUCT_NAME&quot;, &quot;&quot;)
+      platforms = os.environ.get(&quot;PLATFORMS&quot;, &quot;&quot;).split(&quot;,&quot;)
+      max_results = os.environ.get(&quot;MAX_RESULTS&quot;, &quot;5&quot;)
+      api_key = os.environ.get(&quot;BRAVE_API_KEY&quot;, &quot;&quot;)
+
+      import time
+
+      all_results = []
+      for i, plat in enumerate(platforms):
+          plat = plat.strip()
+          if not plat:
+              continue
+          if i &gt; 0:
+              time.sleep(1.5)  # Rate limit: avoid 429 from Brave API
+          query = urllib.parse.quote(f&quot;{product} {plat} review&quot;)
+          url = f&quot;https://api.search.brave.com/res/v1/web/search?q={query}&amp;count={max_results}&amp;text_decorations=false&quot;
+          req = urllib.request.Request(url, headers={
+              &quot;Accept&quot;: &quot;application/json&quot;,
+              &quot;Accept-Encoding&quot;: &quot;identity&quot;,
+              &quot;X-Subscription-Token&quot;: api_key
+          })
+          try:
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  data = json.loads(resp.read().decode())
+              for r in data.get(&quot;web&quot;, {}).get(&quot;results&quot;, []):
+                  all_results.append({
+                      &quot;platform&quot;: plat,
+                      &quot;title&quot;: r.get(&quot;title&quot;, &quot;&quot;),
+                      &quot;url&quot;: r.get(&quot;url&quot;, &quot;&quot;),
+                      &quot;snippet&quot;: r.get(&quot;description&quot;, &quot;&quot;),
+                      &quot;source&quot;: &quot;brave_search&quot;
+                  })
+          except Exception as e:
+              print(f&quot;Warning: search failed for {plat}: {e}&quot;, file=sys.stderr)
+
+      json.dump(all_results, sys.stdout, indent=2)
+      PYEOF
+    env:
+      PRODUCT_NAME: &quot;${product_name}&quot;
+      PLATFORMS: &quot;${platforms}&quot;
+      MAX_RESULTS: &quot;${max_results}&quot;
+
+  # Step 2: Sentiment analysis using keyword heuristics
+  - id: classify_sentiment
+    command: |
+      cat &gt; /tmp/sentiment_classify.py &lt;&lt; &#39;PYEOF&#39;
+      import json, sys, re
+
+      POSITIVE_WORDS = [
+        &quot;great&quot;, &quot;excellent&quot;, &quot;amazing&quot;, &quot;love&quot;, &quot;fantastic&quot;, &quot;awesome&quot;,
+        &quot;wonderful&quot;, &quot;perfect&quot;, &quot;best&quot;, &quot;recommend&quot;, &quot;impressed&quot;, &quot;outstanding&quot;,
+        &quot;helpful&quot;, &quot;easy to use&quot;, &quot;intuitive&quot;, &quot;powerful&quot;, &quot;reliable&quot;, &quot;fast&quot;,
+        &quot;efficient&quot;, &quot;beautiful&quot;, &quot;clean&quot;, &quot;solid&quot;, &quot;superb&quot;, &quot;brilliant&quot;,
+        &quot;top-notch&quot;, &quot;seamless&quot;, &quot;delightful&quot;, &quot;incredible&quot;, &quot;must-have&quot;,
+        &quot;game-changer&quot;, &quot;innovative&quot;, &quot;smooth&quot;, &quot;responsive&quot;, &quot;worth it&quot;,
+        &quot;5 stars&quot;, &quot;five stars&quot;, &quot;highly recommend&quot;, &quot;exceeded expectations&quot;
+      ]
+
+      NEGATIVE_WORDS = [
+        &quot;terrible&quot;, &quot;awful&quot;, &quot;horrible&quot;, &quot;hate&quot;, &quot;worst&quot;, &quot;bad&quot;, &quot;poor&quot;,
+        &quot;disappointing&quot;, &quot;broken&quot;, &quot;buggy&quot;, &quot;slow&quot;, &quot;expensive&quot;, &quot;overpriced&quot;,
+        &quot;frustrating&quot;, &quot;useless&quot;, &quot;waste&quot;, &quot;crash&quot;, &quot;confusing&quot;, &quot;clunky&quot;,
+        &quot;unreliable&quot;, &quot;lacking&quot;, &quot;mediocre&quot;, &quot;avoid&quot;, &quot;nightmare&quot;, &quot;regret&quot;,
+        &quot;misleading&quot;, &quot;downgrade&quot;, &quot;unusable&quot;, &quot;garbage&quot;, &quot;failed&quot;,
+        &quot;not worth&quot;, &quot;1 star&quot;, &quot;one star&quot;, &quot;do not recommend&quot;, &quot;stay away&quot;
+      ]
+
+      def score_text(text):
+          text_lower = text.lower()
+          pos = sum(1 for w in POSITIVE_WORDS if w in text_lower)
+          neg = sum(1 for w in NEGATIVE_WORDS if w in text_lower)
+          return pos, neg
+
+      reviews = json.loads(sys.stdin.read())
+      classified = []
+      for r in reviews:
+          combined = f&quot;{r.get(&#39;title&#39;, &#39;&#39;)} {r.get(&#39;snippet&#39;, &#39;&#39;)}&quot;
+          pos, neg = score_text(combined)
+          score = pos - neg
+          if score &gt; 0:
+              sentiment = &quot;POSITIVE&quot;
+          elif score &lt; 0:
+              sentiment = &quot;NEGATIVE&quot;
+          else:
+              sentiment = &quot;NEUTRAL&quot;
+          classified.append({
+              **r,
+              &quot;sentiment&quot;: sentiment,
+              &quot;positive_hits&quot;: pos,
+              &quot;negative_hits&quot;: neg,
+              &quot;sentiment_score&quot;: score
+          })
+      json.dump(classified, sys.stdout, indent=2)
+      PYEOF
+      python3 /tmp/sentiment_classify.py
+    stdin: &quot;$search_reviews.stdout&quot;
+
+  # Step 3: Generate the structured report with sentiment breakdown
+  - id: generate_report
+    command: |
+      cat &gt; /tmp/gen_report.py &lt;&lt; &#39;PYEOF&#39;
+      import json, sys
+      from datetime import datetime, timezone
+
+      classified = json.loads(sys.stdin.read())
+      positive = [r for r in classified if r[&quot;sentiment&quot;] == &quot;POSITIVE&quot;]
+      negative = [r for r in classified if r[&quot;sentiment&quot;] == &quot;NEGATIVE&quot;]
+      neutral = [r for r in classified if r[&quot;sentiment&quot;] == &quot;NEUTRAL&quot;]
+
+      # Platform breakdown
+      platforms = {}
+      for r in classified:
+          p = r[&quot;platform&quot;]
+          if p not in platforms:
+              platforms[p] = {&quot;positive&quot;: 0, &quot;negative&quot;: 0, &quot;neutral&quot;: 0, &quot;total&quot;: 0}
+          platforms[p][r[&quot;sentiment&quot;].lower()] += 1
+          platforms[p][&quot;total&quot;] += 1
+
+      # Top positive (potential testimonials)
+      testimonials = sorted(positive, key=lambda x: x[&quot;sentiment_score&quot;], reverse=True)[:3]
+
+      # Negative alerts requiring response
+      alerts = sorted(negative, key=lambda x: x[&quot;sentiment_score&quot;])[:5]
+
+      report = {
+          &quot;report_type&quot;: &quot;review_defense&quot;,
+          &quot;generated_at&quot;: datetime.now(timezone.utc).isoformat(),
+          &quot;product&quot;: sys.argv[1] if len(sys.argv) &gt; 1 else &quot;unknown&quot;,
+          &quot;summary&quot;: {
+              &quot;total_results&quot;: len(classified),
+              &quot;positive&quot;: len(positive),
+              &quot;negative&quot;: len(negative),
+              &quot;neutral&quot;: len(neutral),
+              &quot;sentiment_ratio&quot;: round(len(positive) / max(len(classified), 1) * 100, 1)
+          },
+          &quot;platform_breakdown&quot;: platforms,
+          &quot;alerts&quot;: [{
+              &quot;severity&quot;: &quot;high&quot; if r[&quot;sentiment_score&quot;] &lt;= -2 else &quot;medium&quot;,
+              &quot;platform&quot;: r[&quot;platform&quot;],
+              &quot;title&quot;: r[&quot;title&quot;],
+              &quot;url&quot;: r[&quot;url&quot;],
+              &quot;snippet&quot;: r[&quot;snippet&quot;],
+              &quot;sentiment_score&quot;: r[&quot;sentiment_score&quot;],
+              &quot;action_needed&quot;: &quot;Draft empathetic response and escalate to team&quot;
+          } for r in alerts],
+          &quot;testimonials&quot;: [{
+              &quot;platform&quot;: r[&quot;platform&quot;],
+              &quot;title&quot;: r[&quot;title&quot;],
+              &quot;url&quot;: r[&quot;url&quot;],
+              &quot;snippet&quot;: r[&quot;snippet&quot;],
+              &quot;sentiment_score&quot;: r[&quot;sentiment_score&quot;],
+              &quot;action&quot;: &quot;Consider for social proof / thank reviewer&quot;
+          } for r in testimonials],
+          &quot;all_results&quot;: classified,
+          &quot;notes&quot;: [
+              &quot;Sentiment classified via keyword heuristics (not LLM)&quot;,
+              &quot;For production use: integrate real platform APIs (G2, Capterra, etc.)&quot;,
+              &quot;Enhanced analysis available via prompt step (draft-responses)&quot;
+          ]
+      }
+      json.dump(report, sys.stdout, indent=2)
+      PYEOF
+      python3 /tmp/gen_report.py &quot;${product_name}&quot;
+    stdin: &quot;$classify_sentiment.stdout&quot;
+
+  - id: draft-responses
+    stdin: $generate_report.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a customer success manager. Draft empathetic responses and extract actionable product feedback.\n\nUSER: Review the sentiment analysis report for ${product_name} and:\n\n1. Re-evaluate sentiment for any results where keyword heuristics may be wrong (sarcasm, mixed sentiment, comparative mentions)\n2. For each NEGATIVE alert, draft an empathetic, professional response that:\n   - Acknowledges the concern\n   - Offers a solution or asks for more details\n   - Avoids being defensive\n3. For POSITIVE testimonials, suggest:\n   - Which ones are best for social proof (landing page, ads)\n   - A brief thank-you response\n4. Identify any patterns in negative feedback that suggest product issues\n\nPrioritize responses by severity and platform visibility.&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Monitor reviews everywhere. Auto-thank positive reviewers. Instant alerts on negative with empathetic response drafts.</p>
+<h3>What It Does</h3>
+<ul><li>Monitors G2, Capterra, TrustPilot, Product Hunt, Twitter</li><li>Positive reviews: Auto-thank within 2 hours, extract for testimonials</li><li>Negative reviews: Instant alert, draft empathetic response, tag team, log to tracker</li></ul>
+<p>> "Response time dropped from 48 hours to 2 hours. Negative reviews get addressed before they spread."</p>
+<h3>Requirements</h3>
+<ul><li>`web_fetch`, `messaging`, `file_system` capabilities</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

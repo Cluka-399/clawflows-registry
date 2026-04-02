@@ -3,82 +3,550 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>weekly-retro-generator — ClawFlows</title>
+  <title>Weekly Retro Generator — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>weekly-retro-generator</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Generate a weekly retrospective from your agent's activity and accomplishments</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Weekly Retro Generator</h1>
+        <p class="description">Generate a weekly retrospective from your agent&#39;s activity and accomplishments</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule 0 17 * * 5</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Productivity</span><span class="tag">Reflection</span><span class="tag">Weekly</span></div>
+        <div class="tag-row"><span class="pill">retro</span><span class="pill">retrospective</span><span class="pill">weekly</span><span class="pill">accomplishments</span><span class="pill">planning</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install weekly-retro-generator</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">file-system</span><span class="tag">calendar</span><span class="tag">llm-analysis</span><span class="tag">notifications</span><span class="tag">exec</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">capability: file-system</span><span class="tag">capability: calendar</span><span class="tag">capability: llm-analysis</span><span class="tag">capability: notifications</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>**Analyzes** the past week&#39;s activity logs</li><li>**Includes** calendar events and meetings</li><li>**Generates** accomplishments, progress, blockers, learnings</li><li>**Suggests** priorities for next week</li><li>**Saves** retro for future reference</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. read-week-logs</div><div class="step-detail">file-system</div></div><div class="step"><div class="step-title">2. get-calendar-events</div><div class="step-detail">calendar</div></div><div class="step"><div class="step-title">3. analyze-week</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">4. format-retro</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">5. notify-retro</div><div class="step-detail">notify</div></div><div class="step"><div class="step-title">6. save-retro</div><div class="step-detail">file-system</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install weekly-retro-generator</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">memory_path</div><div class="kv-meta">Path to agent memory/logs · default: /data/clawd/memory</div></div><div class="kv"><div class="kv-name">include_calendar</div><div class="kv-meta">Include calendar events in analysis · default: true</div></div><div class="kv"><div class="kv-name">include_commits</div><div class="kv-meta">Include git commits if available · default: true</div></div><div class="kv"><div class="kv-name">format</div><div class="kv-meta">Output format: summary, detailed, or standup · default: summary</div></div></div>
+        <h3>README configuration</h3><div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`memory_path`</td><td>/data/clawd/memory</td><td>Path to logs</td></tr><tr><td>`include_calendar`</td><td>true</td><td>Include calendar events</td></tr><tr><td>`include_commits`</td><td>true</td><td>Include git commits</td></tr><tr><td>`format`</td><td>&quot;summary&quot;</td><td>summary, detailed, standup</td></tr></tbody></table></div>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 17 * * 5</code></p>
+        
+        <h3>Example output</h3><pre class="code-block"><code>📆 Weekly Retrospective
+Week of Jan 27 - Jan 31
+
+✅ Accomplishments
+  • Shipped multi-line chart feature
+  • Created 5 new ClawFlows automations
+  • Fixed email categorization bug
+
+🔄 Progress
+  • ClawDirect listing (waiting on ATXP)
+  • New onboarding flow (80% done)
+
+🚧 Blockers
+  • Moltbook API issues (server-side)
+  • Need design review for dashboard
+
+💡 Learnings
+  • Vega-Lite multi-series syntax
+  • ATXP payment protocol basics
+
+📋 Next Week
+  • Complete onboarding flow
+  • 10 more ClawFlows automations
+  • Fix CI pipeline</code></pre>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses llm task.invoke for retrospective narrative generation</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. collect_logs</div></div><div class="step"><div class="step-title">2. collect_commits</div></div><div class="step"><div class="step-title">3. collect_calendar</div></div><div class="step"><div class="step-title">4. build_retro_data</div></div><div class="step"><div class="step-title">5. format_retro</div></div><div class="step"><div class="step-title">6. save_retro</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses llm_task.invoke for retrospective narrative generation
+
+name: &quot;Weekly Retro Generator&quot;
+description: &quot;Generate a weekly retrospective from agent activity logs, git commits, and calendar events&quot;
+
+args:
+  memory_path:
+    desc: &quot;Path to agent memory/logs directory&quot;
+    default: &quot;/data/clawd/memory&quot;
+  repo_path:
+    desc: &quot;Path to a git repo to include commits from (empty to skip)&quot;
+    default: &quot;/data/clawd/clawflows-registry&quot;
+  include_calendar:
+    desc: &quot;Include calendar events (true/false)&quot;
+    default: &quot;true&quot;
+  days_back:
+    desc: &quot;Number of days to look back&quot;
+    default: &quot;7&quot;
+  output_dir:
+    desc: &quot;Directory to save the retro file&quot;
+    default: &quot;/data/clawd/memory/retros&quot;
+  format:
+    desc: &quot;Output format: summary, detailed, or standup&quot;
+    default: &quot;summary&quot;
+
+steps:
+  - id: collect_logs
+    command: |
+      cat &gt; /tmp/retro_collect_logs.py &lt;&lt; &#39;PYEOF&#39;
+      import os, json, glob, sys
+      from datetime import datetime, timedelta
+
+      memory_path = sys.argv[1]
+      days_back = int(sys.argv[2])
+
+      cutoff = datetime.now() - timedelta(days=days_back)
+      cutoff_str = cutoff.strftime(&quot;%Y-%m-%d&quot;)
+
+      logs = []
+      pattern = os.path.join(memory_path, &quot;*.md&quot;)
+      for f in sorted(glob.glob(pattern)):
+          basename = os.path.basename(f)
+          # Match YYYY-MM-DD.md files
+          if len(basename) == 13 and basename[:4].isdigit() and basename.endswith(&quot;.md&quot;):
+              date_str = basename[:-3]
+              if date_str &gt;= cutoff_str:
+                  with open(f) as fh:
+                      content = fh.read()
+                  logs.append({
+                      &quot;date&quot;: date_str,
+                      &quot;file&quot;: f,
+                      &quot;content&quot;: content,
+                      &quot;lines&quot;: len(content.splitlines()),
+                      &quot;chars&quot;: len(content)
+                  })
+
+      output = {
+          &quot;count&quot;: len(logs),
+          &quot;date_range&quot;: {
+              &quot;from&quot;: logs[0][&quot;date&quot;] if logs else cutoff_str,
+              &quot;to&quot;: logs[-1][&quot;date&quot;] if logs else datetime.now().strftime(&quot;%Y-%m-%d&quot;)
+          },
+          &quot;logs&quot;: logs
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open(&quot;/tmp/retro_logs.json&quot;, &quot;w&quot;) as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      python3 /tmp/retro_collect_logs.py &quot;${memory_path}&quot; &quot;${days_back}&quot;
+
+  - id: collect_commits
+    command: |
+      cat &gt; /tmp/retro_collect_commits.sh &lt;&lt; &#39;BASH&#39;
+      #!/usr/bin/env bash
+      set -e
+      REPO_PATH=&quot;${1}&quot;
+      DAYS_BACK=&quot;${2}&quot;
+
+      if [ -z &quot;$REPO_PATH&quot; ] || [ ! -d &quot;$REPO_PATH/.git&quot; ]; then
+        echo &#39;{&quot;count&quot;:0,&quot;commits&quot;:[]}&#39;
+        echo &#39;{&quot;count&quot;:0,&quot;commits&quot;:[]}&#39; &gt; /tmp/retro_commits.json
+        exit 0
+      fi
+
+      cd &quot;$REPO_PATH&quot;
+      SINCE_DATE=$(date -d &quot;-${DAYS_BACK} days&quot; +%Y-%m-%d 2&gt;/dev/null || date -v-${DAYS_BACK}d +%Y-%m-%d)
+
+      # Use JSON output from git directly for reliable parsing
+      git log --since=&quot;$SINCE_DATE&quot; --pretty=format:&#39;{&quot;hash&quot;:&quot;%H&quot;,&quot;date&quot;:&quot;%ai&quot;,&quot;author&quot;:&quot;%an&quot;,&quot;message&quot;:&quot;%s&quot;},&#39; &gt; /tmp/retro_raw_commits.txt
+
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json, re
+
+      commits = []
+      try:
+          with open(&quot;/tmp/retro_raw_commits.txt&quot;) as f:
+              raw = f.read().strip().rstrip(&quot;,&quot;)
+          if raw:
+              # Wrap in array and parse
+              items = json.loads(&quot;[&quot; + raw + &quot;]&quot;)
+              for item in items:
+                  commits.append({
+                      &quot;hash&quot;: item[&quot;hash&quot;][:8],
+                      &quot;date&quot;: item[&quot;date&quot;],
+                      &quot;author&quot;: item[&quot;author&quot;],
+                      &quot;message&quot;: item[&quot;message&quot;]
+                  })
+      except (FileNotFoundError, json.JSONDecodeError) as e:
+          pass
+
+      output = {&quot;count&quot;: len(commits), &quot;commits&quot;: commits}
+      json.dump(output, open(&quot;/tmp/retro_commits.json&quot;, &quot;w&quot;), indent=2)
+      print(json.dumps(output, indent=2))
+      PYEOF
+      BASH
+      chmod +x /tmp/retro_collect_commits.sh
+      bash /tmp/retro_collect_commits.sh &quot;${repo_path}&quot; &quot;${days_back}&quot;
+
+  - id: collect_calendar
+    command: |
+      if [ &quot;${include_calendar}&quot; != &quot;true&quot; ]; then
+        echo &#39;{&quot;count&quot;:0,&quot;events&quot;:[],&quot;source&quot;:&quot;skipped&quot;}&#39;
+        echo &#39;{&quot;count&quot;:0,&quot;events&quot;:[],&quot;source&quot;:&quot;skipped&quot;}&#39; &gt; /tmp/retro_calendar.json
+        exit 0
+      fi
+      cat &gt; /tmp/retro_collect_cal.sh &lt;&lt; &#39;BASH&#39;
+      #!/usr/bin/env bash
+      set -e
+      DAYS_BACK=&quot;${1}&quot;
+
+      GCAL=&quot;/data/clawd/.venv-gcal/bin/gcalcli&quot;
+      UV=&quot;/data/clawd/.local/bin/uv&quot;
+      KHAL_CFG=&quot;/data/clawd/.config/khal/config&quot;
+      VDIR_CFG=&quot;/data/clawd/.config/vdirsyncer/config&quot;
+
+      events=&quot;&quot;
+
+      # Try iCloud calendar via khal
+      if [ -f &quot;$UV&quot; ] &amp;&amp; [ -f &quot;$KHAL_CFG&quot; ]; then
+        # Sync first
+        $UV run --with vdirsyncer -- vdirsyncer -c &quot;$VDIR_CFG&quot; sync 2&gt;/dev/null || true
+        events=$($UV run --with khal -- khal -c &quot;$KHAL_CFG&quot; list &quot;today -${DAYS_BACK}d&quot; &quot;${DAYS_BACK}d&quot; 2&gt;/dev/null || echo &quot;&quot;)
+      fi
+
+      # Try gcalcli as fallback/addition
+      if [ -f &quot;$GCAL&quot; ] &amp;&amp; [ -f ~/.local/share/gcalcli/oauth ]; then
+        gcal_events=$(TZ=Asia/Jerusalem $GCAL agenda --nocolor --tsv \
+          &quot;$(date -d &quot;-${DAYS_BACK} days&quot; +%Y-%m-%d 2&gt;/dev/null || date -v-${DAYS_BACK}d +%Y-%m-%d)&quot; \
+          &quot;$(date +%Y-%m-%d)&quot; 2&gt;/dev/null || echo &quot;&quot;)
+        if [ -n &quot;$gcal_events&quot; ]; then
+          events=&quot;${events}
+      ${gcal_events}&quot;
+        fi
+      fi
+
+      python3 &lt;&lt; PYEOF
+      import json, sys
+
+      raw_events = &quot;&quot;&quot;${events}&quot;&quot;&quot;
+
+      event_lines = [l.strip() for l in raw_events.strip().splitlines() if l.strip()]
+      parsed = []
+      for line in event_lines:
+          parsed.append({&quot;raw&quot;: line})
+
+      output = {
+          &quot;count&quot;: len(parsed),
+          &quot;events&quot;: parsed,
+          &quot;source&quot;: &quot;icloud+gcal&quot;
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open(&quot;/tmp/retro_calendar.json&quot;, &quot;w&quot;) as f:
+          json.dump(output, f, indent=2)
+      PYEOF
+      BASH
+      chmod +x /tmp/retro_collect_cal.sh
+      bash /tmp/retro_collect_cal.sh &quot;${days_back}&quot;
+
+  - id: build_retro_data
+    # Assembles all collected data into a single structured JSON document.
+    command: |
+      cat &gt; /tmp/retro_assemble.py &lt;&lt; &#39;PYEOF&#39;
+      import json, os, re, sys
+      from datetime import datetime
+      from collections import Counter
+
+      # Load collected data
+      with open(&quot;/tmp/retro_logs.json&quot;) as f:
+          logs_data = json.load(f)
+
+      commits_data = {&quot;count&quot;: 0, &quot;commits&quot;: []}
+      if os.path.exists(&quot;/tmp/retro_commits.json&quot;):
+          with open(&quot;/tmp/retro_commits.json&quot;) as f:
+              commits_data = json.load(f)
+
+      calendar_data = {&quot;count&quot;: 0, &quot;events&quot;: []}
+      if os.path.exists(&quot;/tmp/retro_calendar.json&quot;):
+          with open(&quot;/tmp/retro_calendar.json&quot;) as f:
+              calendar_data = json.load(f)
+
+      # Extract key themes/topics from logs
+      all_content = &quot;\n&quot;.join(log[&quot;content&quot;] for log in logs_data.get(&quot;logs&quot;, []))
+
+      # Extract headers (## lines) as activity topics
+      headers = re.findall(r&#39;^##\s+(.+)$&#39;, all_content, re.MULTILINE)
+
+      # Extract items that look like accomplishments (lines with checkmarks, &quot;done&quot;, &quot;shipped&quot;, &quot;fixed&quot;, &quot;added&quot;)
+      accomplishment_patterns = re.findall(
+          r&#39;^[-*]\s+.*(?:✅|done|shipped|fixed|added|completed|deployed|created|built|launched|resolved).*$&#39;,
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Extract items that look like blockers/issues
+      blocker_patterns = re.findall(
+          r&#39;^[-*]\s+.*(?:❌|blocked|stuck|failed|broken|issue|bug|problem|can\&#39;t|missing|error).*$&#39;,
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Extract items that look like learnings
+      learning_patterns = re.findall(
+          r&#39;^[-*]\s+.*(?:💡|learned|discovered|realized|key lesson|insight|TIL|note to self).*$&#39;,
+          all_content, re.MULTILINE | re.IGNORECASE
+      )
+
+      # Categorize commit messages
+      commit_categories = Counter()
+      for c in commits_data.get(&quot;commits&quot;, []):
+          msg = c.get(&quot;message&quot;, &quot;&quot;)
+          if msg.startswith(&quot;feat&quot;): commit_categories[&quot;features&quot;] += 1
+          elif msg.startswith(&quot;fix&quot;): commit_categories[&quot;fixes&quot;] += 1
+          elif msg.startswith(&quot;chore&quot;) or msg.startswith(&quot;update&quot;): commit_categories[&quot;maintenance&quot;] += 1
+          elif msg.startswith(&quot;docs&quot;): commit_categories[&quot;docs&quot;] += 1
+          else: commit_categories[&quot;other&quot;] += 1
+
+      output_format = sys.argv[1] if len(sys.argv) &gt; 1 else &quot;summary&quot;
+
+      assembled = {
+          &quot;meta&quot;: {
+              &quot;generated_at&quot;: datetime.now().isoformat(),
+              &quot;date_range&quot;: logs_data.get(&quot;date_range&quot;, {}),
+              &quot;format&quot;: output_format
+          },
+          &quot;stats&quot;: {
+              &quot;daily_logs&quot;: logs_data[&quot;count&quot;],
+              &quot;total_log_lines&quot;: sum(l[&quot;lines&quot;] for l in logs_data.get(&quot;logs&quot;, [])),
+              &quot;git_commits&quot;: commits_data[&quot;count&quot;],
+              &quot;commit_categories&quot;: dict(commit_categories),
+              &quot;calendar_events&quot;: calendar_data[&quot;count&quot;]
+          },
+          &quot;activity_topics&quot;: headers[:30],
+          &quot;extracted&quot;: {
+              &quot;accomplishments&quot;: accomplishment_patterns[:20],
+              &quot;blockers&quot;: blocker_patterns[:10],
+              &quot;learnings&quot;: learning_patterns[:10]
+          },
+          &quot;commits_summary&quot;: [
+              {&quot;hash&quot;: c[&quot;hash&quot;], &quot;message&quot;: c[&quot;message&quot;], &quot;date&quot;: c.get(&quot;date&quot;, &quot;&quot;)}
+              for c in commits_data.get(&quot;commits&quot;, [])[:20]
+          ],
+          &quot;calendar_summary&quot;: calendar_data.get(&quot;events&quot;, [])[:20],
+          &quot;raw_log_dates&quot;: [l[&quot;date&quot;] for l in logs_data.get(&quot;logs&quot;, [])]
+      }
+
+      json.dump(assembled, sys.stdout, indent=2)
+      with open(&quot;/tmp/retro_assembled.json&quot;, &quot;w&quot;) as f:
+          json.dump(assembled, f, indent=2)
+      PYEOF
+      python3 /tmp/retro_assemble.py &quot;${format}&quot;
+
+  - id: format_retro
+    stdin: $build_retro_data.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a thoughtful engineering retrospective facilitator. Write honest, actionable retros.\n\nUSER: Generate a ${format} weekly retrospective from the assembled data below.\n\nStructure the retro as:\n1. **TL;DR** — One-sentence summary of the week\n2. **Accomplishments** — What got done (extract from logs and commits)\n3. **Progress** — What moved forward but isn&#39;t finished\n4. **Blockers** — What&#39;s stuck and what would unblock it\n5. **Learnings** — Key insights or lessons from this week\n6. **Next Week** — Top 3 priorities based on pending work and patterns\n\nUse emoji indicators. Reference specific commits and log entries.\nBe honest about what went well and what didn&#39;t.\n\nDATA:\n$(cat -)&quot;
+    env: { CLAWD_URL: &quot;http://127.0.0.1:3000&quot; }
+
+
+  - id: save_retro
+    stdin: $format_retro.stdout
+    command: |
+      OUTPUT_DIR=&quot;${output_dir}&quot;
+      mkdir -p &quot;$OUTPUT_DIR&quot;
+      TODAY=$(date +%Y-%m-%d)
+      OUTFILE=&quot;${OUTPUT_DIR}/week-${TODAY}.md&quot;
+
+      # Add markdown header — stdin has the LLM-generated retro
+      {
+        echo &quot;# Weekly Retro — ${TODAY}&quot;
+        echo &quot;&quot;
+        cat -
+      } &gt; &quot;$OUTFILE&quot;
+
+      echo &quot;Saved to: ${OUTFILE}&quot;
+      cat &quot;$OUTFILE&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Generate a weekly retrospective from your agent's activity and accomplishments.</p>
+<h3>What It Does</h3>
+<ul><li>**Analyzes** the past week&#39;s activity logs</li><li>**Includes** calendar events and meetings</li><li>**Generates** accomplishments, progress, blockers, learnings</li><li>**Suggests** priorities for next week</li><li>**Saves** retro for future reference</li></ul>
+<h3>Why Weekly?</h3>
+<p>Daily is too granular. Monthly loses detail. Weekly hits the sweet spot for reflection and planning.</p>
+<h3>Requirements</h3>
+<ul><li>`file-system` capability</li><li>`calendar` capability (optional)</li><li>`llm-analysis` capability</li><li>`notifications` capability</li></ul>
+<h3>Configuration</h3>
+<div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`memory_path`</td><td>/data/clawd/memory</td><td>Path to logs</td></tr><tr><td>`include_calendar`</td><td>true</td><td>Include calendar events</td></tr><tr><td>`include_commits`</td><td>true</td><td>Include git commits</td></tr><tr><td>`format`</td><td>&quot;summary&quot;</td><td>summary, detailed, standup</td></tr></tbody></table></div>
+<h3>Example Output</h3>
+<pre class="code-block"><code>📆 Weekly Retrospective
+Week of Jan 27 - Jan 31
+
+✅ Accomplishments
+  • Shipped multi-line chart feature
+  • Created 5 new ClawFlows automations
+  • Fixed email categorization bug
+
+🔄 Progress
+  • ClawDirect listing (waiting on ATXP)
+  • New onboarding flow (80% done)
+
+🚧 Blockers
+  • Moltbook API issues (server-side)
+  • Need design review for dashboard
+
+💡 Learnings
+  • Vega-Lite multi-series syntax
+  • ATXP payment protocol basics
+
+📋 Next Week
+  • Complete onboarding flow
+  • 10 more ClawFlows automations
+  • Fix CI pipeline</code></pre>
+<h3>Author</h3>
+<p>**Cluka** 🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

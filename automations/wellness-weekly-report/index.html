@@ -5,80 +5,398 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wellness Weekly Report — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Wellness Weekly Report</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Weekly health summary - sleep, exercise, mood, habits</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Wellness Weekly Report</h1>
+        <p class="description">Weekly health summary - sleep, exercise, mood, habits</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">health</span><span class="pill">wellness</span><span class="pill">weekly</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install wellness-weekly-report</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">file_system</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">file_system</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Aggregates wellness data from the past week</li><li>Summarizes sleep patterns, exercise, mood trends, and habit streaks</li><li>Provides actionable health insights</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. ensure-data</div></div><div class="step"><div class="step-title">2. aggregate-sleep</div></div><div class="step"><div class="step-title">3. aggregate-exercise</div></div><div class="step"><div class="step-title">4. aggregate-mood</div></div><div class="step"><div class="step-title">5. aggregate-habits</div></div><div class="step"><div class="step-title">6. llm_insights</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. step</div></div><div class="step"><div class="step-title">11. step</div></div><div class="step"><div class="step-title">12. report</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install wellness-weekly-report</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">data_dir</div><div class="kv-meta">Directory containing wellness data JSON files · default: /tmp/clawflows-wellness</div></div><div class="kv"><div class="kv-name">days</div><div class="kv-meta">Number of days to include in report · default: 7</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        
+        <p>Sundays at 9am (<code>0 9 * * 0</code>).</p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: wellness weekly report Aggregates weekly health data (sleep, exercise, mood, habits) into a report Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. ensure-data</div></div><div class="step"><div class="step-title">2. aggregate-sleep</div></div><div class="step"><div class="step-title">3. aggregate-exercise</div></div><div class="step"><div class="step-title">4. aggregate-mood</div></div><div class="step"><div class="step-title">5. aggregate-habits</div></div><div class="step"><div class="step-title">6. llm_insights</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. step</div></div><div class="step"><div class="step-title">11. step</div></div><div class="step"><div class="step-title">12. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: wellness-weekly-report
+# Aggregates weekly health data (sleep, exercise, mood, habits) into a report
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;data_dir&quot;:&quot;/path/to/wellness/&quot;}&#39;
+#
+# Expected files in data_dir:
+#   sleep.json:    [{&quot;date&quot;:&quot;2026-02-01&quot;,&quot;bed&quot;:&quot;23:30&quot;,&quot;wake&quot;:&quot;07:15&quot;,&quot;quality&quot;:4}]
+#   exercise.json: [{&quot;date&quot;:&quot;2026-02-01&quot;,&quot;type&quot;:&quot;running&quot;,&quot;duration_min&quot;:30,&quot;calories&quot;:280}]
+#   mood.json:     [{&quot;date&quot;:&quot;2026-02-01&quot;,&quot;score&quot;:4,&quot;notes&quot;:&quot;good day&quot;}]
+#   habits.json:   [{&quot;date&quot;:&quot;2026-02-01&quot;,&quot;water_glasses&quot;:8,&quot;meditation_min&quot;:10,&quot;steps&quot;:8500}]
+#
+# Requires: jq
+
+name: wellness-weekly-report
+description: Weekly health summary - sleep, exercise, mood, habits
+
+args:
+  data_dir:
+    description: &quot;Directory containing wellness data JSON files&quot;
+    default: &quot;/tmp/clawflows-wellness&quot;
+  days:
+    description: &quot;Number of days to include in report&quot;
+    default: &quot;7&quot;
+
+steps:
+  - id: ensure-data
+    command: |
+      mkdir -p &quot;${data_dir}&quot;
+      if [ ! -f &quot;${data_dir}/sleep.json&quot; ]; then
+        cat &gt; &quot;${data_dir}/sleep.json&quot; &lt;&lt; &#39;EOF&#39;
+      [{&quot;date&quot;:&quot;2026-01-27&quot;,&quot;bed&quot;:&quot;23:30&quot;,&quot;wake&quot;:&quot;07:00&quot;,&quot;quality&quot;:4},
+       {&quot;date&quot;:&quot;2026-01-28&quot;,&quot;bed&quot;:&quot;00:15&quot;,&quot;wake&quot;:&quot;07:30&quot;,&quot;quality&quot;:3},
+       {&quot;date&quot;:&quot;2026-01-29&quot;,&quot;bed&quot;:&quot;23:00&quot;,&quot;wake&quot;:&quot;06:45&quot;,&quot;quality&quot;:5},
+       {&quot;date&quot;:&quot;2026-01-30&quot;,&quot;bed&quot;:&quot;23:45&quot;,&quot;wake&quot;:&quot;07:15&quot;,&quot;quality&quot;:4},
+       {&quot;date&quot;:&quot;2026-01-31&quot;,&quot;bed&quot;:&quot;01:00&quot;,&quot;wake&quot;:&quot;08:00&quot;,&quot;quality&quot;:2},
+       {&quot;date&quot;:&quot;2026-02-01&quot;,&quot;bed&quot;:&quot;23:15&quot;,&quot;wake&quot;:&quot;07:00&quot;,&quot;quality&quot;:4},
+       {&quot;date&quot;:&quot;2026-02-02&quot;,&quot;bed&quot;:&quot;23:30&quot;,&quot;wake&quot;:&quot;07:30&quot;,&quot;quality&quot;:4}]
+      EOF
+      fi
+      if [ ! -f &quot;${data_dir}/exercise.json&quot; ]; then
+        cat &gt; &quot;${data_dir}/exercise.json&quot; &lt;&lt; &#39;EOF&#39;
+      [{&quot;date&quot;:&quot;2026-01-27&quot;,&quot;type&quot;:&quot;running&quot;,&quot;duration_min&quot;:35,&quot;calories&quot;:320},
+       {&quot;date&quot;:&quot;2026-01-28&quot;,&quot;type&quot;:&quot;yoga&quot;,&quot;duration_min&quot;:45,&quot;calories&quot;:150},
+       {&quot;date&quot;:&quot;2026-01-30&quot;,&quot;type&quot;:&quot;weights&quot;,&quot;duration_min&quot;:50,&quot;calories&quot;:280},
+       {&quot;date&quot;:&quot;2026-02-01&quot;,&quot;type&quot;:&quot;running&quot;,&quot;duration_min&quot;:40,&quot;calories&quot;:360},
+       {&quot;date&quot;:&quot;2026-02-02&quot;,&quot;type&quot;:&quot;cycling&quot;,&quot;duration_min&quot;:60,&quot;calories&quot;:450}]
+      EOF
+      fi
+      if [ ! -f &quot;${data_dir}/mood.json&quot; ]; then
+        cat &gt; &quot;${data_dir}/mood.json&quot; &lt;&lt; &#39;EOF&#39;
+      [{&quot;date&quot;:&quot;2026-01-27&quot;,&quot;score&quot;:4,&quot;notes&quot;:&quot;productive day&quot;},
+       {&quot;date&quot;:&quot;2026-01-28&quot;,&quot;score&quot;:3,&quot;notes&quot;:&quot;tired afternoon&quot;},
+       {&quot;date&quot;:&quot;2026-01-29&quot;,&quot;score&quot;:5,&quot;notes&quot;:&quot;great energy&quot;},
+       {&quot;date&quot;:&quot;2026-01-30&quot;,&quot;score&quot;:4,&quot;notes&quot;:&quot;steady&quot;},
+       {&quot;date&quot;:&quot;2026-01-31&quot;,&quot;score&quot;:2,&quot;notes&quot;:&quot;stressed, late night&quot;},
+       {&quot;date&quot;:&quot;2026-02-01&quot;,&quot;score&quot;:4,&quot;notes&quot;:&quot;recovered&quot;},
+       {&quot;date&quot;:&quot;2026-02-02&quot;,&quot;score&quot;:4,&quot;notes&quot;:&quot;relaxed weekend&quot;}]
+      EOF
+      fi
+      if [ ! -f &quot;${data_dir}/habits.json&quot; ]; then
+        cat &gt; &quot;${data_dir}/habits.json&quot; &lt;&lt; &#39;EOF&#39;
+      [{&quot;date&quot;:&quot;2026-01-27&quot;,&quot;water_glasses&quot;:8,&quot;meditation_min&quot;:10,&quot;steps&quot;:9200},
+       {&quot;date&quot;:&quot;2026-01-28&quot;,&quot;water_glasses&quot;:6,&quot;meditation_min&quot;:0,&quot;steps&quot;:7100},
+       {&quot;date&quot;:&quot;2026-01-29&quot;,&quot;water_glasses&quot;:9,&quot;meditation_min&quot;:15,&quot;steps&quot;:11000},
+       {&quot;date&quot;:&quot;2026-01-30&quot;,&quot;water_glasses&quot;:7,&quot;meditation_min&quot;:10,&quot;steps&quot;:8500},
+       {&quot;date&quot;:&quot;2026-01-31&quot;,&quot;water_glasses&quot;:4,&quot;meditation_min&quot;:0,&quot;steps&quot;:5200},
+       {&quot;date&quot;:&quot;2026-02-01&quot;,&quot;water_glasses&quot;:8,&quot;meditation_min&quot;:10,&quot;steps&quot;:10300},
+       {&quot;date&quot;:&quot;2026-02-02&quot;,&quot;water_glasses&quot;:7,&quot;meditation_min&quot;:15,&quot;steps&quot;:8800}]
+      EOF
+      fi
+      echo &quot;Data directory ready: ${data_dir}&quot;
+
+  - id: aggregate-sleep
+    command: |
+      jq -c --argjson n ${days} &#39;
+        sort_by(.date) | .[-$n:] |
+        {
+          nights: length,
+          avg_quality: ([.[].quality] | add / length * 10 | round / 10),
+          avg_hours: ([.[] |
+            ((.bed|split(&quot;:&quot;)|.[0]|tonumber)*60 + (.bed|split(&quot;:&quot;)|.[1]|tonumber)) as $b |
+            ((.wake|split(&quot;:&quot;)|.[0]|tonumber)*60 + (.wake|split(&quot;:&quot;)|.[1]|tonumber)) as $w |
+            (if $b &gt; $w then 1440 - $b + $w else $w - $b end) / 60
+          ] | add / length * 10 | round / 10),
+          best_night: (sort_by(.quality) | last | {date, quality}),
+          worst_night: (sort_by(.quality) | first | {date, quality})
+        }
+      &#39; &quot;${data_dir}/sleep.json&quot; &gt; /tmp/lb_w_sleep.json
+      cat /tmp/lb_w_sleep.json
+
+  - id: aggregate-exercise
+    command: |
+      jq -c --argjson n ${days} &#39;
+        sort_by(.date) | .[-$n:] |
+        {
+          sessions: length,
+          total_minutes: ([.[].duration_min] | add),
+          total_calories: ([.[].calories] | add),
+          types: ([.[].type] | group_by(.) | map({type: .[0], count: length}) | sort_by(-.count))
+        }
+      &#39; &quot;${data_dir}/exercise.json&quot; &gt; /tmp/lb_w_exercise.json
+      cat /tmp/lb_w_exercise.json
+
+  - id: aggregate-mood
+    command: |
+      jq -c --argjson n ${days} &#39;
+        sort_by(.date) | .[-$n:] |
+        {
+          entries: length,
+          avg_score: ([.[].score] | add / length * 10 | round / 10),
+          best_day: (sort_by(.score) | last | {date, score, notes}),
+          worst_day: (sort_by(.score) | first | {date, score, notes}),
+          trend: (if length &gt;= 4 then
+            ((.[:length/2|floor] | [.[].score] | add / length) as $first_half |
+             (.[length/2|floor:] | [.[].score] | add / length) as $second_half |
+             if ($second_half - $first_half) &gt; 0.3 then &quot;improving&quot;
+             elif ($first_half - $second_half) &gt; 0.3 then &quot;declining&quot;
+             else &quot;stable&quot; end)
+          else &quot;insufficient data&quot; end)
+        }
+      &#39; &quot;${data_dir}/mood.json&quot; &gt; /tmp/lb_w_mood.json
+      cat /tmp/lb_w_mood.json
+
+  - id: aggregate-habits
+    command: |
+      jq -c --argjson n ${days} &#39;
+        sort_by(.date) | .[-$n:] |
+        {
+          days_tracked: length,
+          avg_water: ([.[].water_glasses] | add / length * 10 | round / 10),
+          meditation_days: ([.[] | select(.meditation_min &gt; 0)] | length),
+          avg_meditation_min: ([.[] | select(.meditation_min &gt; 0) | .meditation_min] | if length &gt; 0 then add / length | round else 0 end),
+          avg_steps: ([.[].steps] | add / length | round),
+          step_goal_days: ([.[] | select(.steps &gt;= 8000)] | length)
+        }
+      &#39; &quot;${data_dir}/habits.json&quot; &gt; /tmp/lb_w_habits.json
+      cat /tmp/lb_w_habits.json
+
+  - id: llm_insights
+    command: |
+      jq -nc --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json &#39;{sleep: $sleep[0], exercise: $ex[0], mood: $mood[0], habits: $habits[0]}&#39; &gt; /tmp/lb_w_all.json
+      DATA=$(cat /tmp/lb_w_all.json)
+      llm_task.invoke &lt;&lt;PROMPT
+      You are a wellness coach. Analyze this week&#39;s health data:
+
+      $DATA
+
+      Provide:
+      - correlations: connections between sleep/exercise/mood (e.g., &quot;exercise days correlate with higher mood&quot;)
+      - achievements: 2-3 things to celebrate this week
+      - improvements: 2-3 specific, actionable recommendations
+      - focus_area: the ONE thing that would have the biggest impact next week
+      - weekly_grade: A-F overall wellness grade with brief justification
+
+      Return JSON with those fields.
+      PROMPT
+      rm -f /tmp/lb_w_all.json
+    env:
+      CLAWD_URL: &quot;http://localhost:1691&quot;
+
+  - id: report
+    command: |
+      INSIGHTS=$(cat /tmp/lobster_llm_task_result.json 2&gt;/dev/null || echo &#39;{}&#39;)
+      jq -rn --slurpfile sleep /tmp/lb_w_sleep.json --slurpfile ex /tmp/lb_w_exercise.json --slurpfile mood /tmp/lb_w_mood.json --slurpfile habits /tmp/lb_w_habits.json --argjson insights &quot;$INSIGHTS&quot; &#39;
+        $sleep[0] as $s | $ex[0] as $e | $mood[0] as $m | $habits[0] as $h |
+        &quot;🏥 Wellness Weekly Report\n&quot; +
+        &quot;━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n&quot; +
+        &quot;🛏️ Sleep (\($s.nights) nights)\n&quot; +
+        &quot;  Average: \($s.avg_hours)h | Quality: \($s.avg_quality)/5\n&quot; +
+        &quot;  Best: \($s.best_night.date) (\($s.best_night.quality)/5)\n&quot; +
+        &quot;  Worst: \($s.worst_night.date) (\($s.worst_night.quality)/5)\n\n&quot; +
+        &quot;🏃 Exercise (\($e.sessions) sessions)\n&quot; +
+        &quot;  Total: \($e.total_minutes)min | \($e.total_calories) cal\n&quot; +
+        &quot;  Activities: &quot; + ($e.types | map(&quot;\(.type)×\(.count)&quot;) | join(&quot;, &quot;)) + &quot;\n\n&quot; +
+        &quot;😊 Mood (avg \($m.avg_score)/5 — \($m.trend))\n&quot; +
+        &quot;  Best: \($m.best_day.date) (\($m.best_day.score)/5) — \($m.best_day.notes)\n&quot; +
+        &quot;  Worst: \($m.worst_day.date) (\($m.worst_day.score)/5) — \($m.worst_day.notes)\n\n&quot; +
+        &quot;💧 Habits\n&quot; +
+        &quot;  Water: \($h.avg_water) glasses/day\n&quot; +
+        &quot;  Meditation: \($h.meditation_days)/\($h.days_tracked) days (avg \($h.avg_meditation_min)min)\n&quot; +
+        &quot;  Steps: \($h.avg_steps)/day (\($h.step_goal_days)/\($h.days_tracked) hit 8k goal)\n\n&quot; +
+        &quot;━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n&quot; +
+        &quot;🤖 AI Wellness Insights\n\n&quot; +
+        (if $insights.weekly_grade then &quot;📊 Weekly Grade: \($insights.weekly_grade)\n\n&quot; else &quot;&quot; end) +
+        (if $insights.achievements then &quot;🏆 Achievements\n&quot; + ($insights.achievements | map(&quot;  • \(.)&quot;) | join(&quot;\n&quot;)) + &quot;\n\n&quot; else &quot;&quot; end) +
+        (if $insights.correlations then &quot;🔗 Correlations\n&quot; + ($insights.correlations | if type == &quot;array&quot; then map(&quot;  • \(.)&quot;) | join(&quot;\n&quot;) else &quot;  • \(.)&quot; end) + &quot;\n\n&quot; else &quot;&quot; end) +
+        (if $insights.improvements then &quot;💡 Recommendations\n&quot; + ($insights.improvements | map(&quot;  • \(.)&quot;) | join(&quot;\n&quot;)) + &quot;\n\n&quot; else &quot;&quot; end) +
+        (if $insights.focus_area then &quot;🎯 Focus Next Week: \($insights.focus_area)\n&quot; else &quot;&quot; end)
+      &#39;
+      rm -f /tmp/lb_w_sleep.json /tmp/lb_w_exercise.json /tmp/lb_w_mood.json /tmp/lb_w_habits.json /tmp/lobster_llm_task_result.json
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Weekly health summary covering sleep, exercise, mood, and habits.</p>
+<h3>What It Does</h3>
+<ul><li>Aggregates wellness data from the past week</li><li>Summarizes sleep patterns, exercise, mood trends, and habit streaks</li><li>Provides actionable health insights</li></ul>
+<h3>Requirements</h3>
+<p>No external capabilities required — reads from local data files.</p>
+<h3>Schedule</h3>
+<p>Sundays at 9am (<code>0 9 * * 0</code>).</p>
+<h3>Installation</h3>
+<ol><li>Add this automation to your ClawFlows registry</li><li>Configure your wellness tracking data source</li><li>Deploy</li></ol>
+<h3>Author</h3>
+<p>Built by <a href="https://clawhub.ai/u/Cluka-399">@Cluka-399</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

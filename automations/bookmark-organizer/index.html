@@ -3,82 +3,387 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>bookmark-organizer — ClawFlows</title>
+  <title>Bookmark Organizer — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>bookmark-organizer</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Periodically organize and summarize your saved bookmarks/links</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Bookmark Organizer</h1>
+        <p class="description">Periodically organize and summarize your saved bookmarks/links</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule 0 10 * * 0</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Productivity</span><span class="tag">Organization</span><span class="tag">Weekly</span></div>
+        <div class="tag-row"><span class="pill">bookmarks</span><span class="pill">links</span><span class="pill">organize</span><span class="pill">categorize</span><span class="pill">cleanup</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install bookmark-organizer</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">file-system</span><span class="tag">web-fetch</span><span class="tag">llm-analysis</span><span class="tag">notifications</span><span class="tag">browser</span><span class="tag">exec</span><span class="tag">discord</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">capability: file-system</span><span class="tag">capability: web-fetch</span><span class="tag">capability: llm-analysis</span><span class="tag">capability: notifications</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>**Parses** your bookmarks file (markdown format)</li><li>**Checks** for dead/moved links</li><li>**Categorizes** uncategorized bookmarks</li><li>**Summarizes** your collection</li><li>**Reports** weekly on Sundays</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. read-bookmarks</div><div class="step-detail">file-system</div></div><div class="step"><div class="step-title">2. parse-bookmarks</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">3. check-links</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">4. categorize-uncategorized</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">5. generate-summary</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">6. Total count by category</div></div><div class="step"><div class="step-title">7. Any themes or patterns</div></div><div class="step"><div class="step-title">8. Bookmarks that might be outdated</div></div><div class="step"><div class="step-title">9. Suggested cleanup actions</div></div><div class="step"><div class="step-title">10. notify-report</div><div class="step-detail">notify</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install bookmark-organizer</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">bookmarks_path</div><div class="kv-meta">Path to bookmarks file or folder · default: /data/clawd/bookmarks.md</div></div><div class="kv"><div class="kv-name">max_process</div><div class="kv-meta">Max bookmarks to process per run · default: 20</div></div><div class="kv"><div class="kv-name">auto_categorize</div><div class="kv-meta">Automatically categorize uncategorized bookmarks · default: true</div></div><div class="kv"><div class="kv-name">check_dead_links</div><div class="kv-meta">Check for dead/moved links · default: true</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 10 * * 0</code></p>
+        
+        <h3>Example output</h3><pre class="code-block"><code>🔖 Bookmark Organizer Report
+
+📊 Summary:
+• 47 total bookmarks across 8 categories
+• Most bookmarks: Development (18), Learning (12)
+• Theme: Heavy focus on AI/ML content recently
+• Suggestion: Review &quot;Tools&quot; category - 5 links are 2+ years old
+
+⚠️ Dead Links (3):
+• Old blog post about Redux
+• Deprecated API docs
+• Company blog (domain expired)
+
+🏷️ Suggested Categories:
+• &quot;GPT-4 Vision Guide&quot; → AI/ML
+• &quot;How to Run a 1:1&quot; → Leadership</code></pre>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: bookmark organizer Reads a markdown bookmarks file, checks for dead links, and produces a categorized report</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. read-bookmarks</div></div><div class="step"><div class="step-title">2. parse-bookmarks</div></div><div class="step"><div class="step-title">3. check-links</div></div><div class="step"><div class="step-title">4. generate-summary</div></div><div class="step"><div class="step-title">5. categorize-and-report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: bookmark-organizer
+# Reads a markdown bookmarks file, checks for dead links, and produces
+# a categorized report
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;bookmarks_path&quot;:&quot;/data/clawd/bookmarks.md&quot;}&#39;
+#
+# Requires: jq, curl
+# LLM: Uses prompt step for bookmark categorization
+
+name: bookmark-organizer
+description: Periodically organize and summarize your saved bookmarks/links
+
+args:
+  bookmarks_path:
+    description: &quot;Path to bookmarks file (markdown with ## categories and [title](url) links)&quot;
+    default: &quot;/data/clawd/bookmarks.md&quot;
+  max_process:
+    description: &quot;Max bookmarks to process per run&quot;
+    default: &quot;20&quot;
+  check_dead_links:
+    description: &quot;Check for dead/moved links (true/false)&quot;
+    default: &quot;true&quot;
+
+steps:
+  - id: read-bookmarks
+    command: |
+      if [ ! -f &quot;${bookmarks_path}&quot; ]; then
+        echo &quot;No bookmarks file found at ${bookmarks_path}. Creating empty template.&quot; &gt;&amp;2
+        echo &#39;{&quot;bookmarks&quot;:[],&quot;categories&quot;:[],&quot;total&quot;:0}&#39;
+        exit 0
+      fi
+      cat &quot;${bookmarks_path}&quot;
+
+  - id: parse-bookmarks
+    stdin: $read-bookmarks.stdout
+    command: |
+      cat &gt; /tmp/lb_bo_raw.md
+      max=&quot;${max_process}&quot;
+
+      # Check if input is already JSON (empty file case)
+      if head -1 /tmp/lb_bo_raw.md | grep -q &#39;^{&#39;; then
+        cat /tmp/lb_bo_raw.md
+        rm -f /tmp/lb_bo_raw.md
+        exit 0
+      fi
+
+      # Parse markdown bookmarks: extract categories and links
+      python3 -c &quot;
+      import json, re, sys
+
+      content = open(&#39;/tmp/lb_bo_raw.md&#39;).read()
+      lines = content.split(&#39;\n&#39;)
+      bookmarks = []
+      category = &#39;Uncategorized&#39;
+      for line in lines:
+          if line.startswith(&#39;## &#39;):
+              category = line[3:].strip()
+          else:
+              m = re.search(r&#39;\[([^\]]+)\]\((https?://[^)]+)\)&#39;, line)
+              if m:
+                  bookmarks.append({&#39;title&#39;: m.group(1), &#39;url&#39;: m.group(2), &#39;category&#39;: category})
+
+      max_n = int(&#39;${max_process}&#39;) if &#39;${max_process}&#39;.isdigit() else 20
+      bookmarks = bookmarks[:max_n]
+      cats = list(set(b[&#39;category&#39;] for b in bookmarks))
+      print(json.dumps({&#39;bookmarks&#39;: bookmarks, &#39;categories&#39;: sorted(cats), &#39;total&#39;: len(bookmarks)}))
+      &quot; 2&gt;/dev/null || echo &#39;{&quot;bookmarks&quot;:[],&quot;categories&quot;:[],&quot;total&quot;:0}&#39;
+      rm -f /tmp/lb_bo_raw.md
+
+  - id: check-links
+    stdin: $parse-bookmarks.stdout
+    command: |
+      cat &gt; /tmp/lb_bo_parsed.json
+      check=&quot;${check_dead_links}&quot;
+
+      if [ &quot;$check&quot; != &quot;true&quot; ]; then
+        jq &#39;{bookmarks: .bookmarks, categories: .categories, total: .total, dead_links: [], checked: false}&#39; /tmp/lb_bo_parsed.json
+        rm -f /tmp/lb_bo_parsed.json
+        exit 0
+      fi
+
+      # Check each URL with a HEAD request (timeout 5s)
+      dead=&quot;[]&quot;
+      urls=$(jq -r &#39;.bookmarks[].url&#39; /tmp/lb_bo_parsed.json)
+      tmpd=/tmp/lb_bo_dead.json
+      echo &#39;[]&#39; &gt; &quot;$tmpd&quot;
+
+      for url in $urls; do
+        status=$(curl -o /dev/null -s -w &#39;%{http_code}&#39; --max-time 5 -L &quot;$url&quot; 2&gt;/dev/null)
+        status=${status:-000}
+        if [ &quot;$status&quot; = &quot;000&quot; ] || [ &quot;$status&quot; -ge 400 ] 2&gt;/dev/null; then
+          title=$(jq -r --arg u &quot;$url&quot; &#39;.bookmarks[] | select(.url==$u) | .title&#39; /tmp/lb_bo_parsed.json | head -1)
+          jq --arg u &quot;$url&quot; --arg t &quot;$title&quot; --argjson s &quot;$status&quot; &#39;. + [{url:$u, title:$t, status:$s}]&#39; &quot;$tmpd&quot; &gt; /tmp/lb_bo_dead2.json
+          mv /tmp/lb_bo_dead2.json &quot;$tmpd&quot;
+        fi
+      done
+
+      jq --slurpfile dead &quot;$tmpd&quot; &#39;{
+        bookmarks: .bookmarks,
+        categories: .categories,
+        total: .total,
+        dead_links: $dead[0],
+        checked: true
+      }&#39; /tmp/lb_bo_parsed.json
+      rm -f /tmp/lb_bo_parsed.json &quot;$tmpd&quot;
+
+  - id: generate-summary
+    stdin: $check-links.stdout
+    command: |
+      # Produce summary stats and categorization data
+      cat &gt; /tmp/lb_bo_checked.json
+
+      jq &#39;{
+        total: .total,
+        categories: (
+          [.bookmarks | group_by(.category)[] |
+            {category: .[0].category, count: length, items: [.[].title]}]
+        ),
+        uncategorized: [.bookmarks[] | select(.category == &quot;Uncategorized&quot;) | {title, url}],
+        dead_links: .dead_links,
+        checked: .checked,
+        needs_categorization: ([.bookmarks[] | select(.category == &quot;Uncategorized&quot;)] | length),
+        health: {
+          total_checked: .total,
+          dead: (.dead_links | length),
+          alive: (.total - (.dead_links | length))
+        }
+      }&#39; /tmp/lb_bo_checked.json
+      rm -f /tmp/lb_bo_checked.json
+
+  - id: categorize-and-report
+    stdin: $generate-summary.stdout
+    command: |
+      llm_task.invoke --prompt &quot;SYSTEM: You are a knowledge management assistant. Organize bookmarks into clear, useful categories.\n\nUSER: Analyze the bookmark collection data below and produce an organized report.\n\nTasks:\n1. For any uncategorized bookmarks, suggest appropriate categories based on their titles and URLs (e.g., Development, Design, AI/ML, Business, DevOps, Learning, etc.)\n2. Identify duplicate or very similar bookmarks\n3. Suggest a reorganization plan if categories are imbalanced\n4. Flag any bookmarks with dead links for removal\n5. Format as a clean, scannable report with emoji category headers\n\nData:\n$(cat)&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Periodically organize and summarize your saved bookmarks/links.</p>
+<h3>What It Does</h3>
+<ul><li>**Parses** your bookmarks file (markdown format)</li><li>**Checks** for dead/moved links</li><li>**Categorizes** uncategorized bookmarks</li><li>**Summarizes** your collection</li><li>**Reports** weekly on Sundays</li></ul>
+<h3>The Problem</h3>
+<p>Bookmarks are where good links go to die. You save something interesting, never look at it again, and it piles up. This keeps your bookmarks useful.</p>
+<h3>Requirements</h3>
+<ul><li>`file-system` capability</li><li>`web-fetch` capability</li><li>`llm-analysis` capability</li><li>`notifications` capability</li></ul>
+<h3>Bookmarks Format</h3>
+<pre class="code-block"><code data-lang="markdown">## Development
+- [React Docs](https://react.dev)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+
+## Design
+- [Figma Best Practices](https://www.figma.com/best-practices/)
+
+## Uncategorized
+- [Some interesting link](https://example.com)</code></pre>
+<h3>Example Output</h3>
+<pre class="code-block"><code>🔖 Bookmark Organizer Report
+
+📊 Summary:
+• 47 total bookmarks across 8 categories
+• Most bookmarks: Development (18), Learning (12)
+• Theme: Heavy focus on AI/ML content recently
+• Suggestion: Review &quot;Tools&quot; category - 5 links are 2+ years old
+
+⚠️ Dead Links (3):
+• Old blog post about Redux
+• Deprecated API docs
+• Company blog (domain expired)
+
+🏷️ Suggested Categories:
+• &quot;GPT-4 Vision Guide&quot; → AI/ML
+• &quot;How to Run a 1:1&quot; → Leadership</code></pre>
+<h3>Author</h3>
+<p>**Cluka** 🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

@@ -5,80 +5,342 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meeting Prep Assistant — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Meeting Prep Assistant</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Generate meeting briefs 30 min before - attendees, agenda, relevant docs</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Meeting Prep Assistant</h1>
+        <p class="description">Generate meeting briefs 30 min before - attendees, agenda, relevant docs</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">productivity</span><span class="pill">meetings</span><span class="pill">calendar</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install meeting-prep-assistant</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">calendar</span><span class="tag">file_system</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">calendar</span><span class="tag">file_system</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>**Checks calendar** - Looks for meetings starting in the next 30 minutes</li><li>**Gathers context** - Pulls attendee info, previous notes, related documents</li><li>**Generates brief** - Creates a concise prep document</li></ol>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. get-imminent</div></div><div class="step"><div class="step-title">2. find-related-docs</div></div><div class="step"><div class="step-title">3. llm_brief</div></div><div class="step"><div class="step-title">4. step</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. report</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install meeting-prep-assistant</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">minutes_before</div><div class="kv-meta">How many minutes ahead to look for meetings · default: 30</div></div><div class="kv"><div class="kv-name">gcalcli_path</div><div class="kv-meta">Path to gcalcli binary · default: /data/clawd/.venv-gcal/bin/gcalcli</div></div><div class="kv"><div class="kv-name">notes_path</div><div class="kv-meta">Path to search for related notes/docs · default: /data/clawd/memory</div></div></div>
+        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
+  minutes_before: 30
+  include_docs: true</code></pre>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        
+        <p>Runs every 30 minutes during work hours on weekdays (<code>*/30 8-18 * * 1-5</code>).</p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: meeting prep assistant Generate meeting briefs with attendee info and relevant docs Usage:</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. get-imminent</div></div><div class="step"><div class="step-title">2. find-related-docs</div></div><div class="step"><div class="step-title">3. llm_brief</div></div><div class="step"><div class="step-title">4. step</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: meeting-prep-assistant
+# Generate meeting briefs with attendee info and relevant docs
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;minutes_before&quot;:&quot;30&quot;}&#39;
+#
+# Requires: jq, gcalcli (or any calendar CLI)
+#
+# NOTE: The original automation uses calendar + file_system capabilities.
+# This version fetches imminent meetings, searches for related docs/notes,
+# and generates AI-powered briefs via llm_task.invoke.
+
+name: meeting-prep-assistant
+description: Generate meeting briefs 30 min before - attendees, agenda, relevant docs
+
+args:
+  minutes_before:
+    description: &quot;How many minutes ahead to look for meetings&quot;
+    default: &quot;30&quot;
+  gcalcli_path:
+    description: &quot;Path to gcalcli binary&quot;
+    default: &quot;/data/clawd/.venv-gcal/bin/gcalcli&quot;
+  notes_path:
+    description: &quot;Path to search for related notes/docs&quot;
+    default: &quot;/data/clawd/memory&quot;
+
+steps:
+  - id: get-imminent
+    command: |
+      gcal=&quot;${gcalcli_path}&quot;
+      mins=&quot;${minutes_before}&quot;
+      if [ ! -f &quot;$gcal&quot; ]; then
+        echo &#39;{&quot;meetings&quot;:[],&quot;error&quot;:&quot;gcalcli not found&quot;}&#39;
+        exit 0
+      fi
+      now=$(date &quot;+%Y-%m-%dT%H:%M&quot;)
+      end_time=$(date -d &quot;+${mins} minutes&quot; &quot;+%Y-%m-%dT%H:%M&quot; 2&gt;/dev/null || date -v+${mins}M &quot;+%Y-%m-%dT%H:%M&quot; 2&gt;/dev/null || echo &quot;&quot;)
+      timeout 10 env TZ=Asia/Jerusalem &quot;$gcal&quot; agenda --nocolor --tsv &quot;$now&quot; &quot;$end_time&quot; &gt; /tmp/lb_mpa_cal.tsv 2&gt;/dev/null || true
+      # Strip ANSI codes and check for valid TSV
+      if [ -s /tmp/lb_mpa_cal.tsv ]; then
+        sed -i &#39;s/\x1b\[[0-9;]*m//g&#39; /tmp/lb_mpa_cal.tsv
+      fi
+      if ! grep -qP &#39;^\d{4}&#39; /tmp/lb_mpa_cal.tsv 2&gt;/dev/null; then
+        echo &#39;{&quot;meetings&quot;:[],&quot;count&quot;:0}&#39;
+        rm -f /tmp/lb_mpa_cal.tsv
+        exit 0
+      fi
+      grep -P &#39;^\d{4}&#39; /tmp/lb_mpa_cal.tsv | awk -F&#39;\t&#39; &#39;{
+        gsub(/&quot;/, &quot;\\\&quot;&quot;, $5);
+        printf &quot;{\&quot;start_date\&quot;:\&quot;%s\&quot;,\&quot;start_time\&quot;:\&quot;%s\&quot;,\&quot;end_date\&quot;:\&quot;%s\&quot;,\&quot;end_time\&quot;:\&quot;%s\&quot;,\&quot;title\&quot;:\&quot;%s\&quot;}\n&quot;, $1, $2, $3, $4, $5
+      }&#39; | jq -sc &#39;{meetings: ., count: length}&#39;
+      rm -f /tmp/lb_mpa_cal.tsv
+
+  - id: find-related-docs
+    stdin: $get-imminent.stdout
+    command: |
+      cat &gt; /tmp/lb_mpa_meetings.json
+      notes_dir=&quot;${notes_path}&quot;
+      # For each meeting, search notes directory for related files
+      echo &#39;[]&#39; &gt; /tmp/lb_mpa_docs.json
+      jq -r &#39;.meetings[].title // empty&#39; /tmp/lb_mpa_meetings.json | while read title; do
+        # Extract key words from title (skip common words)
+        keywords=$(echo &quot;$title&quot; | tr &#39;[:upper:]&#39; &#39;[:lower:]&#39; | tr -cs &#39;[:alpha:]&#39; &#39;\n&#39; | grep -vE &#39;^(the|and|or|for|with|our|a|an|in|on|at|to|of|is)$&#39; | head -5)
+        found=&#39;[]&#39;
+        if [ -d &quot;$notes_dir&quot; ] &amp;&amp; [ -n &quot;$keywords&quot; ]; then
+          for kw in $keywords; do
+            matches=$(grep -ril &quot;$kw&quot; &quot;$notes_dir&quot;/*.md 2&gt;/dev/null | head -3 || true)
+            if [ -n &quot;$matches&quot; ]; then
+              found=$(echo &quot;$matches&quot; | jq -R &#39;.&#39; | jq -sc &#39;.&#39;)
+              break
+            fi
+          done
+        fi
+        jq -c --arg t &quot;$title&quot; --argjson f &quot;$found&quot; \
+          &#39;. + [{&quot;meeting&quot;: $t, &quot;related_files&quot;: $f}]&#39; /tmp/lb_mpa_docs.json &gt; /tmp/lb_mpa_docs2.json
+        mv /tmp/lb_mpa_docs2.json /tmp/lb_mpa_docs.json
+      done
+
+      jq -nc --slurpfile m /tmp/lb_mpa_meetings.json --slurpfile d /tmp/lb_mpa_docs.json \
+        &#39;{meetings: $m[0].meetings, docs: $d[0], count: $m[0].count}&#39;
+      rm -f /tmp/lb_mpa_meetings.json /tmp/lb_mpa_docs.json
+
+  - id: llm_brief
+    stdin: $find-related-docs.stdout
+    command: |
+      cat &gt; /tmp/lb_mpa_llm_input.json
+      DATA=$(cat /tmp/lb_mpa_llm_input.json)
+      llm_task.invoke &lt;&lt;PROMPT
+      You are an executive meeting prep assistant. Given these upcoming meetings and related notes:
+
+      $DATA
+
+      For each meeting, generate a brief with:
+      - key_context: what this meeting is likely about based on the title and related docs
+      - suggested_talking_points: 2-3 things to raise
+      - prep_actions: anything to review/prepare before the meeting
+      - energy_level: &quot;high&quot; (important decision), &quot;medium&quot; (routine), &quot;low&quot; (informational)
+
+      Return JSON: { &quot;briefs&quot;: [{ &quot;title&quot;: &quot;...&quot;, &quot;key_context&quot;: &quot;...&quot;, &quot;talking_points&quot;: [...], &quot;prep_actions&quot;: [...], &quot;energy_level&quot;: &quot;...&quot; }] }
+      PROMPT
+      rm -f /tmp/lb_mpa_llm_input.json
+    env:
+      CLAWD_URL: &quot;http://localhost:1691&quot;
+
+  - id: report
+    stdin: $llm_brief.stdout
+    command: |
+      cat &gt; /tmp/lb_mpa_briefs.json
+      BRIEFS=$(cat /tmp/lb_mpa_briefs.json)
+      # Check if we got valid briefs
+      if echo &quot;$BRIEFS&quot; | jq -e &#39;.briefs&#39; &gt;/dev/null 2&gt;&amp;1; then
+        echo &quot;$BRIEFS&quot; | jq -r &#39;
+          if (.briefs | length) == 0 then
+            &quot;📅 No meetings coming up.&quot;
+          else
+            &quot;📋 **AI Meeting Briefs** (&quot; + (.briefs | length | tostring) + &quot; upcoming)\n&quot; +
+            (.briefs | map(
+              &quot;\n&quot; +
+              (if .energy_level == &quot;high&quot; then &quot;🔴&quot; elif .energy_level == &quot;medium&quot; then &quot;🟡&quot; else &quot;🟢&quot; end) +
+              &quot; **&quot; + .title + &quot;**\n&quot; +
+              &quot;  💡 &quot; + .key_context + &quot;\n&quot; +
+              &quot;  🗣️ Talking points:\n&quot; + (.talking_points | map(&quot;    • &quot; + .) | join(&quot;\n&quot;)) + &quot;\n&quot; +
+              &quot;  📝 Prep: &quot; + (.prep_actions | join(&quot;; &quot;))
+            ) | join(&quot;\n---\n&quot;))
+          end
+        &#39;
+      else
+        echo &quot;📅 No meeting briefs generated.&quot;
+        echo &quot;$BRIEFS&quot;
+      fi
+      rm -f /tmp/lb_mpa_briefs.json
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Generate meeting briefs 30 minutes before each meeting — attendees, agenda, and relevant docs.</p>
+<h3>What It Does</h3>
+<ol><li>**Checks calendar** - Looks for meetings starting in the next 30 minutes</li><li>**Gathers context** - Pulls attendee info, previous notes, related documents</li><li>**Generates brief** - Creates a concise prep document</li></ol>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`calendar`</td><td>caldav-calendar, google-calendar</td></tr></tbody></table></div>
+<h3>Configuration</h3>
+<pre class="code-block"><code data-lang="yaml">config:
+  minutes_before: 30
+  include_docs: true</code></pre>
+<h3>Schedule</h3>
+<p>Runs every 30 minutes during work hours on weekdays (<code>*/30 8-18 * * 1-5</code>).</p>
+<h3>Install</h3>
+<pre class="code-block"><code data-lang="bash">openclaw install meeting-prep-assistant</code></pre></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

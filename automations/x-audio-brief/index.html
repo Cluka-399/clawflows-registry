@@ -3,82 +3,469 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>x-audio-brief — ClawFlows</title>
+  <title>X Audio Brief — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>x-audio-brief</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>X Audio Brief</h1>
+        <p class="description">Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">social-media</span><span class="pill">audio</span><span class="pill">research</span><span class="pill">tts</span><span class="pill">x-twitter</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install x-audio-brief</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">search-x</span><span class="tag">elevenlabs-tts</span><span class="tag">llm-analysis</span><span class="tag">web-search</span><span class="tag">tts</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">skill: search-x</span><span class="tag">skill: elevenlabs-tts</span><span class="tag">capability: llm-analysis</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. search-x</div><div class="step-detail">search</div></div><div class="step"><div class="step-title">2. format-for-summary</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">3. select-voice</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">4. generate-summary</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">5. Write for TEXT-TO-SPEECH (will be read aloud)</div></div><div class="step"><div class="step-title">6. Use conversational, natural language appropriate for ${config.language}</div></div><div class="step"><div class="step-title">7. No URLs, hashtags, or @ mentions (spell out names)</div></div><div class="step"><div class="step-title">8. No emojis or special characters</div></div><div class="step"><div class="step-title">9. Start with an appropriate greeting for ${config.language} speakers</div></div><div class="step"><div class="step-title">10. Go through each notable post in detail - who said it, what they said, why it matters</div></div><div class="step"><div class="step-title">11. Add context and connections between posts when relevant</div></div><div class="step"><div class="step-title">12. Include engagement numbers when impressive (likes, retweets)</div></div><div class="step"><div class="step-title">13. Target 3 MINUTES when read aloud (~450-500 words equivalent)</div></div><div class="step"><div class="step-title">14. End with overall sentiment/vibe and key takeaways</div></div><div class="step"><div class="step-title">15. generate-text-summary</div><div class="step-detail">llm-analysis</div></div><div class="step"><div class="step-title">16. Bullet points with author attribution</div></div><div class="step"><div class="step-title">17. Include key insights and notable takes</div></div><div class="step"><div class="step-title">18. Keep it scannable</div></div><div class="step"><div class="step-title">19. generate-audio</div><div class="step-detail">speak</div></div><div class="step"><div class="step-title">20. deliver-briefing</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">21. fallback-notify</div><div class="step-detail">notify</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install x-audio-brief</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">topic</div><div class="kv-meta">What to search for on X · required</div></div><div class="kv"><div class="kv-name">days</div><div class="kv-meta">How far back to search (1-30) · default: 1</div></div><div class="kv"><div class="kv-name">language</div><div class="kv-meta">Output language (english, hebrew, french, spanish, german, etc) · default: english</div></div><div class="kv"><div class="kv-name">voice</div><div class="kv-meta">TTS voice to use (auto-selects multilingual voice if non-English) · default: adam</div></div><div class="kv"><div class="kv-name">max_tweets</div><div class="kv-meta">Maximum tweets to include in summary · default: 15</div></div><div class="kv"><div class="kv-name">duration_minutes</div><div class="kv-meta">Target audio length in minutes · default: 3</div></div><div class="kv"><div class="kv-name">include_text</div><div class="kv-meta">Include text summary alongside audio · default: true</div></div><div class="kv"><div class="kv-name">send_file</div><div class="kv-meta">Send audio file via message (not just path) · default: true</div></div><div class="kv"><div class="kv-name">channel</div><div class="kv-meta">Channel to send to (discord, telegram, etc) · default: discord</div></div><div class="kv"><div class="kv-name">target</div><div class="kv-meta">Channel/chat ID to send the file to</div></div></div>
+        <h3>README configuration</h3><div class="table-wrap"><table><thead><tr><th>Config</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`topic`</td><td>(required)</td><td>What to search for</td></tr><tr><td>`days`</td><td>1</td><td>How far back to search</td></tr><tr><td>`language`</td><td>english</td><td>Output language (english, hebrew, french, spanish, german)</td></tr><tr><td>`voice`</td><td>adam</td><td>ElevenLabs voice (auto-selects for language)</td></tr><tr><td>`max_tweets`</td><td>15</td><td>Max tweets to summarize</td></tr><tr><td>`duration_minutes`</td><td>3</td><td>Target audio length</td></tr><tr><td>`include_text`</td><td>true</td><td>Include text summary</td></tr><tr><td>`send_file`</td><td>true</td><td>Send audio file directly</td></tr><tr><td>`channel`</td><td>discord</td><td>Channel to send to</td></tr><tr><td>`target`</td><td>-</td><td>Channel/chat ID for delivery</td></tr></tbody></table></div>
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p>No schedule declared. This may be manual-only.</p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: x audio brief Search X/Twitter for a topic via Brave Search, collect posts and discussion, produce a structured summary, and optionally convert to audio via ElevenLabs TTS.</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. setup</div></div><div class="step"><div class="step-title">2. search-x-posts</div></div><div class="step"><div class="step-title">3. format-tweets</div></div><div class="step"><div class="step-title">4. generate-script</div></div><div class="step"><div class="step-title">5. save-script</div></div><div class="step"><div class="step-title">6. tts</div></div><div class="step"><div class="step-title">7. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: x-audio-brief
+# Search X/Twitter for a topic via Brave Search, collect posts and discussion,
+# produce a structured summary, and optionally convert to audio via ElevenLabs TTS.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;topic&quot;:&quot;OpenAI&quot;,&quot;skip_tts&quot;:&quot;true&quot;}&#39;
+#
+# Requires: curl, jq (at /home/node/bin/jq)
+# Env: BRAVE_API_KEY, ELEVENLABS_API_KEY (for TTS)
+#
+# Note: Brave Search returns a mix of X profile pages, archived tweets (archive.is),
+# and news articles discussing X/Twitter activity. The workflow extracts and combines
+# all sources to produce a comprehensive briefing.
+
+name: x-audio-brief
+description: Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing
+
+env:
+  PATH: &quot;/home/node/bin:/usr/local/bin:/usr/bin:/bin&quot;
+
+args:
+  topic:
+    description: &quot;What to search for on X/Twitter&quot;
+  days:
+    description: &quot;How far back to search (1-30)&quot;
+    default: &quot;1&quot;
+  max_tweets:
+    description: &quot;Maximum posts/mentions to include in summary&quot;
+    default: &quot;15&quot;
+  voice:
+    description: &quot;TTS voice (adam or rachel)&quot;
+    default: &quot;adam&quot;
+  skip_tts:
+    description: &quot;Skip TTS generation (set to false to actually generate audio)&quot;
+    default: &quot;true&quot;
+  output_dir:
+    description: &quot;Directory for output files&quot;
+    default: &quot;/tmp/x-audio-brief&quot;
+
+steps:
+  - id: setup
+    command: |
+      mkdir -p &quot;${output_dir}&quot;
+      echo &#39;{&quot;status&quot;:&quot;ready&quot;}&#39;
+
+  - id: search-x-posts
+    command: |
+      # Determine freshness based on days arg
+      freshness=&quot;pd&quot;
+      days_num=&quot;${days}&quot;
+      if [ &quot;$days_num&quot; -gt 7 ] 2&gt;/dev/null; then
+        freshness=&quot;pm&quot;
+      elif [ &quot;$days_num&quot; -gt 1 ] 2&gt;/dev/null; then
+        freshness=&quot;pw&quot;
+      fi
+
+      # Query 1: Recent X/Twitter content (with freshness)
+      curl -sf &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+        -H &quot;Accept: application/json&quot; \
+        --data-urlencode &quot;q=${topic} x.com&quot; \
+        --data-urlencode &quot;count=20&quot; \
+        --data-urlencode &quot;freshness=$freshness&quot; \
+        -G \
+        -o &quot;${output_dir}/brave_q1.json&quot; 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; &quot;${output_dir}/brave_q1.json&quot;
+
+      # Query 2: News + discussion about topic on X/Twitter
+      curl -sf &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+        -H &quot;Accept: application/json&quot; \
+        --data-urlencode &quot;q=${topic} twitter reactions discussion&quot; \
+        --data-urlencode &quot;count=10&quot; \
+        --data-urlencode &quot;freshness=$freshness&quot; \
+        -G \
+        -o &quot;${output_dir}/brave_q2.json&quot; 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; &quot;${output_dir}/brave_q2.json&quot;
+
+      # Parse results into unified post format
+      # Handles: x.com profile pages, archive.is/ph cached tweets, news articles
+      cat &gt; /tmp/xab_parse.jq &lt;&lt; &#39;JQEOF&#39;
+      [.web.results // [] | .[] |
+        # Detect archived X posts (archive.is/ph with &quot;on X:&quot; in title)
+        if ((.url | test(&quot;archive\\.(is|ph|org)&quot;)) and (.title | test(&quot;on X:&quot;; &quot;i&quot;))) then
+          (.title | capture(&quot;^(?&lt;author&gt;[^@]+?)\\s+on X:\\s*\&quot;?(?&lt;text&gt;.+?)\&quot;?$&quot;) // {author: &quot;unknown&quot;, text: (.title // &quot;&quot;)}) as $parsed |
+          {
+            author: ($parsed.author | gsub(&quot;^\\s+|\\s+$&quot;; &quot;&quot;)),
+            content: ($parsed.text // .description // &quot;&quot;),
+            title: .title,
+            url: .url,
+            date: (.age // .page_age // &quot;recent&quot;),
+            source: &quot;x_post&quot;
+          }
+        # Detect x.com/twitter.com URLs
+        elif (.url | test(&quot;(x\\.com|twitter\\.com)&quot;)) then
+          (.url | capture(&quot;(?:x|twitter)\\.com/(?&lt;handle&gt;[^/?]+)&quot;) // {handle: &quot;unknown&quot;}) as $p |
+          {
+            author: $p.handle,
+            content: (.description // .title // &quot;&quot;),
+            title: (.title // &quot;&quot;),
+            url: .url,
+            date: (.age // .page_age // &quot;recent&quot;),
+            source: (if (.url | test(&quot;/status/&quot;)) then &quot;x_post&quot; else &quot;x_profile&quot; end)
+          }
+        # News/other articles
+        else
+          {
+            author: (.meta_url.hostname // .url | split(&quot;/&quot;) | .[2] // &quot;unknown&quot;),
+            content: (.description // .title // &quot;&quot;),
+            title: (.title // &quot;&quot;),
+            url: .url,
+            date: (.age // .page_age // &quot;recent&quot;),
+            source: &quot;news&quot;
+          }
+        end
+      ]
+      JQEOF
+
+      jq -f /tmp/xab_parse.jq &quot;${output_dir}/brave_q1.json&quot; &gt; &quot;${output_dir}/posts_q1.json&quot; 2&gt;/dev/null || echo &#39;[]&#39; &gt; &quot;${output_dir}/posts_q1.json&quot;
+      jq -f /tmp/xab_parse.jq &quot;${output_dir}/brave_q2.json&quot; &gt; &quot;${output_dir}/posts_q2.json&quot; 2&gt;/dev/null || echo &#39;[]&#39; &gt; &quot;${output_dir}/posts_q2.json&quot;
+
+      # Merge: prioritize x_post &gt; x_profile &gt; news, dedupe, cap at max
+      cat &gt; /tmp/xab_merge.jq &lt;&lt; &#39;JQEOF&#39;
+      ($max | tonumber) as $limit |
+      flatten |
+      unique_by(.url) |
+      . as $all |
+      [
+        ($all[] | select(.source == &quot;x_post&quot;)),
+        ($all[] | select(.source == &quot;x_profile&quot;)),
+        ($all[] | select(.source == &quot;news&quot;))
+      ] |
+      unique_by(.url) |
+      .[0:$limit]
+      JQEOF
+
+      jq -s --arg max &quot;${max_tweets}&quot; -f /tmp/xab_merge.jq &quot;${output_dir}/posts_q1.json&quot; &quot;${output_dir}/posts_q2.json&quot; &gt; &quot;${output_dir}/tweets.json&quot;
+      cat &quot;${output_dir}/tweets.json&quot;
+
+  - id: format-tweets
+    command: |
+      cat &gt; /tmp/xab_format.jq &lt;&lt; &#39;JQEOF&#39;
+      {
+        count: length,
+        x_post_count: [.[] | select(.source == &quot;x_post&quot;)] | length,
+        x_profile_count: [.[] | select(.source == &quot;x_profile&quot;)] | length,
+        news_count: [.[] | select(.source == &quot;news&quot;)] | length,
+        posts: [.[] | {
+          author: .author,
+          content: (.content | gsub(&quot;\\n&quot;; &quot; &quot;) | .[0:500]),
+          title: (.title | .[0:200]),
+          url: .url,
+          date: .date,
+          source: .source
+        }],
+        authors: ([.[].author] | unique),
+        text_block: ([.[] | &quot;- \(.author) (\(.source)): \(.content | gsub(&quot;\\n&quot;; &quot; &quot;) | .[0:300])&quot;] | join(&quot;\n&quot;))
+      }
+      JQEOF
+
+      jq -c -f /tmp/xab_format.jq &quot;${output_dir}/tweets.json&quot; &gt; &quot;${output_dir}/formatted.json&quot;
+      cat &quot;${output_dir}/formatted.json&quot;
+
+  - id: generate-script
+    stdin: $format-tweets.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a tech podcast host creating an engaging audio briefing. Write scripts that sound natural when read aloud. No bullet points, no headers, no visual formatting. Use spoken transitions like &#39;Now let&#39;s talk about...&#39; and &#39;What&#39;\&#39;&#39;s interesting is...&#39;\n\nUSER: Create a 5-minute conversational audio briefing about \&quot;${topic}\&quot; based on the X/Twitter posts and related discussions below.\n\nGuidelines:\n- Write for text-to-speech: no URLs, hashtags, or @ symbols in the script\n- Use natural spoken language with conversational transitions\n- Start with a greeting, mention the topic\n- Group by theme, not chronologically\n- Attribute quotes and insights to specific people by name\n- End with overall sentiment summary and key takeaways\n- Target approximately 700 words for 5 minutes\n\nPosts data (from stdin):&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+  - id: save-script
+    stdin: $generate-script.stdout
+    command: |
+      cat &gt; &quot;${output_dir}/script.txt&quot;
+      wc_words=$(wc -w &lt; &quot;${output_dir}/script.txt&quot; | tr -d &#39; &#39;)
+      wc_chars=$(wc -c &lt; &quot;${output_dir}/script.txt&quot; | tr -d &#39; &#39;)
+      printf &#39;{&quot;script_file&quot;:&quot;%s&quot;,&quot;word_count&quot;:%s,&quot;char_count&quot;:%s}&#39; &quot;${output_dir}/script.txt&quot; &quot;$wc_words&quot; &quot;$wc_chars&quot;
+
+  - id: tts
+    command: |
+      if [ &quot;${skip_tts}&quot; = &quot;true&quot; ]; then
+        echo &#39;{&quot;status&quot;:&quot;skipped&quot;,&quot;reason&quot;:&quot;skip_tts=true&quot;,&quot;audio_file&quot;:null}&#39;
+        exit 0
+      fi
+
+      case &quot;${voice}&quot; in
+        rachel) voice_id=&quot;21m00Tcm4TlvDq8ikWAM&quot; ;;
+        adam|*) voice_id=&quot;pNInz6obpgDQGcFmaJgB&quot; ;;
+      esac
+
+      script_text=$(cat &quot;${output_dir}/script.txt&quot;)
+      audio_file=&quot;${output_dir}/brief.mp3&quot;
+
+      jq -n --arg text &quot;$script_text&quot; &#39;{&quot;text&quot;: $text, &quot;model_id&quot;: &quot;eleven_multilingual_v2&quot;}&#39; &gt; &quot;${output_dir}/tts_request.json&quot;
+
+      http_code=$(curl -s -w &#39;%{http_code}&#39; \
+        -X POST &quot;https://api.elevenlabs.io/v1/text-to-speech/${voice_id}&quot; \
+        -H &quot;xi-api-key: ${ELEVENLABS_API_KEY}&quot; \
+        -H &quot;Content-Type: application/json&quot; \
+        -d @&quot;${output_dir}/tts_request.json&quot; \
+        -o &quot;$audio_file&quot;)
+
+      if [ &quot;$http_code&quot; -ge 200 ] &amp;&amp; [ &quot;$http_code&quot; -lt 300 ] &amp;&amp; [ -s &quot;$audio_file&quot; ]; then
+        size=$(stat -c%s &quot;$audio_file&quot; 2&gt;/dev/null || stat -f%z &quot;$audio_file&quot; 2&gt;/dev/null || echo 0)
+        printf &#39;{&quot;status&quot;:&quot;ok&quot;,&quot;audio_file&quot;:&quot;%s&quot;,&quot;size_bytes&quot;:%s,&quot;voice&quot;:&quot;%s&quot;,&quot;voice_id&quot;:&quot;%s&quot;}&#39; &quot;$audio_file&quot; &quot;$size&quot; &quot;${voice}&quot; &quot;$voice_id&quot;
+      else
+        printf &#39;{&quot;status&quot;:&quot;error&quot;,&quot;http_code&quot;:%s,&quot;audio_file&quot;:null}&#39; &quot;$http_code&quot;
+        exit 1
+      fi
+
+  - id: report
+    command: |
+      cat &gt; /tmp/xab_report.jq &lt;&lt; &#39;JQEOF&#39;
+      {
+        topic: $topic,
+        total_posts: .count,
+        x_posts: .x_post_count,
+        x_profiles: .x_profile_count,
+        news_mentions: .news_count,
+        unique_sources: (.authors | length),
+        sources: .authors,
+        script_preview: ($script | .[0:300]),
+        tts_skipped: ($skip == &quot;true&quot;),
+        summary: (
+          &quot;X Audio Brief: &quot; + $topic + &quot;\n&quot; +
+          &quot;Found &quot; + (.count | tostring) + &quot; items (&quot; +
+          (.x_post_count | tostring) + &quot; X posts, &quot; +
+          (.x_profile_count | tostring) + &quot; X profiles, &quot; +
+          (.news_count | tostring) + &quot; news) from &quot; +
+          (.authors | length | tostring) + &quot; sources.\n&quot; +
+          if $skip == &quot;true&quot; then &quot;TTS skipped (skip_tts=true)&quot;
+          else &quot;Audio generated&quot; end
+        )
+      }
+      JQEOF
+
+      script_text=$(cat &quot;${output_dir}/script.txt&quot; 2&gt;/dev/null || echo &quot;&quot;)
+      jq --arg topic &quot;${topic}&quot; --arg skip &quot;${skip_tts}&quot; --arg script &quot;$script_text&quot; -f /tmp/xab_report.jq &quot;${output_dir}/formatted.json&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turn X/Twitter chatter into a listenable audio briefing.</p>
+<h3>What it does</h3>
+<ol><li>**Searches X** for your topic using `search-x` skill</li><li>**Summarizes** the most engaging posts into an audio-friendly script</li><li>**Generates audio** via ElevenLabs TTS</li><li>**Delivers** both audio file and optional text summary</li></ol>
+<h3>Use cases</h3>
+<ul><li>🚗 **Commute briefings** — hear what&#39;s trending while driving</li><li>🚶 **Walking updates** — stay informed on walks</li><li>🏋️ **Gym listening** — catch up while working out</li><li>👀 **Quick intel** — when you want the vibe without scrolling</li></ul>
+<h3>Example usage</h3>
+<pre class="code-block"><code data-lang="yaml"># On-demand: what&#39;s new about AI today?
+topic: &quot;AI news&quot;
+days: 1
+
+# Weekly competitor check
+topic: &quot;Figma AI OR Framer AI&quot;
+days: 7
+
+# Track your product mentions
+topic: &quot;@YourProduct&quot;
+days: 3</code></pre>
+<h3>Configuration</h3>
+<div class="table-wrap"><table><thead><tr><th>Config</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td>`topic`</td><td>(required)</td><td>What to search for</td></tr><tr><td>`days`</td><td>1</td><td>How far back to search</td></tr><tr><td>`language`</td><td>english</td><td>Output language (english, hebrew, french, spanish, german)</td></tr><tr><td>`voice`</td><td>adam</td><td>ElevenLabs voice (auto-selects for language)</td></tr><tr><td>`max_tweets`</td><td>15</td><td>Max tweets to summarize</td></tr><tr><td>`duration_minutes`</td><td>3</td><td>Target audio length</td></tr><tr><td>`include_text`</td><td>true</td><td>Include text summary</td></tr><tr><td>`send_file`</td><td>true</td><td>Send audio file directly</td></tr><tr><td>`channel`</td><td>discord</td><td>Channel to send to</td></tr><tr><td>`target`</td><td>-</td><td>Channel/chat ID for delivery</td></tr></tbody></table></div>
+<h3>Multi-language Examples</h3>
+<pre class="code-block"><code data-lang="yaml"># Hebrew briefing
+topic: &quot;OpenClaw&quot;
+language: &quot;hebrew&quot;
+
+# French tech news
+topic: &quot;AI startups Paris&quot;
+language: &quot;french&quot;
+
+# Spanish crypto update  
+topic: &quot;Bitcoin&quot;
+language: &quot;spanish&quot;</code></pre>
+<h3>Requirements</h3>
+<ul><li>`search-x` skill (requires XAI_API_KEY)</li><li>`elevenlabs-tts` skill (requires ELEVENLABS_API_KEY)</li></ul>
+<h3>Author</h3>
+<p>Built by <a href="https://clawhub.ai/u/Cluka-399">@Cluka-399</a> 🐱🦞</p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

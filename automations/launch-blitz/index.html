@@ -5,80 +5,433 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>100-Platform Launch Blitz — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>100-Platform Launch Blitz</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>100-Platform Launch Blitz</h1>
+        <p class="description">Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 10 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Marketing</span></div>
+        <div class="tag-row"><span class="pill">launch</span><span class="pill">directories</span><span class="pill">product-hunt</span><span class="pill">visibility</span><span class="pill">marketing</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install launch-blitz</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">browser</span><span class="tag">file_system</span><span class="tag">messaging</span><span class="tag">launch</span><span class="tag">directories</span><span class="tag">product-hunt</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">browser</span><span class="tag">file_system</span><span class="tag">messaging</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Maintains a queue of 100+ directories</li><li>Submits 3 per day (configurable)</li><li>Generates platform-specific descriptions</li><li>Handles file uploads (logo, screenshots)</li><li>Tracks approval status</li><li>Alerts you when you go live</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. load_directories</div><div class="step-detail">file_read</div></div><div class="step"><div class="step-title">2. get_pending</div><div class="step-detail">filter</div></div><div class="step"><div class="step-title">3. generate_descriptions</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">4. submit_to_platform</div><div class="step-detail">browser</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. submit</div></div><div class="step"><div class="step-title">8. update_status</div><div class="step-detail">file_update</div></div><div class="step"><div class="step-title">9. alert_submissions</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">10. step</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install launch-blitz</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">product_name</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">product_url</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">tagline</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">description</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">assets_folder</div><div class="kv-meta">Path to launch assets (logo.png, banner.png, screenshots) · default: ~/launch-assets/</div></div><div class="kv"><div class="kv-name">submissions_per_day</div><div class="kv-meta">No description yet. · default: 3</div></div><div class="kv"><div class="kv-name">directories_file</div><div class="kv-meta">No description yet. · default: memory/launch-directories.json</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 10 * * *</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses prompt step for platform tailored descriptions</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. init_db</div></div><div class="step"><div class="step-title">2. select_batch</div></div><div class="step"><div class="step-title">3. count_stats</div></div><div class="step"><div class="step-title">4. $name,</div></div><div class="step"><div class="step-title">5. tailor_descriptions</div></div><div class="step"><div class="step-title">6. .product.name,</div></div><div class="step"><div class="step-title">7. update_state</div></div><div class="step"><div class="step-title">8. summary</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses prompt step for platform-tailored descriptions
+
+name: &quot;100-Platform Launch Blitz&quot;
+description: |
+  Submit your SaaS to 100+ launch directories. Initializes a directories database,
+  selects the next batch of pending platforms, generates platform-specific descriptions,
+  and produces submission-ready data packages with URLs and form details.
+  Tracks state between runs (pending, submitted, approved).
+  NOTE: Actual form submission requires browser automation — this workflow produces
+  the structured data packages needed for submission.
+
+args:
+  product_name:
+    desc: &quot;Name of the product/SaaS to submit&quot;
+  product_url:
+    desc: &quot;URL of the product&quot;
+  tagline:
+    desc: &quot;Short tagline for the product&quot;
+  description:
+    desc: &quot;Full product description (will be adapted per platform)&quot;
+  category:
+    desc: &quot;Product category (e.g. developer-tools, productivity, marketing)&quot;
+    default: &quot;developer-tools&quot;
+  submissions_per_run:
+    desc: &quot;Number of directories to process per run&quot;
+    default: &quot;5&quot;
+  state_dir:
+    desc: &quot;Directory for persisting state between runs&quot;
+    default: &quot;/tmp/launch-blitz&quot;
+
+steps:
+  # Step 1: Ensure state directory and initialize the directories database if needed
+  - id: init_db
+    command: |
+      mkdir -p &quot;${state_dir}&quot;
+      DB=&quot;${state_dir}/directories.json&quot;
+      if [ ! -f &quot;$DB&quot; ]; then
+        cat &gt; &quot;$DB&quot; &lt;&lt; &#39;DIRECTORIES&#39;
+      [
+        {&quot;id&quot;:&quot;product-hunt&quot;,&quot;name&quot;:&quot;Product Hunt&quot;,&quot;url&quot;:&quot;https://www.producthunt.com&quot;,&quot;submit_url&quot;:&quot;https://www.producthunt.com/posts/new&quot;,&quot;max_chars&quot;:260,&quot;style&quot;:&quot;punchy, startup-friendly, emoji welcome&quot;,&quot;category_field&quot;:&quot;topics&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Best launched on Tuesday-Thursday. Needs maker account.&quot;},
+        {&quot;id&quot;:&quot;alternativeto&quot;,&quot;name&quot;:&quot;AlternativeTo&quot;,&quot;url&quot;:&quot;https://alternativeto.net&quot;,&quot;submit_url&quot;:&quot;https://alternativeto.net/manage/add-app/&quot;,&quot;max_chars&quot;:500,&quot;style&quot;:&quot;factual, comparison-focused, mention alternatives&quot;,&quot;category_field&quot;:&quot;tags&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Include what product is alternative to. Takes 1-3 days for approval.&quot;},
+        {&quot;id&quot;:&quot;saashub&quot;,&quot;name&quot;:&quot;SaaSHub&quot;,&quot;url&quot;:&quot;https://www.saashub.com&quot;,&quot;submit_url&quot;:&quot;https://www.saashub.com/submit&quot;,&quot;max_chars&quot;:300,&quot;style&quot;:&quot;professional, feature-list oriented&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Good for SEO backlinks. Approval in 1-5 days.&quot;},
+        {&quot;id&quot;:&quot;betalist&quot;,&quot;name&quot;:&quot;BetaList&quot;,&quot;url&quot;:&quot;https://betalist.com&quot;,&quot;submit_url&quot;:&quot;https://betalist.com/submit&quot;,&quot;max_chars&quot;:200,&quot;style&quot;:&quot;early-adopter focused, beta/launch angle&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Best for pre-launch or just-launched products. Free tier has queue.&quot;},
+        {&quot;id&quot;:&quot;launching-next&quot;,&quot;name&quot;:&quot;Launching Next&quot;,&quot;url&quot;:&quot;https://www.launchingnext.com&quot;,&quot;submit_url&quot;:&quot;https://www.launchingnext.com/submit/&quot;,&quot;max_chars&quot;:400,&quot;style&quot;:&quot;startup pitch style, problem-solution format&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Quick approval. Good for early traction.&quot;},
+        {&quot;id&quot;:&quot;capterra&quot;,&quot;name&quot;:&quot;Capterra&quot;,&quot;url&quot;:&quot;https://www.capterra.com&quot;,&quot;submit_url&quot;:&quot;https://www.capterra.com/vendors/sign-up&quot;,&quot;max_chars&quot;:1000,&quot;style&quot;:&quot;enterprise-friendly, feature-rich, mention integrations&quot;,&quot;category_field&quot;:&quot;software_category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Major directory. Verification process takes 1-2 weeks.&quot;},
+        {&quot;id&quot;:&quot;g2&quot;,&quot;name&quot;:&quot;G2&quot;,&quot;url&quot;:&quot;https://www.g2.com&quot;,&quot;submit_url&quot;:&quot;https://www.g2.com/products/new&quot;,&quot;max_chars&quot;:800,&quot;style&quot;:&quot;professional, ROI-focused, enterprise language&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:1,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Top B2B review site. Needs vendor claim after listing.&quot;},
+        {&quot;id&quot;:&quot;getapp&quot;,&quot;name&quot;:&quot;GetApp&quot;,&quot;url&quot;:&quot;https://www.getapp.com&quot;,&quot;submit_url&quot;:&quot;https://www.getapp.com/submit&quot;,&quot;max_chars&quot;:600,&quot;style&quot;:&quot;business-focused, emphasize pricing and features&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Part of Gartner Digital Markets. Good for B2B.&quot;},
+        {&quot;id&quot;:&quot;slant&quot;,&quot;name&quot;:&quot;Slant&quot;,&quot;url&quot;:&quot;https://www.slant.co&quot;,&quot;submit_url&quot;:&quot;https://www.slant.co/improve&quot;,&quot;max_chars&quot;:300,&quot;style&quot;:&quot;pros/cons format, comparison-driven&quot;,&quot;category_field&quot;:&quot;topic&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Community-driven. Add to relevant recommendation questions.&quot;},
+        {&quot;id&quot;:&quot;stackshare&quot;,&quot;name&quot;:&quot;StackShare&quot;,&quot;url&quot;:&quot;https://stackshare.io&quot;,&quot;submit_url&quot;:&quot;https://stackshare.io/submit&quot;,&quot;max_chars&quot;:400,&quot;style&quot;:&quot;developer-focused, tech stack emphasis&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Great for dev tools. Emphasize tech stack and integrations.&quot;},
+        {&quot;id&quot;:&quot;toolify-ai&quot;,&quot;name&quot;:&quot;Toolify.ai&quot;,&quot;url&quot;:&quot;https://www.toolify.ai&quot;,&quot;submit_url&quot;:&quot;https://www.toolify.ai/submit&quot;,&quot;max_chars&quot;:500,&quot;style&quot;:&quot;AI-focused, emphasize AI/ML capabilities&quot;,&quot;category_field&quot;:&quot;ai_category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Only for AI/ML products. Growing directory.&quot;},
+        {&quot;id&quot;:&quot;there-is-an-ai&quot;,&quot;name&quot;:&quot;There is an AI for That&quot;,&quot;url&quot;:&quot;https://theresanaiforthat.com&quot;,&quot;submit_url&quot;:&quot;https://theresanaiforthat.com/submit/&quot;,&quot;max_chars&quot;:300,&quot;style&quot;:&quot;concise, task-oriented, what-it-does focus&quot;,&quot;category_field&quot;:&quot;task&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Popular AI directory. Quick approval for quality products.&quot;},
+        {&quot;id&quot;:&quot;futurepedia&quot;,&quot;name&quot;:&quot;Futurepedia&quot;,&quot;url&quot;:&quot;https://www.futurepedia.io&quot;,&quot;submit_url&quot;:&quot;https://www.futurepedia.io/submit-tool&quot;,&quot;max_chars&quot;:400,&quot;style&quot;:&quot;AI tool showcase, feature highlights&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;AI tools directory. Good organic traffic.&quot;},
+        {&quot;id&quot;:&quot;microlaunch&quot;,&quot;name&quot;:&quot;MicroLaunch&quot;,&quot;url&quot;:&quot;https://microlaunch.net&quot;,&quot;submit_url&quot;:&quot;https://microlaunch.net/submit&quot;,&quot;max_chars&quot;:280,&quot;style&quot;:&quot;indie hacker friendly, casual, authentic&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Indie hacker community. Good for bootstrapped products.&quot;},
+        {&quot;id&quot;:&quot;uneed&quot;,&quot;name&quot;:&quot;Uneed&quot;,&quot;url&quot;:&quot;https://www.uneed.best&quot;,&quot;submit_url&quot;:&quot;https://www.uneed.best/submit&quot;,&quot;max_chars&quot;:300,&quot;style&quot;:&quot;clean, benefit-focused, modern&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Curated directory. Free submission with queue.&quot;},
+        {&quot;id&quot;:&quot;devhunt&quot;,&quot;name&quot;:&quot;DevHunt&quot;,&quot;url&quot;:&quot;https://devhunt.org&quot;,&quot;submit_url&quot;:&quot;https://devhunt.org/submit&quot;,&quot;max_chars&quot;:250,&quot;style&quot;:&quot;developer-focused, GitHub integration, open-source friendly&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:2,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Product Hunt alternative for dev tools. GitHub login required.&quot;},
+        {&quot;id&quot;:&quot;saas-ai-tools&quot;,&quot;name&quot;:&quot;SaaS AI Tools&quot;,&quot;url&quot;:&quot;https://saasaitools.com&quot;,&quot;submit_url&quot;:&quot;https://saasaitools.com/submit/&quot;,&quot;max_chars&quot;:500,&quot;style&quot;:&quot;SEO-optimized, keyword-rich, feature list&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;SEO-focused directory. Good for long-tail keywords.&quot;},
+        {&quot;id&quot;:&quot;pitchwall&quot;,&quot;name&quot;:&quot;PitchWall&quot;,&quot;url&quot;:&quot;https://pitchwall.co&quot;,&quot;submit_url&quot;:&quot;https://pitchwall.co/submit&quot;,&quot;max_chars&quot;:300,&quot;style&quot;:&quot;startup pitch, problem-solution, traction metrics&quot;,&quot;category_field&quot;:&quot;industry&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Startup showcase. Good for fundraising visibility.&quot;},
+        {&quot;id&quot;:&quot;startupbase&quot;,&quot;name&quot;:&quot;Startupbase&quot;,&quot;url&quot;:&quot;https://startupbase.io&quot;,&quot;submit_url&quot;:&quot;https://startupbase.io/startups/new&quot;,&quot;max_chars&quot;:500,&quot;style&quot;:&quot;startup community, growth metrics, team info&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:true,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Brazilian startup directory but global reach.&quot;},
+        {&quot;id&quot;:&quot;softwareworld&quot;,&quot;name&quot;:&quot;SoftwareWorld&quot;,&quot;url&quot;:&quot;https://www.softwareworld.co&quot;,&quot;submit_url&quot;:&quot;https://www.softwareworld.co/get-listed&quot;,&quot;max_chars&quot;:600,&quot;style&quot;:&quot;professional review style, feature comparison&quot;,&quot;category_field&quot;:&quot;category&quot;,&quot;requires_account&quot;:false,&quot;priority&quot;:3,&quot;status&quot;:&quot;pending&quot;,&quot;submitted_at&quot;:null,&quot;approved_at&quot;:null,&quot;notes&quot;:&quot;Software review directory. Takes 1-2 weeks for listing.&quot;}
+      ]
+      DIRECTORIES
+        echo &quot;Initialized directories database with 20 platforms&quot;
+      else
+        echo &quot;Directories database already exists&quot;
+      fi
+      echo &#39;{&quot;status&quot;:&quot;ok&quot;}&#39;
+
+  # Step 2: Select the next batch of pending directories, sorted by priority
+  # Write batch to a temp file for other steps to read
+  - id: select_batch
+    command: |
+      DB=&quot;${state_dir}/directories.json&quot;
+      LIMIT=&quot;${submissions_per_run}&quot;
+      BATCH_FILE=&quot;${state_dir}/_current_batch.json&quot;
+      cat &quot;$DB&quot; | jq --argjson limit &quot;$LIMIT&quot; &#39;
+        [ .[] | select(.status == &quot;pending&quot;) ]
+        | sort_by(.priority)
+        | .[:$limit]
+      &#39; &gt; &quot;$BATCH_FILE&quot;
+      cat &quot;$BATCH_FILE&quot;
+
+  # Step 3: Count overall stats
+  - id: count_stats
+    command: |
+      DB=&quot;${state_dir}/directories.json&quot;
+      cat &quot;$DB&quot; | jq &#39;{
+        total: length,
+        pending: [ .[] | select(.status == &quot;pending&quot;) ] | length,
+        submitted: [ .[] | select(.status == &quot;submitted&quot;) ] | length,
+        approved: [ .[] | select(.status == &quot;approved&quot;) ] | length,
+        rejected: [ .[] | select(.status == &quot;rejected&quot;) ] | length
+      }&#39;
+
+  # Step 4: Generate platform-specific descriptions for each selected directory
+  - id: generate_descriptions
+    command: |
+      BATCH_FILE=&quot;${state_dir}/_current_batch.json&quot;
+      DESC_FILE=&quot;${state_dir}/_current_descriptions.json&quot;
+
+      jq --arg name &quot;${product_name}&quot; \
+        --arg url &quot;${product_url}&quot; \
+        --arg tagline &quot;${tagline}&quot; \
+        --arg desc &quot;${description}&quot; \
+        --arg category &quot;${category}&quot; &#39;
+        [.[] | {
+          platform_id: .id,
+          platform_name: .name,
+          submit_url: .submit_url,
+          requires_account: .requires_account,
+          notes: .notes,
+          style_guidance: .style,
+          max_chars: .max_chars,
+          product: {
+            name: $name,
+            url: $url,
+            tagline: $tagline,
+            category: $category,
+            description: (if (.max_chars // 500) &lt; ($desc | length)
+              then ($desc | .[:(.max_chars // 500) - 3] + &quot;...&quot;)
+              else $desc end)
+          },
+          llm_prompt: (&quot;Generate a submission description for &quot; + .name + &quot; (max &quot; + ((.max_chars // 500) | tostring) + &quot; chars). Style: &quot; + (.style // &quot;professional&quot;) + &quot;. Product: &quot; + $name + &quot; - &quot; + $tagline + &quot;. Base: &quot; + $desc)
+        }]
+      &#39; &lt; &quot;$BATCH_FILE&quot; &gt; &quot;$DESC_FILE&quot;
+      cat &quot;$DESC_FILE&quot;
+
+  # Step 4b: Generate platform-tailored descriptions using LLM
+  - id: tailor_descriptions
+    stdin: $generate_descriptions.stdout
+    env: { CLAWD_URL: &quot;http://127.0.0.1:3000&quot; }
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a SaaS launch copywriter. Write compelling, platform-native product descriptions.\n\nUSER: For each directory platform below, rewrite the product description to match the platform&#39;s style and character limit.\n\nProduct: ${product_name}\nTagline: ${tagline}\nCategory: ${category}\n\nFor each platform:\n1. Follow the style_guidance exactly\n2. Stay within max_chars\n3. Emphasize different product angles per platform audience\n4. Include a compelling hook in the first sentence\n5. End with a clear value proposition\n\nOutput as JSON array with {platform_id, platform_name, tailored_description}.&quot;
+
+  # Step 5: Build submission-ready data packages and save to file
+  - id: build_packages
+    command: |
+      DESC_FILE=&quot;${state_dir}/_current_descriptions.json&quot;
+      TIMESTAMP=$(date -u +&quot;%Y-%m-%dT%H:%M:%SZ&quot;)
+      PACKAGES_FILE=&quot;${state_dir}/submission-packages-$(date -u +%Y%m%d-%H%M%S).json&quot;
+
+      jq --arg ts &quot;$TIMESTAMP&quot; \
+        --arg product_url &quot;${product_url}&quot; \
+        --arg category &quot;${category}&quot; &#39;
+        {
+          generated_at: $ts,
+          product_url: $product_url,
+          category: $category,
+          total_in_batch: length,
+          packages: [.[] | {
+            platform_id: .platform_id,
+            platform_name: .platform_name,
+            submit_url: .submit_url,
+            requires_account: .requires_account,
+            notes: .notes,
+            submission_data: {
+              name: .product.name,
+              url: .product.url,
+              tagline: .product.tagline,
+              description: .product.description,
+              category: $category
+            },
+            style_guidance: .style_guidance,
+            max_chars: .max_chars,
+            llm_prompt: .llm_prompt,
+            status: &quot;ready_for_submission&quot;,
+            action_required: (if .requires_account then &quot;Create account first, then submit&quot; else &quot;Submit directly&quot; end)
+          }]
+        }
+      &#39; &lt; &quot;$DESC_FILE&quot; | tee &quot;$PACKAGES_FILE&quot;
+
+  # Step 6: Update directory statuses to &#39;submitted&#39; for processed batch
+  - id: update_state
+    command: |
+      DB=&quot;${state_dir}/directories.json&quot;
+      BATCH_FILE=&quot;${state_dir}/_current_batch.json&quot;
+      TIMESTAMP=$(date -u +&quot;%Y-%m-%dT%H:%M:%SZ&quot;)
+      BATCH_IDS=$(jq -r &#39;.[].id&#39; &lt; &quot;$BATCH_FILE&quot;)
+
+      TMP_DB=$(mktemp)
+      cp &quot;$DB&quot; &quot;$TMP_DB&quot;
+
+      for ID in $BATCH_IDS; do
+        jq --arg id &quot;$ID&quot; --arg ts &quot;$TIMESTAMP&quot; &#39;
+          map(if .id == $id then .status = &quot;submitted&quot; | .submitted_at = $ts else . end)
+        &#39; &lt; &quot;$TMP_DB&quot; &gt; &quot;${TMP_DB}.new&quot;
+        mv &quot;${TMP_DB}.new&quot; &quot;$TMP_DB&quot;
+      done
+
+      mv &quot;$TMP_DB&quot; &quot;$DB&quot;
+      echo &quot;Updated $(echo &quot;$BATCH_IDS&quot; | wc -w | tr -d &#39; &#39;) directories to submitted status&quot;
+
+  # Step 7: Generate final summary report
+  - id: summary
+    command: |
+      DB=&quot;${state_dir}/directories.json&quot;
+      BATCH_FILE=&quot;${state_dir}/_current_batch.json&quot;
+
+      STATS=$(jq &#39;{
+        total: length,
+        pending: [.[] | select(.status == &quot;pending&quot;)] | length,
+        submitted: [.[] | select(.status == &quot;submitted&quot;)] | length,
+        approved: [.[] | select(.status == &quot;approved&quot;)] | length
+      }&#39; &lt; &quot;$DB&quot;)
+
+      SUBMITTED_NAMES=$(jq -r &#39;.[].name&#39; &lt; &quot;$BATCH_FILE&quot;)
+      BATCH_COUNT=$(echo &quot;$SUBMITTED_NAMES&quot; | grep -c . || true)
+
+      # Clean up temp files
+      rm -f &quot;${state_dir}/_current_batch.json&quot; &quot;${state_dir}/_current_descriptions.json&quot;
+
+      jq -n \
+        --arg product &quot;${product_name}&quot; \
+        --arg batch_count &quot;$BATCH_COUNT&quot; \
+        --arg submitted_names &quot;$SUBMITTED_NAMES&quot; \
+        --argjson stats &quot;$STATS&quot; &#39;
+        {
+          report: &quot;Launch Blitz Update&quot;,
+          product: $product,
+          batch_processed: ($batch_count | tonumber),
+          platforms_submitted: ($submitted_names | split(&quot;\n&quot;) | map(select(. != &quot;&quot;))),
+          queue_remaining: $stats.pending,
+          total_submitted: $stats.submitted,
+          total_approved: $stats.approved,
+          total_tracked: $stats.total,
+          next_action: (if $stats.pending &gt; 0 then &quot;Run again to process next batch&quot; else &quot;All directories processed!&quot; end)
+        }
+      &#39;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Submit your SaaS to 100+ launch directories (Product Hunt, Uneed, BetaList, DevHunt, etc.) automatically over 30 days.</p>
+<h3>What It Does</h3>
+<ul><li>Maintains a queue of 100+ directories</li><li>Submits 3 per day (configurable)</li><li>Generates platform-specific descriptions</li><li>Handles file uploads (logo, screenshots)</li><li>Tracks approval status</li><li>Alerts you when you go live</li></ul>
+<h3>Why This Matters</h3>
+<p>> "Instead of a single Product Hunt spike, you get continuous visibility across the entire launch ecosystem."</p>
+<p>Most directories have 3-6 month waitlists. This automation monitors them all.</p>
+<h3>Requirements</h3>
+<ul><li>`browser` capability</li><li>`file_system` capability</li><li>Launch assets folder with logo.png, banner.png, screenshots</li></ul>
+<h3>Credit</h3>
+<p>Inspired by <a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

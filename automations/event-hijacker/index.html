@@ -5,80 +5,418 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Event Hijacker — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Event Hijacker</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Event Hijacker</h1>
+        <p class="description">Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 7 * * *</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Marketing</span></div>
+        <div class="tag-row"><span class="pill">events</span><span class="pill">cfp</span><span class="pill">speaking</span><span class="pill">networking</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install event-hijacker</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_search</span><span class="tag">browser</span><span class="tag">file_system</span><span class="tag">events</span><span class="tag">cfp</span><span class="tag">speaking</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_search</span><span class="tag">browser</span><span class="tag">file_system</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Monitors EventBrite, Luma, Meetup, CFP boards</li><li>Auto-registers for virtual events</li><li>Submits CFP proposals using your speaker kit</li><li>Researches speakers and attendees</li><li>Generates custom talking points</li><li>Schedules follow-up messages</li></ul>
+<p>> "You show up to events prepared. The agent already knows who's attending, what they care about, and what to say."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. find_events</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. find_cfps</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">3. analyze_relevance</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">4. auto_register</div><div class="step-detail">browser</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. submit</div></div><div class="step"><div class="step-title">8. submit_cfp</div><div class="step-detail">browser</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. submit</div></div><div class="step"><div class="step-title">11. prepare_networking</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">12. Who&#39;s speaking? Research their backgrounds</div></div><div class="step"><div class="step-title">13. Who&#39;s attending? (if visible)</div></div><div class="step"><div class="step-title">14. Generate custom talking points based on event theme</div></div><div class="step"><div class="step-title">15. Identify networking opportunities</div></div><div class="step"><div class="step-title">16. schedule_followups</div><div class="step-detail">cron_add</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install event-hijacker</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">industry_keywords</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">speaker_kit_path</div><div class="kv-meta">Path to your speaker bio, headshot, talk abstracts</div></div><div class="kv"><div class="kv-name">location</div><div class="kv-meta">No description yet. · default: remote</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 7 * * *</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. find_events</div></div><div class="step"><div class="step-title">2. find_cfps</div></div><div class="step"><div class="step-title">3. find_location_events</div></div><div class="step"><div class="step-title">4. build_report</div></div><div class="step"><div class="step-title">5. llm_analyze</div></div><div class="step"><div class="step-title">6. step</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. final_report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code>name: &quot;Event Hijacker&quot;
+description: &gt;
+  Search for upcoming events, conferences, and CFPs matching industry keywords.
+  Produces a structured JSON report with relevance scoring.
+  Based on ClawFlows automation: event-hijacker v1.0.0
+
+args:
+  industry_keywords:
+    desc: &quot;Keywords for your industry/niche (e.g. &#39;AI developer tools&#39;)&quot;
+  location:
+    desc: &quot;Preferred location or &#39;remote&#39;&quot;
+    default: &quot;remote&quot;
+  max_results:
+    desc: &quot;Max results per search query&quot;
+    default: &quot;5&quot;
+
+steps:
+  - id: find_events
+    command: |
+      curl -s &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -G \
+        --data-urlencode &quot;q=${industry_keywords} (site:eventbrite.com OR site:lu.ma OR site:meetup.com) 2025 2026&quot; \
+        --data-urlencode &quot;count=${max_results}&quot; \
+        -H &quot;X-Subscription-Token: $BRAVE_API_KEY&quot; \
+        -H &quot;Accept: application/json&quot; \
+        -o /tmp/eh_events_raw.json \
+        -w &quot;%{http_code}&quot;
+      
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const raw = JSON.parse(fs.readFileSync(&#39;/tmp/eh_events_raw.json&#39;, &#39;utf8&#39;));
+        const results = (raw.web &amp;&amp; raw.web.results) || [];
+        const events = results.map((r, i) =&gt; ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || &#39;&#39;).replace(/&lt;[^&gt;]+&gt;/g, &#39;&#39;),
+          source: (r.meta_url &amp;&amp; r.meta_url.hostname) || &#39;unknown&#39;,
+          platform: r.url.includes(&#39;eventbrite&#39;) ? &#39;eventbrite&#39;
+                  : r.url.includes(&#39;lu.ma&#39;) ? &#39;luma&#39;
+                  : r.url.includes(&#39;meetup.com&#39;) ? &#39;meetup&#39;
+                  : &#39;other&#39;
+        }));
+        const out = JSON.stringify({ query: &#39;${industry_keywords} events&#39;, count: events.length, events }, null, 2);
+        fs.writeFileSync(&#39;/tmp/eh_events.json&#39;, out);
+        console.log(out);
+      &quot;
+
+  - id: find_cfps
+    command: |
+      curl -s &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -G \
+        --data-urlencode &quot;q=${industry_keywords} CFP call for proposals speakers 2025 2026&quot; \
+        --data-urlencode &quot;count=${max_results}&quot; \
+        -H &quot;X-Subscription-Token: $BRAVE_API_KEY&quot; \
+        -H &quot;Accept: application/json&quot; \
+        -o /tmp/eh_cfps_raw.json \
+        -w &quot;%{http_code}&quot;
+      
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const raw = JSON.parse(fs.readFileSync(&#39;/tmp/eh_cfps_raw.json&#39;, &#39;utf8&#39;));
+        const results = (raw.web &amp;&amp; raw.web.results) || [];
+        const cfps = results.map((r, i) =&gt; ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || &#39;&#39;).replace(/&lt;[^&gt;]+&gt;/g, &#39;&#39;),
+          source: (r.meta_url &amp;&amp; r.meta_url.hostname) || &#39;unknown&#39;
+        }));
+        const out = JSON.stringify({ query: &#39;${industry_keywords} CFPs&#39;, count: cfps.length, cfps }, null, 2);
+        fs.writeFileSync(&#39;/tmp/eh_cfps.json&#39;, out);
+        console.log(out);
+      &quot;
+
+  - id: find_location_events
+    command: |
+      if [ &quot;${location}&quot; = &quot;remote&quot; ]; then
+        QUERY=&quot;${industry_keywords} virtual online event conference 2025 2026&quot;
+      else
+        QUERY=&quot;${industry_keywords} event conference ${location} 2025 2026&quot;
+      fi
+      
+      curl -s &quot;https://api.search.brave.com/res/v1/web/search&quot; \
+        -G \
+        --data-urlencode &quot;q=$QUERY&quot; \
+        --data-urlencode &quot;count=${max_results}&quot; \
+        -H &quot;X-Subscription-Token: $BRAVE_API_KEY&quot; \
+        -H &quot;Accept: application/json&quot; \
+        -o /tmp/eh_location_raw.json \
+        -w &quot;%{http_code}&quot;
+      
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const raw = JSON.parse(fs.readFileSync(&#39;/tmp/eh_location_raw.json&#39;, &#39;utf8&#39;));
+        const results = (raw.web &amp;&amp; raw.web.results) || [];
+        const events = results.map((r, i) =&gt; ({
+          index: i + 1,
+          title: r.title,
+          url: r.url,
+          description: (r.description || &#39;&#39;).replace(/&lt;[^&gt;]+&gt;/g, &#39;&#39;),
+          source: (r.meta_url &amp;&amp; r.meta_url.hostname) || &#39;unknown&#39;
+        }));
+        const out = JSON.stringify({ query: &#39;${industry_keywords} in ${location}&#39;, count: events.length, events }, null, 2);
+        fs.writeFileSync(&#39;/tmp/eh_location.json&#39;, out);
+        console.log(out);
+      &quot;
+
+  - id: build_report
+    command: |
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const events = JSON.parse(fs.readFileSync(&#39;/tmp/eh_events.json&#39;, &#39;utf8&#39;));
+        const cfps = JSON.parse(fs.readFileSync(&#39;/tmp/eh_cfps.json&#39;, &#39;utf8&#39;));
+        const location = JSON.parse(fs.readFileSync(&#39;/tmp/eh_location.json&#39;, &#39;utf8&#39;));
+
+        // Deduplicate by URL across all sources
+        const seen = new Set();
+        const allEvents = [];
+        const addUnique = (items, type) =&gt; {
+          for (const item of items) {
+            if (!seen.has(item.url)) {
+              seen.add(item.url);
+              allEvents.push({ ...item, type });
+            }
+          }
+        };
+        addUnique(events.events || [], &#39;event&#39;);
+        addUnique(location.events || [], &#39;event&#39;);
+        addUnique(cfps.cfps || [], &#39;cfp&#39;);
+
+        // Simple relevance scoring based on keyword density
+        const keywords = &#39;${industry_keywords}&#39;.toLowerCase().split(/\s+/);
+        for (const ev of allEvents) {
+          const text = (ev.title + &#39; &#39; + ev.description).toLowerCase();
+          let score = 0;
+          for (const kw of keywords) {
+            if (text.includes(kw)) score += 2;
+          }
+          // Bonus for platform events (more likely real events)
+          if (ev.platform === &#39;eventbrite&#39; || ev.platform === &#39;luma&#39; || ev.platform === &#39;meetup&#39;) score += 1;
+          // Bonus for CFPs (high value)
+          if (ev.type === &#39;cfp&#39;) score += 1;
+          ev.relevance_score = score;
+          ev.relevance = score &gt;= 4 ? &#39;HIGH&#39; : score &gt;= 2 ? &#39;MEDIUM&#39; : &#39;LOW&#39;;
+        }
+
+        // Sort by relevance score descending
+        allEvents.sort((a, b) =&gt; b.relevance_score - a.relevance_score);
+
+        const report = {
+          generated_at: new Date().toISOString(),
+          industry_keywords: &#39;${industry_keywords}&#39;,
+          location: &#39;${location}&#39;,
+          summary: {
+            total_found: allEvents.length,
+            high_relevance: allEvents.filter(e =&gt; e.relevance === &#39;HIGH&#39;).length,
+            medium_relevance: allEvents.filter(e =&gt; e.relevance === &#39;MEDIUM&#39;).length,
+            low_relevance: allEvents.filter(e =&gt; e.relevance === &#39;LOW&#39;).length,
+            events: allEvents.filter(e =&gt; e.type === &#39;event&#39;).length,
+            cfps: allEvents.filter(e =&gt; e.type === &#39;cfp&#39;).length
+          },
+          events: allEvents,
+          todos: [
+            &#39;AUTO_REGISTER: Browser automation needed to register for HIGH relevance virtual events&#39;,
+            &#39;CFP_SUBMIT: Browser automation needed to submit speaker kit to open CFPs&#39;,
+            &#39;SCHEDULE_FOLLOWUPS: Create calendar reminders for day-after-event follow-ups&#39;
+          ]
+        };
+
+        fs.writeFileSync(&#39;/tmp/eh_report.json&#39;, JSON.stringify(report, null, 2));
+        console.log(JSON.stringify(report, null, 2));
+      &quot;
+
+  - id: llm_analyze
+    stdin: $build_report.stdout
+    command: |
+      cat &gt; /tmp/eh_llm_input.json
+      REPORT=$(cat /tmp/eh_llm_input.json)
+      llm_task.invoke &lt;&lt;PROMPT
+      You are an event strategy analyst. Given these events and CFPs found for &quot;${industry_keywords}&quot;:
+
+      $REPORT
+
+      Analyze and return JSON with:
+      - top_picks: top 3-5 events ranked by strategic value (with reasoning)
+      - networking_targets: speakers/organizers worth connecting with
+      - cfp_strategy: which CFPs to prioritize and topic suggestions
+      - quick_wins: events you can attend with minimal effort
+      PROMPT
+      rm -f /tmp/eh_llm_input.json
+    env:
+      CLAWD_URL: &quot;http://localhost:1691&quot;
+
+  - id: final_report
+    command: |
+      node -e &quot;
+        const fs = require(&#39;fs&#39;);
+        const report = JSON.parse(fs.readFileSync(&#39;/tmp/eh_report.json&#39;, &#39;utf8&#39;));
+        let llmAnalysis = {};
+        try {
+          llmAnalysis = JSON.parse(process.env.LLM_OUTPUT);
+        } catch(e) {
+          llmAnalysis = { raw: process.env.LLM_OUTPUT, parse_error: e.message };
+        }
+        const final = {
+          ...report,
+          llm_analysis: llmAnalysis
+        };
+        console.log(JSON.stringify(final, null, 2));
+      &quot;
+    env:
+      LLM_OUTPUT: $llm_analyze.stdout
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Never miss a relevant event. Auto-register, submit CFPs, and show up prepared.</p>
+<h3>What It Does</h3>
+<ul><li>Monitors EventBrite, Luma, Meetup, CFP boards</li><li>Auto-registers for virtual events</li><li>Submits CFP proposals using your speaker kit</li><li>Researches speakers and attendees</li><li>Generates custom talking points</li><li>Schedules follow-up messages</li></ul>
+<p>> "You show up to events prepared. The agent already knows who's attending, what they care about, and what to say."</p>
+<h3>Requirements</h3>
+<ul><li>`web_search`, `browser`, `file_system` capabilities</li><li>Speaker kit (bio, headshot, talk abstracts)</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

@@ -5,80 +5,468 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cold Email Personalizer — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Cold Email Personalizer</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Cold Email Personalizer</h1>
+        <p class="description">Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Sales</span></div>
+        <div class="tag-row"><span class="pill">email</span><span class="pill">outreach</span><span class="pill">sales</span><span class="pill">personalization</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install cold-email-personalizer</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">outreach</span><span class="tag">sales</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>Finds decision-makers at target accounts</li><li>Researches their LinkedIn, Twitter, company news</li><li>Identifies specific pain points from public info</li><li>Generates hyper-personalized emails</li><li>Finds verified email addresses</li><li>Sends with smart follow-up sequences</li></ol>
+<p>> "This isn't 'spray and pray.' It's 'I noticed you're hiring for X and your last quarter report mentioned Y' level personalization. At scale."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. find_decision_makers</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. research_person</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">3. linkedin_posts</div></div><div class="step"><div class="step-title">4. twitter</div></div><div class="step"><div class="step-title">5. company_blog</div></div><div class="step"><div class="step-title">6. press_releases</div></div><div class="step"><div class="step-title">7. job_listings</div></div><div class="step"><div class="step-title">8. identify_pain_points</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">9. Recent posts/comments</div></div><div class="step"><div class="step-title">10. Company announcements</div></div><div class="step"><div class="step-title">11. Job listings (what are they hiring for?)</div></div><div class="step"><div class="step-title">12. Press mentions</div></div><div class="step"><div class="step-title">13. generate_email</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">14. step</div></div><div class="step"><div class="step-title">15. Connect their pain point to our solution</div></div><div class="step"><div class="step-title">16. NOT generic &quot;I noticed you&#39;re hiring for X</div></div><div class="step"><div class="step-title">17. Actually insightful personalization</div></div><div class="step"><div class="step-title">18. Under 150 words</div></div><div class="step"><div class="step-title">19. Clear CTA</div></div><div class="step"><div class="step-title">20. find_email</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">21. send_emails</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">22. schedule_followups</div><div class="step-detail">cron_add</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install cold-email-personalizer</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">target_accounts</div><div class="kv-meta">List of company domains to target · required</div></div><div class="kv"><div class="kv-name">target_titles</div><div class="kv-meta">Job titles to find · default: [&quot;CEO&quot;, &quot;CTO&quot;, &quot;VP Engineering&quot;, &quot;Head of Product&quot;]</div></div><div class="kv"><div class="kv-name">emails_per_batch</div><div class="kv-meta">No description yet. · default: 10</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p>No schedule declared. This may be manual-only.</p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>Lobster workflow: cold email personalizer Research targets via public web data, collect personalization signals, and produce structured JSON ready for LLM based email generation.</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. $target,</div></div><div class="step"><div class="step-title">2. .name,</div><div class="step-detail">(.payload.action // null)</div></div><div class="step"><div class="step-title">3. web_research</div></div><div class="step"><div class="step-title">4. .person.name,</div></div><div class="step"><div class="step-title">5. generate_emails</div></div><div class="step"><div class="step-title">6. References a specific project or blog post they worked on</div></div><div class="step"><div class="step-title">7. Connects their pain point to the product</div></div><div class="step"><div class="step-title">8. Has a clear, low-friction CTA (e.g. &#39;reply with your thoughts&#39; or &#39;quick 15-min call&#39;)</div></div><div class="step"><div class="step-title">9. Feels human and genuine, not salesy</div></div><div class="step"><div class="step-title">10. report</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># Lobster workflow: cold-email-personalizer
+# Research targets via public web data, collect personalization signals,
+# and produce structured JSON ready for LLM-based email generation.
+#
+# Usage:
+#   lobster run --file workflow.yaml --args-json &#39;{&quot;target_domains&quot;:&quot;github.com/tj,github.com/sindresorhus&quot;,&quot;product_name&quot;:&quot;DevArk&quot;,&quot;product_pitch&quot;:&quot;AI-powered dev tools that ship features 3x faster&quot;}&#39;
+#
+# Requires: curl, jq, BRAVE_API_KEY env var
+#
+# NOTE: The original automation finds LinkedIn decision-makers. This Lobster
+# version uses public GitHub profiles + Brave web search as concrete data
+# sources. Actual LLM personalization and email sending are TODO comments.
+
+name: cold-email-personalizer
+description: Research targets, collect personalization signals, produce structured data for hyper-personalized cold emails
+
+args:
+  target_domains:
+    desc: &quot;Comma-separated target identifiers (GitHub profile URLs or org names)&quot;
+  target_titles:
+    desc: &quot;Job titles to look for (comma-separated)&quot;
+    default: &quot;CEO,CTO,VP Engineering,Head of Product,Founder&quot;
+  product_name:
+    desc: &quot;Your product name&quot;
+    default: &quot;DevArk&quot;
+  product_pitch:
+    desc: &quot;One-line product pitch&quot;
+    default: &quot;AI-powered dev tools that ship features 3x faster&quot;
+  max_targets:
+    desc: &quot;Max targets to research&quot;
+    default: &quot;5&quot;
+
+steps:
+  - id: find_targets
+    command: |
+      # For each target domain/GitHub URL, search for decision-makers
+      tmpout=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpout&quot;
+      count=0
+      max=${max_targets}
+
+      for target in $(echo &quot;${target_domains}&quot; | tr &#39;,&#39; &#39;\n&#39;); do
+        target=$(echo &quot;$target&quot; | xargs)
+        [ -z &quot;$target&quot; ] &amp;&amp; continue
+        [ &quot;$count&quot; -ge &quot;$max&quot; ] &amp;&amp; break
+
+        # Check if it&#39;s a GitHub profile URL
+        if echo &quot;$target&quot; | grep -q &quot;github.com/&quot;; then
+          gh_user=$(echo &quot;$target&quot; | sed &#39;s|.*github.com/||&#39; | tr -d &#39;/&#39;)
+
+          # Fetch GitHub profile
+          curl -sf &quot;https://api.github.com/users/${gh_user}&quot; &gt; /tmp/lb_ce_ghprofile.json 2&gt;/dev/null || echo &#39;{}&#39; &gt; /tmp/lb_ce_ghprofile.json
+
+          jq -c --arg target &quot;$target&quot; &#39;{
+            source: &quot;github&quot;,
+            username: .login,
+            name: (.name // .login),
+            company: (.company // &quot;&quot;),
+            bio: (.bio // &quot;&quot;),
+            blog: (.blog // &quot;&quot;),
+            location: (.location // &quot;&quot;),
+            public_repos: (.public_repos // 0),
+            followers: (.followers // 0),
+            profile_url: .html_url,
+            target_input: $target
+          }&#39; /tmp/lb_ce_ghprofile.json &gt; /tmp/lb_ce_person.json
+        else
+          # Treat as org/company — search for it via Brave
+          encoded=$(echo &quot;$target&quot; | sed &#39;s/ /%20/g&#39;)
+          curl -sf -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+            &quot;https://api.search.brave.com/res/v1/web/search?q=${encoded}+site:github.com&amp;count=3&quot; \
+            &gt; /tmp/lb_ce_bsearch.json 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; /tmp/lb_ce_bsearch.json
+
+          jq -c --arg target &quot;$target&quot; &#39;{
+            source: &quot;brave_search&quot;,
+            name: $target,
+            company: $target,
+            bio: &quot;&quot;,
+            blog: &quot;&quot;,
+            location: &quot;&quot;,
+            public_repos: 0,
+            followers: 0,
+            profile_url: ((.web.results // [])[0].url // &quot;&quot;),
+            target_input: $target
+          }&#39; /tmp/lb_ce_bsearch.json &gt; /tmp/lb_ce_person.json
+        fi
+
+        jq -sc &#39;.[0] + [.[1]]&#39; &quot;$tmpout&quot; /tmp/lb_ce_person.json &gt; /tmp/lb_ce_merged.json
+        mv /tmp/lb_ce_merged.json &quot;$tmpout&quot;
+        count=$((count + 1))
+      done
+
+      cat &quot;$tmpout&quot;
+      rm -f &quot;$tmpout&quot; /tmp/lb_ce_ghprofile.json /tmp/lb_ce_person.json /tmp/lb_ce_bsearch.json /tmp/lb_ce_merged.json
+
+  - id: research_activity
+    stdin: $find_targets.stdout
+    command: |
+      # For each target, fetch recent activity (GitHub events, repos, blog posts)
+      cat &gt; /tmp/lb_ce_targets.json
+      tmpout=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpout&quot;
+
+      for row in $(jq -r &#39;.[] | @base64&#39; /tmp/lb_ce_targets.json); do
+        person=$(echo &quot;$row&quot; | base64 -d)
+        username=$(echo &quot;$person&quot; | jq -r &#39;.username // empty&#39;)
+        source=$(echo &quot;$person&quot; | jq -r &#39;.source // empty&#39;)
+
+        if [ &quot;$source&quot; = &quot;github&quot; ] &amp;&amp; [ -n &quot;$username&quot; ]; then
+          # Fetch recent public events
+          curl -sf &quot;https://api.github.com/users/${username}/events/public?per_page=30&quot; \
+            &gt; /tmp/lb_ce_events.json 2&gt;/dev/null || echo &#39;[]&#39; &gt; /tmp/lb_ce_events.json
+
+          # Fetch recent repos (sorted by update)
+          curl -sf &quot;https://api.github.com/users/${username}/repos?sort=updated&amp;per_page=5&quot; \
+            &gt; /tmp/lb_ce_repos.json 2&gt;/dev/null || echo &#39;[]&#39; &gt; /tmp/lb_ce_repos.json
+
+          # Extract activity signals
+          jq -c --argjson person &quot;$person&quot; &#39;{
+            person: $person,
+            recent_events: [.[:10][] | {
+              type: .type,
+              repo: .repo.name,
+              created: .created_at,
+              action: (.payload.action // null)
+            }]
+          }&#39; /tmp/lb_ce_events.json &gt; /tmp/lb_ce_activity_part.json
+
+          jq -c --slurpfile act /tmp/lb_ce_activity_part.json &#39;
+            ($act[0]) * {
+              recent_repos: [.[:5][] | {
+                name: .name,
+                description: (.description // &quot;&quot;),
+                language: (.language // &quot;unknown&quot;),
+                stars: .stargazers_count,
+                updated: .updated_at,
+                topics: (.topics // [])
+              }]
+            }
+          &#39; /tmp/lb_ce_repos.json &gt; /tmp/lb_ce_activity.json
+        else
+          echo &quot;$person&quot; | jq -c &#39;{person: ., recent_events: [], recent_repos: []}&#39; &gt; /tmp/lb_ce_activity.json
+        fi
+
+        jq -sc &#39;.[0] + [.[1]]&#39; &quot;$tmpout&quot; /tmp/lb_ce_activity.json &gt; /tmp/lb_ce_act_merged.json
+        mv /tmp/lb_ce_act_merged.json &quot;$tmpout&quot;
+      done
+
+      cat &quot;$tmpout&quot;
+      rm -f &quot;$tmpout&quot; /tmp/lb_ce_targets.json /tmp/lb_ce_events.json /tmp/lb_ce_repos.json /tmp/lb_ce_activity_part.json /tmp/lb_ce_activity.json /tmp/lb_ce_act_merged.json
+
+  - id: web_research
+    stdin: $research_activity.stdout
+    command: |
+      # For each target, do a Brave web search for recent mentions, blog posts, talks
+      cat &gt; /tmp/lb_ce_activities.json
+      tmpout=$(mktemp)
+      echo &#39;[]&#39; &gt; &quot;$tmpout&quot;
+
+      for row in $(jq -r &#39;.[] | @base64&#39; /tmp/lb_ce_activities.json); do
+        activity=$(echo &quot;$row&quot; | base64 -d)
+        name=$(echo &quot;$activity&quot; | jq -r &#39;.person.name // .person.username // &quot;unknown&quot;&#39;)
+        company=$(echo &quot;$activity&quot; | jq -r &#39;.person.company // &quot;&quot;&#39; | sed &#39;s/^@//&#39;)
+
+        # Search for recent mentions, posts, talks
+        search_query=$(printf &#39;%s&#39; &quot;${name} ${company} developer&quot; | sed &#39;s/ /%20/g&#39;)
+        curl -sf -H &quot;X-Subscription-Token: ${BRAVE_API_KEY}&quot; \
+          &quot;https://api.search.brave.com/res/v1/web/search?q=${search_query}&amp;count=5&amp;freshness=pm&quot; \
+          &gt; /tmp/lb_ce_web.json 2&gt;/dev/null || echo &#39;{&quot;web&quot;:{&quot;results&quot;:[]}}&#39; &gt; /tmp/lb_ce_web.json
+
+        jq -c --argjson activity &quot;$activity&quot; &#39;{
+          person: $activity.person,
+          recent_events: $activity.recent_events,
+          recent_repos: $activity.recent_repos,
+          web_mentions: [(.web.results // [])[:5][] | {
+            title: .title,
+            url: .url,
+            description: (.description // &quot;&quot;),
+            age: (.age // &quot;&quot;)
+          }]
+        }&#39; /tmp/lb_ce_web.json &gt; /tmp/lb_ce_enriched.json
+
+        jq -sc &#39;.[0] + [.[1]]&#39; &quot;$tmpout&quot; /tmp/lb_ce_enriched.json &gt; /tmp/lb_ce_enr_merged.json
+        mv /tmp/lb_ce_enr_merged.json &quot;$tmpout&quot;
+      done
+
+      cat &quot;$tmpout&quot;
+      rm -f &quot;$tmpout&quot; /tmp/lb_ce_activities.json /tmp/lb_ce_web.json /tmp/lb_ce_enriched.json /tmp/lb_ce_enr_merged.json
+
+  - id: build_profiles
+    stdin: $web_research.stdout
+    command: |
+      # Assemble complete research profiles with personalization signals
+      cat &gt; /tmp/lb_ce_researched.json
+
+      jq -c --arg product &quot;${product_name}&quot; --arg pitch &quot;${product_pitch}&quot; &#39;{
+        product: {name: $product, pitch: $pitch},
+        targets: [.[] | {
+          name: .person.name,
+          username: .person.username,
+          company: .person.company,
+          bio: .person.bio,
+          location: .person.location,
+          profile_url: .person.profile_url,
+          followers: .person.followers,
+          signals: {
+            active_repos: [(.recent_repos // [])[:3][] | &quot;\(.name) (\(.language), \(.stars) ★) - \(.description)&quot;],
+            recent_activity: [(.recent_events // [])[:5][] | &quot;\(.type) on \(.repo)&quot;],
+            web_mentions: [(.web_mentions // [])[:3][] | {title: .title, url: .url, snippet: .description}]
+          },
+          personalization_hooks: {
+            top_project: ((.recent_repos // [])[0] // null | if . then &quot;\(.name) - \(.description)&quot; else null end),
+            tech_stack: [(.recent_repos // [])[] | .language] | unique | join(&quot;, &quot;),
+            recent_topics: [(.recent_repos // [])[] | .topics[]] | unique | join(&quot;, &quot;)
+          }
+        }],
+        meta: {
+          researched_at: (now | todate),
+          target_count: (. | length)
+        }
+      }&#39; /tmp/lb_ce_researched.json
+
+      rm -f /tmp/lb_ce_researched.json
+
+  - id: generate_emails
+    stdin: $build_profiles.stdout
+    command: |
+      llm_task.invoke --prompt &quot;You are a cold email expert. Given the JSON research profiles below, for each target:
+      1. Identify their likely pain points based on their tech stack, projects, and activity.
+      2. Write a hyper-personalized cold email (under 150 words) that:
+         - References a specific project or blog post they worked on
+         - Connects their pain point to the product
+         - Has a clear, low-friction CTA (e.g. &#39;reply with your thoughts&#39; or &#39;quick 15-min call&#39;)
+         - Feels human and genuine, not salesy
+      3. Suggest a subject line (under 60 chars, no spam triggers)
+
+      Return valid JSON: {\&quot;emails\&quot;: [{\&quot;name\&quot;: \&quot;...\&quot;, \&quot;username\&quot;: \&quot;...\&quot;, \&quot;subject\&quot;: \&quot;...\&quot;, \&quot;body\&quot;: \&quot;...\&quot;, \&quot;pain_point\&quot;: \&quot;...\&quot;, \&quot;personalization_hook\&quot;: \&quot;...\&quot;}]}
+
+      Include the original profile data in a &#39;profiles&#39; key so downstream steps can use it.&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+  - id: report
+    stdin: $generate_emails.stdout
+    command: |
+      # Format a human-readable summary with generated emails
+      jq -r &#39;
+        &quot;🎯 Cold Email Personalizer — Generated Emails\n&quot; +
+        &quot;═══════════════════════════════════════════\n\n&quot; +
+        (if .profiles then
+          &quot;Targets researched: \(.profiles.meta.target_count // &quot;N/A&quot;)\n&quot; +
+          &quot;Product: \(.profiles.product.name // &quot;N/A&quot;) — \(.profiles.product.pitch // &quot;&quot;)\n\n&quot;
+        else &quot;&quot; end) +
+        (.emails | to_entries | map(
+          &quot;[\(.key + 1)] \(.value.name) (@\(.value.username))\n&quot; +
+          &quot;    Pain Point: \(.value.pain_point)\n&quot; +
+          &quot;    Hook: \(.value.personalization_hook)\n\n&quot; +
+          &quot;    📧 Subject: \(.value.subject)\n\n&quot; +
+          &quot;    Body:\n&quot; +
+          (.value.body | split(&quot;\n&quot;) | map(&quot;      &quot; + .) | join(&quot;\n&quot;)) +
+          &quot;\n&quot;
+        ) | join(&quot;\n───────────────────────────────────────────\n\n&quot;))
+      &#39;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Not spray and pray. Actually personalized cold outreach at scale.</p>
+<h3>What It Does</h3>
+<ol><li>Finds decision-makers at target accounts</li><li>Researches their LinkedIn, Twitter, company news</li><li>Identifies specific pain points from public info</li><li>Generates hyper-personalized emails</li><li>Finds verified email addresses</li><li>Sends with smart follow-up sequences</li></ol>
+<p>> "This isn't 'spray and pray.' It's 'I noticed you're hiring for X and your last quarter report mentioned Y' level personalization. At scale."</p>
+<h3>Requirements</h3>
+<ul><li>`web_search`, `web_fetch`, `email` capabilities</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

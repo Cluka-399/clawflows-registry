@@ -5,80 +5,457 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Weekly Review Generator — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Weekly Review Generator</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Generate weekly summary from completed tasks, commits, and calendar events</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Weekly Review Generator</h1>
+        <p class="description">Generate weekly summary from completed tasks, commits, and calendar events</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">productivity</span><span class="pill">weekly</span><span class="pill">review</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install weekly-review-generator</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">file_system</span><span class="tag">calendar</span><span class="tag">exec</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">file_system</span><span class="tag">calendar</span><span class="tag">exec</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ul><li>Collects completed tasks, git commits, and calendar events from the past week</li><li>Generates a structured weekly review</li><li>Highlights accomplishments and upcoming priorities</li></ul>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. collect_tasks</div></div><div class="step"><div class="step-title">2. collect_git_metrics</div></div><div class="step"><div class="step-title">3. build_review_data</div></div><div class="step"><div class="step-title">4. format_review</div></div><div class="step"><div class="step-title">5. save_review</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install weekly-review-generator</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">task_file</div><div class="kv-meta">No description yet. · default: /data/clawd/memory</div></div><div class="kv"><div class="kv-name">repo_paths</div><div class="kv-meta">No description yet. · default: /data/clawd</div></div><div class="kv"><div class="kv-name">days_back</div><div class="kv-meta">No description yet. · default: 7</div></div><div class="kv"><div class="kv-name">output_dir</div><div class="kv-meta">No description yet. · default: /data/clawd/memory/reviews</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        
+        <p>Fridays at 5pm (<code>0 17 * * 5</code>).</p>
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses llm task.invoke for narrative review generation</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. collect_tasks</div></div><div class="step"><div class="step-title">2. collect_git_metrics</div></div><div class="step"><div class="step-title">3. build_review_data</div></div><div class="step"><div class="step-title">4. format_review</div></div><div class="step"><div class="step-title">5. save_review</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses llm_task.invoke for narrative review generation
+
+name: &quot;Weekly Review Generator&quot;
+description: &quot;Generate a metrics-focused weekly review: task completion stats, git activity metrics (lines changed, files touched, commit frequency), and structured summary report&quot;
+
+args:
+  task_file:
+    desc: &quot;Path to a TODO/task markdown file (lines starting with - [x] are completed)&quot;
+    default: &quot;/data/clawd/memory&quot;
+  repo_paths:
+    desc: &quot;Comma-separated list of git repo paths to collect metrics from&quot;
+    default: &quot;/data/clawd&quot;
+  days_back:
+    desc: &quot;Number of days to look back&quot;
+    default: &quot;7&quot;
+  output_dir:
+    desc: &quot;Directory to save the review file&quot;
+    default: &quot;/data/clawd/memory/reviews&quot;
+
+steps:
+  - id: collect_tasks
+    command: |
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import os, sys, json, glob, re
+      from datetime import datetime, timedelta
+
+      task_path = &quot;${task_file}&quot;
+      days_back = int(&quot;${days_back}&quot;)
+      cutoff = datetime.now() - timedelta(days=days_back)
+      cutoff_str = cutoff.strftime(&quot;%Y-%m-%d&quot;)
+
+      completed = []
+      pending = []
+      counters = {&quot;files_scanned&quot;: 0}
+
+      def scan_file(fpath, date_label):
+          counters[&quot;files_scanned&quot;] += 1
+          try:
+              with open(fpath) as f:
+                  content = f.read()
+          except Exception:
+              return
+          for line in content.splitlines():
+              stripped = line.strip()
+              # Match completed tasks: - [x] or * [x]
+              if re.match(r&#39;^[-*]\s*\[x\]\s+&#39;, stripped, re.IGNORECASE):
+                  task_text = re.sub(r&#39;^[-*]\s*\[x\]\s+&#39;, &#39;&#39;, stripped, flags=re.IGNORECASE)
+                  completed.append({&quot;task&quot;: task_text, &quot;source&quot;: os.path.basename(fpath), &quot;date&quot;: date_label})
+              # Match pending tasks: - [ ] or * [ ]
+              elif re.match(r&#39;^[-*]\s*\[\s\]\s+&#39;, stripped):
+                  task_text = re.sub(r&#39;^[-*]\s*\[\s\]\s+&#39;, &#39;&#39;, stripped)
+                  pending.append({&quot;task&quot;: task_text, &quot;source&quot;: os.path.basename(fpath), &quot;date&quot;: date_label})
+
+      if os.path.isfile(task_path):
+          scan_file(task_path, &quot;file&quot;)
+      elif os.path.isdir(task_path):
+          # Scan dated markdown files in the directory
+          for f in sorted(glob.glob(os.path.join(task_path, &quot;*.md&quot;))):
+              basename = os.path.basename(f)
+              if len(basename) == 13 and basename[:4].isdigit() and basename.endswith(&quot;.md&quot;):
+                  date_str = basename[:-3]
+                  if date_str &gt;= cutoff_str:
+                      scan_file(f, date_str)
+              elif basename.lower() in (&quot;todo.md&quot;, &quot;tasks.md&quot;, &quot;session-state.md&quot;):
+                  scan_file(f, &quot;current&quot;)
+
+      output = {
+          &quot;completed_count&quot;: len(completed),
+          &quot;pending_count&quot;: len(pending),
+          &quot;files_scanned&quot;: counters[&quot;files_scanned&quot;],
+          &quot;completed&quot;: completed,
+          &quot;pending&quot;: pending
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open(&quot;/tmp/review_tasks.json&quot;, &quot;w&quot;) as fout:
+          json.dump(output, fout, indent=2)
+      PYEOF
+
+  - id: collect_git_metrics
+    command: |
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import subprocess, json, sys, os
+      from datetime import datetime, timedelta
+      from collections import Counter, defaultdict
+
+      repo_paths_raw = &quot;${repo_paths}&quot;
+      days_back = int(&quot;${days_back}&quot;)
+
+      repos = [r.strip() for r in repo_paths_raw.split(&quot;,&quot;) if r.strip()]
+      since_date = (datetime.now() - timedelta(days=days_back)).strftime(&quot;%Y-%m-%d&quot;)
+
+      all_metrics = []
+
+      for repo_path in repos:
+          if not os.path.isdir(os.path.join(repo_path, &quot;.git&quot;)):
+              continue
+          repo_name = os.path.basename(os.path.abspath(repo_path))
+
+          # Get commit log with stats
+          try:
+              result = subprocess.run(
+                  [&quot;git&quot;, &quot;log&quot;, f&quot;--since={since_date}&quot;, &quot;--pretty=format:%H|%ai|%an|%s&quot;, &quot;--numstat&quot;],
+                  cwd=repo_path, capture_output=True, text=True, timeout=30
+              )
+              raw = result.stdout
+          except Exception:
+              continue
+
+          commits = []
+          current_commit = None
+          files_touched = Counter()
+          lines_added_total = 0
+          lines_deleted_total = 0
+          daily_commits = Counter()
+          author_commits = Counter()
+          file_types = Counter()
+
+          for line in raw.splitlines():
+              if &quot;|&quot; in line and len(line.split(&quot;|&quot;)) &gt;= 4 and not line.startswith(&quot; &quot;):
+                  parts = line.split(&quot;|&quot;, 3)
+                  if len(parts[0]) == 40:
+                      current_commit = {
+                          &quot;hash&quot;: parts[0][:8],
+                          &quot;date&quot;: parts[1].strip(),
+                          &quot;author&quot;: parts[2].strip(),
+                          &quot;message&quot;: parts[3].strip(),
+                          &quot;files&quot;: [],
+                          &quot;additions&quot;: 0,
+                          &quot;deletions&quot;: 0
+                      }
+                      commits.append(current_commit)
+                      day = parts[1].strip()[:10]
+                      daily_commits[day] += 1
+                      author_commits[parts[2].strip()] += 1
+              elif line.strip() and current_commit is not None:
+                  # numstat line: additions\tdeletions\tfilename
+                  num_parts = line.split(&quot;\t&quot;)
+                  if len(num_parts) == 3:
+                      added = int(num_parts[0]) if num_parts[0] != &quot;-&quot; else 0
+                      deleted = int(num_parts[1]) if num_parts[1] != &quot;-&quot; else 0
+                      fname = num_parts[2]
+                      current_commit[&quot;files&quot;].append(fname)
+                      current_commit[&quot;additions&quot;] += added
+                      current_commit[&quot;deletions&quot;] += deleted
+                      lines_added_total += added
+                      lines_deleted_total += deleted
+                      files_touched[fname] += 1
+                      ext = os.path.splitext(fname)[1] or &quot;(no ext)&quot;
+                      file_types[ext] += 1
+
+          # Top changed files
+          top_files = [{&quot;file&quot;: f, &quot;changes&quot;: c} for f, c in files_touched.most_common(10)]
+
+          all_metrics.append({
+              &quot;repo&quot;: repo_name,
+              &quot;repo_path&quot;: repo_path,
+              &quot;commit_count&quot;: len(commits),
+              &quot;lines_added&quot;: lines_added_total,
+              &quot;lines_deleted&quot;: lines_deleted_total,
+              &quot;lines_net&quot;: lines_added_total - lines_deleted_total,
+              &quot;unique_files_touched&quot;: len(files_touched),
+              &quot;top_changed_files&quot;: top_files,
+              &quot;file_types&quot;: dict(file_types.most_common(10)),
+              &quot;daily_commits&quot;: dict(sorted(daily_commits.items())),
+              &quot;authors&quot;: dict(author_commits.most_common(5)),
+              &quot;commits&quot;: [
+                  {&quot;hash&quot;: c[&quot;hash&quot;], &quot;message&quot;: c[&quot;message&quot;], &quot;date&quot;: c[&quot;date&quot;],
+                   &quot;additions&quot;: c[&quot;additions&quot;], &quot;deletions&quot;: c[&quot;deletions&quot;],
+                   &quot;file_count&quot;: len(c[&quot;files&quot;])}
+                  for c in commits[:30]
+              ]
+          })
+
+      output = {
+          &quot;repos_analyzed&quot;: len(all_metrics),
+          &quot;total_commits&quot;: sum(m[&quot;commit_count&quot;] for m in all_metrics),
+          &quot;total_lines_added&quot;: sum(m[&quot;lines_added&quot;] for m in all_metrics),
+          &quot;total_lines_deleted&quot;: sum(m[&quot;lines_deleted&quot;] for m in all_metrics),
+          &quot;total_files_touched&quot;: sum(m[&quot;unique_files_touched&quot;] for m in all_metrics),
+          &quot;repos&quot;: all_metrics
+      }
+      json.dump(output, sys.stdout, indent=2)
+      with open(&quot;/tmp/review_git_metrics.json&quot;, &quot;w&quot;) as fout:
+          json.dump(output, fout, indent=2)
+      PYEOF
+
+  - id: build_review_data
+    # Assembles tasks + git metrics into a single structured JSON document.
+    command: |
+      python3 &lt;&lt; &#39;PYEOF&#39;
+      import json, sys, os
+      from datetime import datetime
+
+      with open(&quot;/tmp/review_tasks.json&quot;) as f:
+          tasks = json.load(f)
+      with open(&quot;/tmp/review_git_metrics.json&quot;) as f:
+          git = json.load(f)
+
+      days_back = int(&quot;${days_back}&quot;)
+
+      # Compute productivity score (simple heuristic)
+      task_score = min(tasks[&quot;completed_count&quot;] * 10, 50)
+      commit_score = min(git[&quot;total_commits&quot;] * 2, 30)
+      code_score = min(git[&quot;total_lines_added&quot;] // 50, 20)
+      productivity_score = task_score + commit_score + code_score
+
+      assembled = {
+          &quot;meta&quot;: {
+              &quot;generated_at&quot;: datetime.now().isoformat(),
+              &quot;days_back&quot;: days_back,
+              &quot;type&quot;: &quot;weekly_review&quot;
+          },
+          &quot;summary_stats&quot;: {
+              &quot;tasks_completed&quot;: tasks[&quot;completed_count&quot;],
+              &quot;tasks_pending&quot;: tasks[&quot;pending_count&quot;],
+              &quot;task_completion_rate&quot;: round(
+                  tasks[&quot;completed_count&quot;] / max(tasks[&quot;completed_count&quot;] + tasks[&quot;pending_count&quot;], 1) * 100, 1
+              ),
+              &quot;total_commits&quot;: git[&quot;total_commits&quot;],
+              &quot;total_lines_added&quot;: git[&quot;total_lines_added&quot;],
+              &quot;total_lines_deleted&quot;: git[&quot;total_lines_deleted&quot;],
+              &quot;net_lines&quot;: git[&quot;total_lines_added&quot;] - git[&quot;total_lines_deleted&quot;],
+              &quot;files_touched&quot;: git[&quot;total_files_touched&quot;],
+              &quot;repos_active&quot;: git[&quot;repos_analyzed&quot;],
+              &quot;productivity_score&quot;: min(productivity_score, 100)
+          },
+          &quot;tasks&quot;: tasks,
+          &quot;git&quot;: git
+      }
+
+      json.dump(assembled, sys.stdout, indent=2)
+      with open(&quot;/tmp/review_assembled.json&quot;, &quot;w&quot;) as fout:
+          json.dump(assembled, fout, indent=2)
+      PYEOF
+
+  - id: format_review
+    stdin: $build_review_data.stdout
+    command: &gt;
+      llm_task.invoke --prompt &quot;SYSTEM: You are a developer productivity analyst. Create insightful, metrics-driven weekly reviews.\n\nUSER: Generate a metrics-focused weekly review from the assembled data below.\n\nInclude:\n1. **Productivity Score** with visual indicator and trend\n2. **Task Analysis** — completion rate, what got done, what&#39;s overdue\n3. **Code Activity** — commits, lines changed, most active repos and files\n4. **Patterns** — daily commit frequency, productive days vs quiet days\n5. **Highlights** — most impactful commits or completed tasks\n6. **Recommendations** — what to focus on next week based on the data\n\nUse tables for metrics, emoji for visual scanning.\nCompare to typical weeks if historical data is available.&quot;
+    env: { CLAWD_URL: &quot;http://127.0.0.1:3000&quot; }
+
+  - id: save_review
+    command: |
+      OUTPUT_DIR=&quot;${output_dir}&quot;
+      mkdir -p &quot;$OUTPUT_DIR&quot;
+      TODAY=$(date +%Y-%m-%d)
+      OUTFILE=&quot;${OUTPUT_DIR}/review-${TODAY}.md&quot;
+      echo &quot;$CLAWD_STEP_format_review&quot; &gt; &quot;$OUTFILE&quot;
+      echo &quot;Saved to: ${OUTFILE}&quot;
+      cat &quot;$OUTFILE&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Generate a weekly summary from completed tasks, commits, and calendar events.</p>
+<h3>What It Does</h3>
+<ul><li>Collects completed tasks, git commits, and calendar events from the past week</li><li>Generates a structured weekly review</li><li>Highlights accomplishments and upcoming priorities</li></ul>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Description</th></tr></thead><tbody><tr><td>`calendar`</td><td>Access calendar events</td></tr><tr><td>`exec`</td><td>Run git commands for commit history</td></tr></tbody></table></div>
+<h3>Schedule</h3>
+<p>Fridays at 5pm (<code>0 17 * * 5</code>).</p>
+<h3>Installation</h3>
+<ol><li>Add this automation to your ClawFlows registry</li><li>Connect calendar and git repos</li><li>Deploy</li></ol>
+<h3>Author</h3>
+<p>Built by <a href="https://clawhub.ai/u/Cluka-399">@Cluka-399</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

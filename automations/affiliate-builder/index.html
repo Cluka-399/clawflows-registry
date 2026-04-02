@@ -5,80 +5,436 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Affiliate Army Builder — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Affiliate Army Builder</h1>
-    <p class="meta">v1.0.0 · by Cluka (inspired by @alex_prompter)</p>
-    <div class="description">
-      <p>Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Affiliate Army Builder</h1>
+        <p class="description">Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by unknown</span>
+          <span>schedule 0 10 * * 1</span>
+          <span>Lobster workflow available</span>
+        </div>
+        <div class="pill-row"><span class="tag">Marketing</span></div>
+        <div class="tag-row"><span class="pill">affiliates</span><span class="pill">partnerships</span><span class="pill">content-creators</span><span class="pill">revenue</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install affiliate-builder</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">affiliates</span><span class="tag">partnerships</span><span class="tag">content-creators</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>Finds bloggers ranking for your target keywords</li><li>Analyzes their existing affiliate relationships</li><li>Scores prospects by potential</li><li>Generates personalized recruitment pitches</li><li>Manages outreach</li></ol>
+<p>> "Identifies bloggers who rank for your target keywords but don't mention your product."</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. find_bloggers</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. analyze_affiliate_potential</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">3. existing_affiliates</div></div><div class="step"><div class="step-title">4. traffic_indicators</div></div><div class="step"><div class="step-title">5. content_quality</div></div><div class="step"><div class="step-title">6. score_prospects</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. Do they mention competitors but not us?</div></div><div class="step"><div class="step-title">11. generate_pitch</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. find_contact</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">13. send_pitches</div><div class="step-detail">email</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install affiliate-builder</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">target_keywords</div><div class="kv-meta">Keywords your affiliates should rank for · required</div></div><div class="kv"><div class="kv-name">your_product</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">commission_details</div><div class="kv-meta">No description yet. · required</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 10 * * 1</code></p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses prompt step for affiliate outreach drafting</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. search_bloggers</div></div><div class="step"><div class="step-title">2. fetch_pages</div></div><div class="step"><div class="step-title">3. llm_analyze_prospects</div></div><div class="step"><div class="step-title">4. score_prospects</div></div><div class="step"><div class="step-title">5. build_prospect_report</div></div><div class="step"><div class="step-title">6. llm_generate_pitches</div></div><div class="step"><div class="step-title">7. final_output</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses prompt step for affiliate outreach drafting
+name: &quot;Affiliate Army Builder&quot;
+description: &gt;
+  Find potential affiliates ranking for your keywords, analyze their content
+  and existing partnerships, produce structured prospect data for recruitment.
+
+args:
+  target_keywords:
+    desc: &quot;Comma-separated keywords your affiliates should rank for&quot;
+    default: &quot;best project management tools&quot;
+  your_product:
+    desc: &quot;Your product name and one-liner&quot;
+    default: &quot;Acme PM - the fastest project management tool for startups&quot;
+  commission_details:
+    desc: &quot;Commission structure for affiliates&quot;
+    default: &quot;30% recurring commission, 90-day cookie&quot;
+  max_results:
+    desc: &quot;Max search results per keyword&quot;
+    default: &quot;5&quot;
+
+steps:
+  # Step 1: Search for bloggers ranking for each keyword via Brave Search
+  # Requires BRAVE_API_KEY env var
+  - id: search_bloggers
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-XXXXXX)
+      KEYWORDS=&#39;${target_keywords}&#39;
+      COUNT=&#39;${max_results}&#39;
+      IDX=0
+      echo &quot;$KEYWORDS&quot; | tr &#39;,&#39; &#39;\n&#39; | sed &#39;s/^ *//;s/ *$//&#39; &gt; &quot;$TMPDIR_AFF/keywords.txt&quot;
+      while IFS= read -r kw; do
+        [ -z &quot;$kw&quot; ] &amp;&amp; continue
+        QUERY=$(printf &#39;%s&#39; &quot;$kw best tools guide review&quot; | jq -Rr @uri)
+        curl -s &quot;https://api.search.brave.com/res/v1/web/search?q=${QUERY}&amp;count=${COUNT}&quot; \
+          -H &quot;Accept: application/json&quot; \
+          -H &quot;X-Subscription-Token: $BRAVE_API_KEY&quot; \
+          | jq --arg kw &quot;$kw&quot; &#39;[
+              .web.results[]? | {
+                keyword: $kw,
+                title: .title,
+                url: .url,
+                description: .description,
+                domain: (.url | split(&quot;/&quot;)[2] // &quot;unknown&quot;)
+              }
+            ]&#39; &gt; &quot;$TMPDIR_AFF/batch_${IDX}.json&quot; 2&gt;/dev/null || echo &#39;[]&#39; &gt; &quot;$TMPDIR_AFF/batch_${IDX}.json&quot;
+        IDX=$((IDX + 1))
+      done &lt; &quot;$TMPDIR_AFF/keywords.txt&quot;
+      if ls &quot;$TMPDIR_AFF&quot;/batch_*.json &gt;/dev/null 2&gt;&amp;1; then
+        jq -s &#39;add // []&#39; &quot;$TMPDIR_AFF&quot;/batch_*.json | jq &#39;[group_by(.domain)[] | .[0]]&#39;
+      else
+        echo &#39;[]&#39;
+      fi
+      rm -rf &quot;$TMPDIR_AFF&quot;
+
+  # Step 2: Fetch each prospect page and extract monetization signals
+  - id: fetch_pages
+    stdin: &quot;$search_bloggers.json&quot;
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-pages-XXXXXX)
+      cat &gt; &quot;$TMPDIR_AFF/search.json&quot;
+      jq -r &#39;.[].url&#39; &quot;$TMPDIR_AFF/search.json&quot; &gt; &quot;$TMPDIR_AFF/urls.txt&quot;
+      IDX=0
+      while IFS= read -r URL; do
+        [ -z &quot;$URL&quot; ] &amp;&amp; continue
+        DOMAIN=$(echo &quot;$URL&quot; | sed &#39;s|https\{0,1\}://\([^/]*\).*|\1|&#39;)
+        PAGEFILE=&quot;$TMPDIR_AFF/html_${IDX}.tmp&quot;
+        # Fetch page (timeout 10s, max 500KB)
+        curl -sL --max-time 10 --max-filesize 500000 \
+          -H &quot;User-Agent: Mozilla/5.0 (compatible; AffiliateResearch/1.0)&quot; \
+          -o &quot;$PAGEFILE&quot; &quot;$URL&quot; 2&gt;/dev/null || echo &quot;empty&quot; &gt; &quot;$PAGEFILE&quot;
+        # Count monetization signals from file
+        HAS_AFFILIATE=$(grep -ciE &#39;affiliate|commission|partner.program|sponsored|referral.link|disclosure&#39; &quot;$PAGEFILE&quot; || true)
+        HAS_ADS=$(grep -ciE &#39;adsense|ad-slot|sponsored-content|advertisement&#39; &quot;$PAGEFILE&quot; || true)
+        OUTBOUND_LINKS=$(grep -coE &#39;href=&quot;https?://&#39; &quot;$PAGEFILE&quot; || true)
+        WORD_COUNT=$(sed &#39;s/&lt;[^&gt;]*&gt;//g&#39; &quot;$PAGEFILE&quot; | wc -w | tr -d &#39; &#39;)
+        TITLE=$(sed -n &#39;s/.*&lt;title[^&gt;]*&gt;\([^&lt;]*\)&lt;\/title&gt;.*/\1/p&#39; &quot;$PAGEFILE&quot; | head -1 | head -c 200)
+        HAS_AFFILIATE=${HAS_AFFILIATE:-0}; HAS_ADS=${HAS_ADS:-0}; OUTBOUND_LINKS=${OUTBOUND_LINKS:-0}; WORD_COUNT=${WORD_COUNT:-0}
+        jq -n \
+          --arg url &quot;$URL&quot; \
+          --arg domain &quot;$DOMAIN&quot; \
+          --arg title &quot;$TITLE&quot; \
+          --argjson affiliate &quot;$HAS_AFFILIATE&quot; \
+          --argjson ads &quot;$HAS_ADS&quot; \
+          --argjson links &quot;$OUTBOUND_LINKS&quot; \
+          --argjson words &quot;$WORD_COUNT&quot; \
+          &#39;{
+            url: $url,
+            domain: $domain,
+            page_title: $title,
+            affiliate_signals: $affiliate,
+            ad_signals: $ads,
+            outbound_links: $links,
+            word_count: $words,
+            monetization_likely: ($affiliate &gt; 2 or $ads &gt; 0)
+          }&#39; &gt; &quot;$TMPDIR_AFF/page_${IDX}.json&quot;
+        IDX=$((IDX + 1))
+      done &lt; &quot;$TMPDIR_AFF/urls.txt&quot;
+      if ls &quot;$TMPDIR_AFF&quot;/page_*.json &gt;/dev/null 2&gt;&amp;1; then
+        jq -s &#39;.&#39; &quot;$TMPDIR_AFF&quot;/page_*.json
+      else
+        echo &#39;[]&#39;
+      fi
+      rm -rf &quot;$TMPDIR_AFF&quot;
+
+  # Step 2b: LLM analyzes page content for deeper affiliate partnership insights
+  - id: llm_analyze_prospects
+    stdin: &quot;$fetch_pages.stdout&quot;
+    command: |
+      llm_task.invoke --prompt &quot;You are an affiliate marketing analyst. Given JSON data about blog pages (affiliate signals, ad signals, word count, outbound links), analyze each prospect and add these fields to each object: &#39;content_quality&#39; (low/medium/high based on word count and structure), &#39;partnership_readiness&#39; (low/medium/high based on existing monetization signals), &#39;competitor_mentions&#39; (likelihood they mention competing products, based on outbound links and affiliate signals), and &#39;outreach_priority&#39; (1-10 score combining all factors). Return the enhanced JSON array only, no explanation.&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+  # Step 3: Merge search + page data, compute heuristic prospect score
+  #   Uses LLM analysis from step 2b for enhanced scoring
+  - id: score_prospects
+    command: |
+      TMPDIR_AFF=$(mktemp -d /tmp/aff-score-XXXXXX)
+      cat &gt; &quot;$TMPDIR_AFF/search.json&quot; &lt;&lt; &#39;SEARCH_EOF&#39;
+      $search_bloggers.stdout
+      SEARCH_EOF
+      cat &gt; &quot;$TMPDIR_AFF/pages.json&quot; &lt;&lt; &#39;PAGES_EOF&#39;
+      $fetch_pages.stdout
+      PAGES_EOF
+      jq -n --slurpfile search &quot;$TMPDIR_AFF/search.json&quot; --slurpfile pages &quot;$TMPDIR_AFF/pages.json&quot; &#39;
+        ($search[0] // []) as $s_arr |
+        ($pages[0] // []) as $p_arr |
+        [
+          $s_arr[] as $s |
+          ($p_arr | map(select(.url == $s.url)) | .[0] // {}) as $p |
+          {
+            url: $s.url,
+            domain: $s.domain,
+            keyword: $s.keyword,
+            title: ($p.page_title // $s.title),
+            description: $s.description,
+            affiliate_signals: ($p.affiliate_signals // 0),
+            ad_signals: ($p.ad_signals // 0),
+            outbound_links: ($p.outbound_links // 0),
+            word_count: ($p.word_count // 0),
+            monetization_likely: ($p.monetization_likely // false),
+            score: (
+              1
+              + (if ($p.monetization_likely // false) then 3 else 0 end)
+              + (if ($p.word_count // 0) &gt; 1000 then 2 else 0 end)
+              + (if ($p.outbound_links // 0) &gt; 10 then 2 else 0 end)
+              + (if ($p.affiliate_signals // 0) &gt; 3 then 2 else 0 end)
+            )
+          }
+        ] | sort_by(-.score)
+      &#39;
+      rm -rf &quot;$TMPDIR_AFF&quot;
+
+  # Step 4: Build recruitment data package with qualified prospects
+  # product details, and commission structure.
+  - id: build_prospect_report
+    stdin: &quot;$score_prospects.json&quot;
+    command: |
+      TMPFILE=$(mktemp /tmp/aff-report-XXXXXX.json)
+      cat &gt; &quot;$TMPFILE&quot;
+      jq --arg product &#39;${your_product}&#39; --arg commission &#39;${commission_details}&#39; &#39;
+        {
+          product: $product,
+          commission: $commission,
+          generated_at: (now | todate),
+          total_found: length,
+          qualified_prospects: [.[] | select(.score &gt;= 5)],
+          all_prospects: .
+        }
+        | .qualified_count = (.qualified_prospects | length)
+        | .summary = &quot;\(.qualified_count) of \(.total_found) prospects scored 5+ and are ready for outreach&quot;
+      &#39; &quot;$TMPFILE&quot;
+      rm -f &quot;$TMPFILE&quot;
+
+  # Step 4b: LLM generates personalized outreach pitches for qualified prospects
+  - id: llm_generate_pitches
+    stdin: &quot;$build_prospect_report.json&quot;
+    command: |
+      llm_task.invoke --prompt &quot;You are an affiliate recruitment specialist. Given a JSON report with product info, commission details, and qualified prospects, generate a personalized outreach email draft for EACH qualified prospect. Each email should: 1) Reference their specific blog/article by name, 2) Explain why their content is a great fit for the product, 3) Highlight the commission structure, 4) Include a clear CTA. Return JSON array of objects with fields: domain, url, subject_line, email_body. Keep emails concise (150-200 words), professional but friendly.&quot;
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+
+  # Step 5: Final summary output
+  - id: final_output
+    stdin: &quot;$build_prospect_report.json&quot;
+    command: |
+      TMPFILE=$(mktemp /tmp/aff-final-XXXXXX.json)
+      cat &gt; &quot;$TMPFILE&quot;
+      jq &#39;{
+        status: &quot;complete&quot;,
+        summary: .summary,
+        product: .product,
+        commission: .commission,
+        generated_at: .generated_at,
+        qualified_count: .qualified_count,
+        total_found: .total_found,
+        top_prospects: [.qualified_prospects[:5][] | {
+          domain: .domain,
+          url: .url,
+          score: .score,
+          keyword: .keyword,
+          monetization_likely: .monetization_likely
+        }],
+        next_steps: [
+          &quot;Review qualified prospects and verify contact info&quot;,
+          &quot;Review generated outreach pitches and customize as needed&quot;,
+          &quot;Send outreach emails via your preferred email tool&quot;
+        ],
+        outreach_pitches: (if $pitches then ($pitches[0] // []) else [] end)
+      }&#39; --slurpfile pitches &lt;(echo &#39;$llm_generate_pitches.stdout&#39;) &quot;$TMPFILE&quot; 2&gt;/dev/null || \
+      jq &#39;{
+        status: &quot;complete&quot;,
+        summary: .summary,
+        product: .product,
+        commission: .commission,
+        generated_at: .generated_at,
+        qualified_count: .qualified_count,
+        total_found: .total_found,
+        top_prospects: [.qualified_prospects[:5][] | {
+          domain: .domain,
+          url: .url,
+          score: .score,
+          keyword: .keyword,
+          monetization_likely: .monetization_likely
+        }],
+        next_steps: [
+          &quot;Review qualified prospects and verify contact info&quot;,
+          &quot;Review generated outreach pitches and customize as needed&quot;,
+          &quot;Send outreach emails via your preferred email tool&quot;
+        ]
+      }&#39; &quot;$TMPFILE&quot;
+      rm -f &quot;$TMPFILE&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turn content creators into your sales force.</p>
+<h3>What It Does</h3>
+<ol><li>Finds bloggers ranking for your target keywords</li><li>Analyzes their existing affiliate relationships</li><li>Scores prospects by potential</li><li>Generates personalized recruitment pitches</li><li>Manages outreach</li></ol>
+<p>> "Identifies bloggers who rank for your target keywords but don't mention your product."</p>
+<h3>Requirements</h3>
+<ul><li>`web_search`, `web_fetch`, `email` capabilities</li></ul>
+<h3>Credit</h3>
+<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>

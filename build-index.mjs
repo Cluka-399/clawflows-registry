@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { buildPages } from './build-pages.mjs';
 
 const automationsDir = './automations';
 const automations = [];
@@ -49,4 +50,6 @@ const index = {
 };
 
 fs.writeFileSync('index.json', JSON.stringify(index, null, 2));
+buildPages();
 console.log(`Generated index.json with ${automations.length} automations`);
+console.log('Generated automation detail pages');

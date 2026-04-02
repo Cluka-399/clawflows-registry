@@ -5,80 +5,356 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Comment Moderator — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-primary: #0a0a12;
-      --bg-card: #1a1a28;
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
       --accent: #ff6b6b;
-      --text-primary: #f0f0f5;
-      --text-secondary: #9090a0;
-      --border: #2a2a3a;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Space Grotesk', -apple-system, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 2rem; }
-    .back-link {
-      color: var(--accent);
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-    h1 { font-size: 2rem; margin: 1rem 0; }
-    .meta { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    .description {
-      background: var(--bg-card);
-      padding: 1.5rem;
-      border-radius: 12px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
       margin-bottom: 1.5rem;
     }
-    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .tag {
-      background: rgba(255, 107, 107, 0.15);
-      color: var(--accent);
-      padding: 0.25rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
     }
-    .install {
-      background: var(--bg-card);
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      color: var(--accent);
+      overflow-x: auto;
     }
-    footer {
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
     }
-    footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <a href="../" class="back-link">← All Automations</a>
-    <h1>Comment Moderator</h1>
-    <p class="meta">v1.0.0 · by cluka</p>
-    <div class="description">
-      <p>Auto-moderate comments based on rules and sentiment</p>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Comment Moderator</h1>
+        <p class="description">Auto-moderate comments based on rules and sentiment</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          
+          <span>Lobster workflow available</span>
+        </div>
+        
+        <div class="tag-row"><span class="pill">social</span><span class="pill">moderation</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install comment-moderator</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web_fetch</span><span class="tag">messaging</span><span class="tag">web-search</span><span class="tag">discord</span>
+        </div>
+        
+      </aside>
     </div>
-    <h3>Requirements</h3>
-    <div class="tags">
-      <span class="tag">web_fetch</span><span class="tag">messaging</span>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <p>Monitors incoming comments and applies moderation rules. Flags or removes comments that violate configurable policies using sentiment analysis and keyword matching.</p>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. (.id // .comment_id // .node_id // (. | tostring | ltrimstr(&quot;{&quot;) | rtrimstr(&quot;}&quot;) | split(&quot;,&quot;)[0])),</div></div><div class="step"><div class="step-title">2. .comment.id,</div></div><div class="step"><div class="step-title">3. report</div></div><div class="step"><div class="step-title">4. llm-analysis</div></div></div>
+      </section>
     </div>
-    <h3>Install</h3>
-    <div class="install">clawflows install comment-moderator</div>
-    <footer>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">api_url</div><div class="kv-meta">No description yet. · default: https://api.github.com/repos/facebook/react/issues/comments?per_page=30</div></div><div class="kv"><div class="kv-name">blocked_words</div><div class="kv-meta">No description yet. · default: spam,scam,viagra,casino,crypto,hack,free money,click here,buy now</div></div><div class="kv"><div class="kv-name">caps_threshold</div><div class="kv-meta">No description yet. · default: 0.6</div></div><div class="kv"><div class="kv-name">min_length_for_caps</div><div class="kv-meta">No description yet. · default: 20</div></div><div class="kv"><div class="kv-name">max_links</div><div class="kv-meta">No description yet. · default: 3</div></div><div class="kv"><div class="kv-name">max_duplicates</div><div class="kv-meta">No description yet. · default: 1</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p>No schedule declared. This may be manual-only.</p>
+        
+        
+      </section>
+    </div>
+
+    <div class="section-grid">
+      
+      <section class="panel"><h2>Lobster workflow</h2><p>LLM: Uses prompt step for enhanced moderation analysis</p><div class="step-list" style="margin-top:.8rem;"><div class="step"><div class="step-title">1. (.id // .comment_id // .node_id // (. | tostring | ltrimstr(&quot;{&quot;) | rtrimstr(&quot;}&quot;) | split(&quot;,&quot;)[0])),</div></div><div class="step"><div class="step-title">2. .comment.id,</div></div><div class="step"><div class="step-title">3. report</div></div><div class="step"><div class="step-title">4. llm-analysis</div></div></div><details style="margin-top:1rem;"><summary style="cursor:pointer; color:#fff;">View workflow YAML</summary><pre class="code-block"><code># LLM: Uses prompt step for enhanced moderation analysis
+
+name: &quot;Comment Moderator&quot;
+description: &quot;Fetch comments from a configurable API, apply rule-based moderation, and produce a report&quot;
+args:
+  api_url:
+    desc: &quot;URL to fetch comments from (must return JSON array with body/user fields)&quot;
+    default: &quot;https://api.github.com/repos/facebook/react/issues/comments?per_page=30&quot;
+  blocked_words:
+    desc: &quot;Comma-separated list of blocked words (case-insensitive)&quot;
+    default: &quot;spam,scam,viagra,casino,crypto,hack,free money,click here,buy now&quot;
+  caps_threshold:
+    desc: &quot;Max ratio of uppercase chars (0.0-1.0) before flagging&quot;
+    default: &quot;0.6&quot;
+  min_length_for_caps:
+    desc: &quot;Minimum comment length to apply caps check&quot;
+    default: &quot;20&quot;
+  max_links:
+    desc: &quot;Max number of URLs allowed per comment before flagging&quot;
+    default: &quot;3&quot;
+  max_duplicates:
+    desc: &quot;Max times the same text can appear before flagging as spam&quot;
+    default: &quot;1&quot;
+
+steps:
+  - id: fetch_comments
+    command: |
+      curl -s -H &quot;Accept: application/json&quot; -H &quot;User-Agent: lobster-moderator&quot; &quot;${api_url}&quot; &gt; /tmp/mod_raw_comments.json
+      # Normalize: extract array of {id, user, body, created_at} regardless of source shape
+      jq &#39;[
+        .[] | {
+          id: (.id // .comment_id // .node_id // (. | tostring | ltrimstr(&quot;{&quot;) | rtrimstr(&quot;}&quot;) | split(&quot;,&quot;)[0])),
+          user: (.user.login // .author // .username // &quot;unknown&quot;),
+          body: (.body // .text // .content // .message // &quot;&quot;),
+          created_at: (.created_at // .timestamp // .date // &quot;unknown&quot;)
+        }
+      ]&#39; /tmp/mod_raw_comments.json &gt; /tmp/mod_comments.json
+      echo &quot;Fetched $(jq length /tmp/mod_comments.json) comments&quot;
+      cat /tmp/mod_comments.json
+
+  - id: moderate
+    command: |
+      cat &gt; /tmp/mod_moderate.sh &lt;&lt; &#39;MODERATE_SCRIPT&#39;
+      #!/usr/bin/env bash
+      set -e
+
+      BLOCKED_WORDS=&quot;${1}&quot;
+      CAPS_THRESHOLD=&quot;${2}&quot;
+      MIN_LENGTH=&quot;${3}&quot;
+      MAX_LINKS=&quot;${4}&quot;
+      MAX_DUPES=&quot;${5}&quot;
+
+      # Build the jq moderation filter
+      jq --arg blocked &quot;$BLOCKED_WORDS&quot; \
+         --argjson caps_thresh &quot;$CAPS_THRESHOLD&quot; \
+         --argjson min_len &quot;$MIN_LENGTH&quot; \
+         --argjson max_links &quot;$MAX_LINKS&quot; \
+         --argjson max_dupes &quot;$MAX_DUPES&quot; &#39;
+        # Pre-compute duplicate counts
+        [.[] | .body] | group_by(.) | map({key: .[0], value: (. | length)}) | from_entries as $dupes |
+
+        # Split blocked words
+        ($blocked | split(&quot;,&quot;) | map(gsub(&quot;^\\s+|\\s+$&quot;; &quot;&quot;))) as $bwords |
+
+        # Process each comment
+        input | [.[] | . as $comment |
+          # Initialize flags
+          { comment: ., flags: [], score: 0 } |
+
+          # Check blocked words
+          (reduce $bwords[] as $word (.;
+            if ($comment.body | ascii_downcase | test($word; &quot;i&quot;))
+            then .flags += [&quot;blocked_word:&quot; + $word] | .score += 10
+            else . end
+          )) |
+
+          # Check caps ratio
+          (if ($comment.body | length) &gt;= $min_len then
+            ([$comment.body | explode[] | select(. &gt;= 65 and . &lt;= 90)] | length) as $upper |
+            ([$comment.body | explode[] | select((. &gt;= 65 and . &lt;= 90) or (. &gt;= 97 and . &lt;= 122))] | length) as $alpha |
+            if $alpha &gt; 0 and (($upper / $alpha) &gt; $caps_thresh) then
+              .flags += [&quot;excessive_caps:ratio=&quot; + (($upper / $alpha * 100) | floor | tostring) + &quot;%&quot;] | .score += 5
+            else . end
+          else . end) |
+
+          # Check link count
+          ([$comment.body | match(&quot;https?://[^\\s)\&quot;]+&quot;; &quot;g&quot;)] | length) as $link_count |
+          (if $link_count &gt; $max_links then
+            .flags += [&quot;too_many_links:count=&quot; + ($link_count | tostring)] | .score += 7
+          else . end) |
+
+          # Check duplicates
+          (if ($dupes[$comment.body] // 0) &gt; $max_dupes then
+            .flags += [&quot;duplicate:count=&quot; + ($dupes[$comment.body] | tostring)] | .score += 8
+          else . end) |
+
+          # Check very short/empty
+          (if ($comment.body | length) &lt; 2 then
+            .flags += [&quot;empty_or_trivial&quot;] | .score += 3
+          else . end) |
+
+          # Check repeated characters (e.g. &quot;aaaaaaa&quot;)
+          (if ($comment.body | test(&quot;(.)\\1{9,}&quot;)) then
+            .flags += [&quot;repeated_chars&quot;] | .score += 4
+          else . end) |
+
+          # Add status
+          (if (.flags | length) &gt; 0 then .status = &quot;flagged&quot; else .status = &quot;clean&quot; end) |
+
+          {
+            id: .comment.id,
+            user: .comment.user,
+            body: (.comment.body | if length &gt; 120 then .[:120] + &quot;...&quot; else . end),
+            full_body_length: (.comment.body | length),
+            status: .status,
+            flags: .flags,
+            score: .score
+          }
+        ]
+      &#39; /tmp/mod_comments.json /tmp/mod_comments.json &gt; /tmp/mod_results.json
+
+      cat /tmp/mod_results.json
+      MODERATE_SCRIPT
+      chmod +x /tmp/mod_moderate.sh
+      bash /tmp/mod_moderate.sh &quot;${blocked_words}&quot; &quot;${caps_threshold}&quot; &quot;${min_length_for_caps}&quot; &quot;${max_links}&quot; &quot;${max_duplicates}&quot;
+
+  - id: report
+    command: |
+      jq &#39;{
+        summary: {
+          total_comments: (. | length),
+          clean: ([.[] | select(.status == &quot;clean&quot;)] | length),
+          flagged: ([.[] | select(.status == &quot;flagged&quot;)] | length),
+          avg_score: (if length &gt; 0 then ([.[].score] | add / length * 100 | floor / 100) else 0 end),
+          max_score: ([.[].score] | max // 0)
+        },
+        flag_breakdown: (
+          [.[] | .flags[]] | group_by(split(&quot;:&quot;)[0]) |
+          map({type: .[0] | split(&quot;:&quot;)[0], count: length}) |
+          sort_by(-.count)
+        ),
+        flagged_comments: [.[] | select(.status == &quot;flagged&quot;) | {id, user, body, flags, score}],
+        clean_sample: [.[] | select(.status == &quot;clean&quot;) | {id, user, body}][:3]
+      }&#39; /tmp/mod_results.json
+
+  - id: llm-analysis
+    command: |
+      llm_task.invoke --prompt &quot;SYSTEM: You are a community moderator with nuanced judgment. Distinguish genuine discussion from spam.\n\nUSER: Review the moderation report below and provide enhanced analysis:\n\n1. For each flagged comment, assess the actual intent (is it truly spam/harmful or a false positive?)\n2. Provide a sentiment score for flagged comments (hostile/neutral/constructive)\n3. Suggest specific moderation actions: approve, delete, shadowban, or escalate\n4. Identify patterns that suggest coordinated spam or bot activity\n5. Recommend any rule adjustments to reduce false positives&quot;
+    stdin: $report.stdout
+    env:
+      CLAWD_URL: &quot;http://127.0.0.1:3000&quot;
+</code></pre></details></section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Auto-moderate comments based on rules and sentiment analysis.</p>
+<h3>What It Does</h3>
+<p>Monitors incoming comments and applies moderation rules. Flags or removes comments that violate configurable policies using sentiment analysis and keyword matching.</p>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Description</th></tr></thead><tbody><tr><td>`web-search`</td><td>Fetch and analyze comment content</td></tr><tr><td>`discord`</td><td>Send moderation notifications</td></tr></tbody></table></div>
+<h3>Trigger</h3>
+<p>Webhook — fires when new comments arrive.</p>
+<h3>Install</h3>
+<pre class="code-block"><code data-lang="yaml">automation: comment-moderator</code></pre></section>
+
+    <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
-    </footer>
+    </div>
   </div>
 </body>
 </html>
