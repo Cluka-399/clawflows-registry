@@ -465,7 +465,7 @@ function renderPage({ slug, meta, yamlText, readmeText, lobsterText }) {
         <div class="tag-row">
           ${requirements.length ? requirements.map(req => `<span class="tag">${escapeHtml(req)}</span>`).join('') : '<span class="pill">No explicit requirements listed</span>'}
         </div>
-        ${requirements.includes('agent-analytics') ? '<p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://agentanalytics.sh?utm_source=clawflows&utm_medium=referral&utm_campaign=flow_detail" target="_blank" rel="noopener">Agent Analytics ↗</a></p>' : ''}
+        ${requirements.includes('agent-analytics') ? '<p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://clawhub.ai/skill/agent-analytics" target="_blank" rel="noopener">Agent Analytics skill ↗</a></p>' : ''}
       </aside>
     </div>
 
