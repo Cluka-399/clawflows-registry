@@ -270,7 +270,17 @@
       background: linear-gradient(135deg, rgba(26, 26, 40, 0.94) 0%, rgba(18, 18, 28, 0.98) 100%);
       border: 1px solid rgba(255, 107, 107, 0.18);
       border-radius: 16px;
-      padding: 1.35rem 1.4rem;
+      padding: 1.6rem 1.4rem;
+      text-align: center;
+    }
+
+    .aa-eyebrow-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.95rem;
     }
 
     .aa-eyebrow {
@@ -285,36 +295,59 @@
       font-weight: 700;
       letter-spacing: 0.03em;
       text-transform: uppercase;
-      margin-bottom: 0.85rem;
+    }
+
+    .aa-new-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(62, 232, 181, 0.22) 0%, rgba(62, 232, 181, 0.1) 100%);
+      border: 1px solid rgba(62, 232, 181, 0.3);
+      color: #84f2d0;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 0 0 24px rgba(62, 232, 181, 0.08);
     }
 
     .aa-promo-header {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
     }
 
+    .aa-promo-copy {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     .aa-promo-header h2 {
-      font-size: 1.35rem;
+      font-size: 1.5rem;
       line-height: 1.15;
       max-width: 720px;
+      margin: 0 auto;
     }
 
     .aa-promo-header p {
       color: var(--text-secondary);
       max-width: 760px;
       font-size: 0.96rem;
-      margin-top: 0.55rem;
+      margin: 0.7rem auto 0;
     }
 
     .aa-promo-actions {
       display: flex;
+      justify-content: center;
       align-items: center;
       gap: 0.9rem;
       flex-wrap: wrap;
-      margin-top: 0.9rem;
+      margin-top: 1rem;
     }
 
     .aa-text-link {
@@ -966,11 +999,14 @@
     <section id="aa-eyes" class="aa-promo" data-aa-impression="aa_promo_section">
       <div class="container">
         <div class="aa-promo-shell">
-          <div class="aa-eyebrow">OpenClaw × Agent Analytics</div>
+          <div class="aa-eyebrow-row">
+            <div class="aa-eyebrow">OpenClaw × Agent Analytics</div>
+            <div class="aa-new-badge">New</div>
+          </div>
           <div class="aa-promo-header">
-            <div>
+            <div class="aa-promo-copy">
               <h2>ClawFlows gives OpenClaw automations. Agent Analytics gives it eyes.</h2>
-              <p>OpenClaw can run the workflow. Agent Analytics lets it see what happened after launch.</p>
+              <p>Build automations. See what works.</p>
               <div class="aa-promo-actions">
                 <button class="btn btn-primary" type="button" onclick="browseAnalyticsGrowthFlows()">Browse analytics &amp; growth flows</button>
                 <a href="https://clawhub.ai/skill/agent-analytics" class="aa-text-link" target="_blank" rel="noopener" onclick="trackEvent('aa_promo_site_click', { button: 'agent_analytics_skill', section: 'aa_promo' }); trackEvent('cta_click', { button: 'agent_analytics_skill', section: 'aa_promo' })">Agent Analytics skill ↗</a>
