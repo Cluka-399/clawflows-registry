@@ -11,12 +11,14 @@ const fs = require('fs');
           
           for (const dir of dirs) {
             const metadataPath = path.join(automationsDir, dir, 'metadata.json');
+            const lobsterWorkflowPath = path.join(automationsDir, dir, 'lobster', 'workflow.yaml');
             
             if (fs.existsSync(metadataPath)) {
               try {
                 const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
                 automations.push({
                   ...metadata,
+                  lobster_ready: metadata.lobster_ready ?? fs.existsSync(lobsterWorkflowPath),
                   url: `/automations/${dir}/`
                 });
               } catch (e) {
