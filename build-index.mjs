@@ -13,7 +13,8 @@ const dirs = fs.readdirSync(automationsDir).filter(f => {
 for (const dir of dirs) {
   const yamlPath = path.join(automationsDir, dir, 'automation.yaml');
   const metaPath = path.join(automationsDir, dir, 'metadata.json');
-  
+  const lobsterWorkflowPath = path.join(automationsDir, dir, 'lobster', 'workflow.yaml');
+
   if (fs.existsSync(metaPath)) {
     try {
       const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
@@ -31,7 +32,7 @@ for (const dir of dirs) {
         schedule: meta.schedule || null,
         tags: meta.tags || [],
         difficulty: meta.difficulty || null,
-        lobster_ready: meta.lobster_ready || false,
+        lobster_ready: meta.lobster_ready ?? fs.existsSync(lobsterWorkflowPath),
         created: meta.created || new Date().toISOString().split('T')[0],
         updated: meta.updated || new Date().toISOString().split('T')[0],
         url: `/automations/${dir}/`
