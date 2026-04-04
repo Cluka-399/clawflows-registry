@@ -1,6 +1,6 @@
-# Bilibili Manager | B站私信管理者
+# Bilibili Manager | B站管理者
 
-Check DMs, view history, draft replies, send after approval. Supports manual mode, auto mode, and heartbeat timer. | B站私信管理器：检查消息、显示历史、起草回复、确认后发送。支持手动模式、自动模式和心跳定时任务。
+Check DMs, browse content, draft replies, send after approval. Supports manual mode, auto mode, and heartbeat patrol. | B站管理者：私信管理、内容浏览、起草回复、确认后发送。支持手动模式、自动模式和心跳巡逻。
 
 ## What It Does | 功能说明
 

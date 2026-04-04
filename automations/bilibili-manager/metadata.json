@@ -1,6 +1,6 @@
 {
   "name": "bilibili-manager",
-  "description": "Check DMs, view history, draft replies, send after approval | B站私信管理器：检查消息、显示历史、起草回复、确认后发送。",
+  "description": "Bilibili manager: check DMs, browse content, auto-reply, heartbeat patrol. | B站管理者：私信管理、内容浏览、自动回复、心跳巡逻。",
   "author": "Moroiser",
   "version": "1.2.0",
   "requires": [

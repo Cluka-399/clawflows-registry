@@ -1,11 +1,12 @@
 name: bilibili-manager
-description: "Check DMs, view history, draft replies, send after approval | B站私信管理器：检查消息、显示历史、起草回复、确认后发送。"
+description: "Bilibili manager: check DMs, browse content, auto-reply, heartbeat patrol. | B站管理者：私信管理、内容浏览、自动回复、心跳巡逻。"
 version: 1.2.0
 
-# ===== Skill Reference =====
+# ===== Skill Reference | Skill 引用 =====
 # 此工作流引用 bilibili-messager skill
-# 使用前必须先安装：clawhub install bilibili-messager
-# 具体操作以引用的 skill 为准，工作流仅负责流程控制
+# First check if already installed locally | 先检测本地是否已安装
+# If not installed: clawhub install bilibili-messager | 未安装则：clawhub install bilibili-messager
+# Operations follow the skill, workflow handles flow control | 具体操作以skill为准，工作流仅负责流程控制
 
 requires:
   - capability: browser
