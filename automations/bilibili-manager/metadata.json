@@ -1,0 +1,9 @@
+{
+  "name": "bilibili-manager",
+  "description": "B站私信管理器：检查消息、显示对话历史、起草回复、用户确认后发送。支持手动模式、自动模式和心跳定时任务。",
+  "author": "Moroiser",
+  "version": "1.2.0",
+  "requires": ["browser", "notification"],
+  "trigger": "manual",
+  "tags": ["bilibili", "dm", "messaging", "automation", "social-media"]
+}

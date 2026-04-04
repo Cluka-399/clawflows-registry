@@ -1,0 +1,407 @@
+name: bilibili-manager
+description: "Bilibili DM manager with user-confirmed replies: check messages, show conversation history, draft replies, and send after approval. B站私信管理器：检查消息、显示对话历史、起草回复、用户确认后发送。"
+version: 1.2.0
+
+# ===== Skill Reference =====
+# 此工作流引用 bilibili-messager skill
+# 使用前必须先安装：clawhub install bilibili-messager
+# 具体操作以引用的 skill 为准，工作流仅负责流程控制
+
+requires:
+  - capability: browser
+  - capability: notification
+
+trigger:
+  manual: true
+
+# ===== 全局配置 =====
+config:
+  auto_mode:
+    description: "自动模式：自动回复，无需用户确认（默认关闭）"
+    default: false
+    required: false
+
+  heartbeat_interval:
+    description: "心跳间隔（分钟），设为0则不启用心跳。例：30=每30分钟，60=每小时"
+    default: 0
+    required: false
+
+  message_limit:
+    description: "单条消息最大字符数"
+    default: 500
+    required: false
+
+# ===== 步骤定义 =====
+steps:
+  # ─────────────────────────────────────────────
+  # 阶段1：模式引导（首次执行时自动显示）
+  # ─────────────────────────────────────────────
+  - name: show-mode-intro
+    action: evaluate
+    expression: |
+      () => {
+        return '📋 **B站私信管理者 - 运行模式说明**\n\n本工作流支持以下三种运行模式：\n\n**1. 手动模式（默认）**\n- 逐条查看私信内容\n- 每条消息都需要你确认才发送\n- 你可以修改回复内容或跳过\n- 适合：需要精细控制每条消息\n\n**2. 自动模式**\n- 自动遍历所有私信\n- 自动起草并发送回复（无需确认）\n- 适合：批量处理已知类型的私信\n\n**3. 心跳模式**\n- 按设定间隔自动执行\n- 自动发送工作报告到飞书\n- 适合：持续监控私信\n\n---\n请选择模式：\n- 直接说"开始" → 手动模式\n- 说"自动模式" → 自动回复\n- 说"心跳+分钟数" → 如"心跳30"\n\n或者直接告诉我你想怎么处理这些私信？';
+      }
+    capture: mode_intro
+
+  - name: check-user-intent
+    action: evaluate
+    expression: |
+      () => {
+        const input = (user_input || '').toLowerCase();
+        
+        if (input.includes('自动模式') || input.includes('自动回复')) {
+          return 'auto';
+        } else if (input.includes('心跳')) {
+          const match = input.match(/(\d+)/);
+          return 'heartbeat:' + (match ? match[1] : '30');
+        } else if (input.includes('开始') || input.includes('是') || input === '') {
+          return 'manual';
+        } else {
+          return 'manual';
+        }
+      }
+    capture: user_intent
+
+  # ─────────────────────────────────────────────
+  # 阶段2：准备工作
+  # ─────────────────────────────────────────────
+  - name: check-browser-status
+    capability: browser
+    method: status
+    capture: browser_status
+
+  - name: open-whisper-page
+    capability: browser
+    method: open
+    args:
+      profile: openclaw
+      targetUrl: https://message.bilibili.com/#/whisper
+    capture: bilibili_tab
+
+  - name: wait-page-ready
+    action: evaluate
+    expression: |
+      new Promise(resolve => setTimeout(resolve, 2000));
+      true;
+
+  - name: verify-login
+    capability: browser
+    method: snapshot
+    capture: login_snapshot
+
+  # ─────────────────────────────────────────────
+  # 阶段3：获取私信列表
+  # ─────────────────────────────────────────────
+  - name: fetch-dm-list
+    capability: browser
+    method: snapshot
+    capture: dm_list_snapshot
+
+  - name: extract-conversations
+    action: evaluate
+    expression: |
+      () => {
+        const selectors = [
+          '[class*="session-list"]',
+          '[class*="conversation-list"]',
+          '[class*="contact-list"]',
+          '[class*="whisper-list"]',
+          '.session-item'
+        ];
+        
+        let container = null;
+        for (const sel of selectors) {
+          container = document.querySelector(sel);
+          if (container) break;
+        }
+        
+        if (!container) return JSON.stringify({ error: 'container_not_found' });
+        
+        const items = container.querySelectorAll('[class*="session-item"], [class*="conversation-item"]');
+        const result = [];
+        
+        items.forEach((item, idx) => {
+          const nameEl = item.querySelector('[class*="name"], [class*="nick"], [class*="uname"]');
+          const timeEl = item.querySelector('[class*="time"], [class*="date"], [class*="time-text"]');
+          const previewEl = item.querySelector('[class*="preview"], [class*="last-msg"], [class*="msg-brief"]');
+          const unreadBadge = item.querySelector('[class*="badge"], [class*="unread-num"]');
+          
+          if (nameEl) {
+            result.push({
+              index: idx,
+              name: nameEl.textContent.trim(),
+              time: timeEl ? timeEl.textContent.trim() : '',
+              preview: previewEl ? previewEl.textContent.trim().substring(0, 100) : '',
+              hasUnread: !!unreadBadge
+            });
+          }
+        });
+        
+        return JSON.stringify({ conversations: result, count: result.length });
+      }
+    capture: conversation_data
+
+  - name: format-conversation-report
+    action: evaluate
+    expression: |
+      () => {
+        try {
+          const data = JSON.parse(conversation_data);
+          if (data.error) return '获取私信列表失败：' + data.error;
+          
+          const { conversations, count } = data;
+          if (!count || count === 0) return '📭 暂无私信会话';
+          
+          let report = '📬 **B站私信列表**（共 ' + count + ' 条）\n\n';
+          
+          conversations.forEach((conv, i) => {
+            report += '**' + (i + 1) + '.** ' + conv.name;
+            if (conv.hasUnread) report += ' 🔵';
+            report += '\n';
+            if (conv.time) report += '   ⏰ ' + conv.time + '\n';
+            if (conv.preview) report += '   💬 ' + conv.preview + '\n';
+            report += '\n';
+          });
+          
+          return report;
+        } catch (e) {
+          return '解析私信列表失败：' + e.message;
+        }
+      }
+    capture: conversation_report
+
+  # ─────────────────────────────────────────────
+  # 阶段4：处理单个会话
+  # ─────────────────────────────────────────────
+  - name: click-conversation-by-index
+    capability: browser
+    method: act
+    args:
+      targetId: "${bilibili_tab}"
+      request:
+        kind: evaluate
+        fn: |
+          (index) => {
+            const items = document.querySelectorAll('[class*="session-item"], [class*="conversation-item"]');
+            if (items[index]) {
+              items[index].click();
+              return 'clicked_' + index;
+            }
+            return 'not_found_' + index;
+          }
+        args:
+          index: 0
+    capture: click_result
+
+  - name: wait-chat-open
+    action: evaluate
+    expression: |
+      new Promise(resolve => setTimeout(resolve, 1500));
+      true;
+
+  - name: extract-messages
+    action: evaluate
+    expression: |
+      () => {
+        const containers = Array.from(document.querySelectorAll('[class*="_Msg_"]'));
+        const messages = [];
+        const seenIds = new Set();
+        
+        containers.forEach(el => {
+          const cls = el.className || '';
+          const id = cls.match(/_Msg_(\d+)/)?.[1] || cls;
+          
+          if (seenIds.has(id)) return;
+          seenIds.add(id);
+          
+          const isMe = cls.includes('_MsgIsMe_');
+          const sender = isMe ? '我' : '对方';
+          
+          let type = 'text';
+          let content = '';
+          
+          const imgs = el.querySelectorAll('img');
+          const realImg = Array.from(imgs).find(img => {
+            const src = img.src || '';
+            return src && !src.includes('avatar') && !src.includes('face');
+          });
+          
+          const hasVideoShare = Array.from(el.querySelectorAll('*')).some(n => 
+            (n.textContent || '').includes('投稿视频') ||
+            (n.textContent || '').includes('转发')
+          );
+          
+          if (hasVideoShare) {
+            type = 'video_share';
+            const videoTitle = Array.from(el.querySelectorAll('*'))
+              .find(n => (n.textContent || '').includes('投稿视频'));
+            content = videoTitle ? videoTitle.textContent.trim() : '[转发视频]';
+          } else if (realImg) {
+            type = 'image';
+            content = '[图片]';
+          } else {
+            const textContent = Array.from(el.childNodes)
+              .filter(n => n.nodeType === Node.TEXT_NODE)
+              .map(n => n.textContent.trim())
+              .filter(t => t.length > 0)
+              .join(' ');
+            content = textContent || (el.textContent || '').trim();
+          }
+          
+          if (content) {
+            messages.push({ sender, type, content: content.substring(0, 300) });
+          }
+        });
+        
+        return JSON.stringify(messages);
+      }
+    capture: messages_json
+
+  - name: format-messages-report
+    action: evaluate
+    expression: |
+      () => {
+        try {
+          const messages = JSON.parse(messages_json);
+          if (!messages.length) return '💬 暂无聊天记录';
+          
+          let report = '💬 **聊天记录**（' + messages.length + ' 条）\n\n';
+          
+          messages.slice(-10).forEach((msg, i) => {
+            const icon = msg.type === 'image' ? '🖼️' : 
+                        msg.type === 'video_share' ? '📹' : '💬';
+            report += icon + ' **' + msg.sender + '：** ' + msg.content + '\n\n';
+          });
+          
+          return report;
+        } catch (e) {
+          return '解析聊天记录失败：' + e.message;
+        }
+      }
+    capture: messages_report
+
+  # ─────────────────────────────────────────────
+  # 阶段5：发送回复
+  # ─────────────────────────────────────────────
+  - name: prepare-reply
+    action: evaluate
+    expression: |
+      () => {
+        const content = user_input || '';
+        if (!content || content === '[SKIP]') return '[SKIP]';
+        if (content.length > 500) {
+          return content.substring(0, 500) + '...[已截断]';
+        }
+        return content;
+      }
+    capture: final_reply
+
+  - name: type-reply
+    capability: browser
+    method: act
+    args:
+      targetId: "${bilibili_tab}"
+      request:
+        kind: evaluate
+        fn: |
+          (text) => {
+            const editor = document.querySelector('.content-input, [contenteditable="true"]');
+            if (!editor) return 'not found';
+            editor.focus();
+            editor.innerText = text;
+            editor.dispatchEvent(new Event('input', {bubbles: true}));
+            return 'typed';
+          }
+        args:
+          text: "${final_reply}"
+
+  - name: click-send-button
+    capability: browser
+    method: act
+    args:
+      targetId: "${bilibili_tab}"
+      request:
+        kind: click
+        ref: e1084
+
+  - name: wait-sent-confirm
+    action: evaluate
+    expression: |
+      new Promise(resolve => setTimeout(resolve, 1500));
+      true;
+
+  - name: return-to-list
+    capability: browser
+    method: act
+    args:
+      targetId: "${bilibili_tab}"
+      request:
+        kind: evaluate
+        fn: |
+          () => {
+            const backBtn = document.querySelector('[class*="back"], [class*="return"], [class*="go-back"]');
+            if (backBtn) {
+              backBtn.click();
+              return 'returned';
+            }
+            document.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'Escape',
+              code: 'Escape',
+              keyCode: 27,
+              bubbles: true
+            }));
+            return 'pressed_escape';
+          }
+
+  # ─────────────────────────────────────────────
+  # 阶段6：生成工作报告
+  # ─────────────────────────────────────────────
+  - name: compile-workflow-report
+    action: evaluate
+    expression: |
+      () => {
+        const processed = processed_count || 0;
+        const succeeded = succeeded_count || 0;
+        const skipped = skipped_count || 0;
+        const failed = failed_count || 0;
+        const total = total_count || 0;
+        
+        let report = '';
+        
+        if (user_intent === 'auto') {
+          report += '【自动模式】';
+        } else if (user_intent.startsWith('heartbeat')) {
+          const mins = user_intent.split(':')[1] || '30';
+          report += '【心跳模式·每' + mins + '分钟】';
+        } else {
+          report += '【手动模式】';
+        }
+        
+        report += 'B站私信处理完成\n\n';
+        report += '📊 **处理统计**\n';
+        report += '- 总私信数：' + total + ' 条\n';
+        report += '- 已处理：' + processed + ' 条\n';
+        report += '- 成功发送：' + succeeded + ' 条\n';
+        report += '- 已跳过：' + skipped + ' 条\n';
+        report += '- 失败：' + failed + ' 条\n\n';
+        
+        if (processed_list && processed_list.length > 0) {
+          report += '📋 **已处理详情**\n';
+          processed_list.forEach((item, i) => {
+            report += (i + 1) + '. 【' + item.name + '】→ ' + (item.reply || '已回复') + '\n';
+          });
+        }
+        
+        report += '\n🕐 完成时间：' + new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+        
+        return report;
+      }
+    capture: workflow_report
+
+  - name: send-workflow-report
+    capability: notification
+    method: send
+    args:
+      channel: feishu
+      message: "${workflow_report}"
