@@ -1,5 +1,5 @@
 name: bilibili-manager
-description: "Bilibili DM manager with user-confirmed replies: check messages, show conversation history, draft replies, and send after approval. B站私信管理器：检查消息、显示对话历史、起草回复、用户确认后发送。"
+description: "Check DMs, view history, draft replies, send after approval | B站私信管理器：检查消息、显示历史、起草回复、确认后发送。"
 version: 1.2.0
 
 # ===== Skill Reference =====
@@ -17,17 +17,17 @@ trigger:
 # ===== 全局配置 =====
 config:
   auto_mode:
-    description: "自动模式：自动回复，无需用户确认（默认关闭）"
+    description: "Auto mode: auto-reply without confirmation | 自动模式：无需确认，自动回复"
     default: false
     required: false
 
   heartbeat_interval:
-    description: "心跳间隔（分钟），设为0则不启用心跳。例：30=每30分钟，60=每小时"
+    description: "Heartbeat interval (minutes), 0=disabled | 心跳间隔（分钟），0=关闭"
     default: 0
     required: false
 
   message_limit:
-    description: "单条消息最大字符数"
+    description: "Max message characters | 单条消息最大字符数"
     default: 500
     required: false
 

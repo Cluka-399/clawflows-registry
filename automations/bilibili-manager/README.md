@@ -1,8 +1,6 @@
 # Bilibili Manager | B站私信管理者
 
-B站私信管理器，支持完整用户确认流程，提供手动模式、自动模式和心跳定时任务。
-
-B站私信管理器，支持完整用户确认流程，提供手动模式、自动模式和心跳定时任务。
+Check DMs, view history, draft replies, send after approval. Supports manual mode, auto mode, and heartbeat timer. | B站私信管理器：检查消息、显示历史、起草回复、确认后发送。支持手动模式、自动模式和心跳定时任务。
 
 ## What It Does | 功能说明
 
