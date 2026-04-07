@@ -1,0 +1,11 @@
+{
+  "name": "lead-qualifier",
+  "description": "Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["email", "exec"],
+  "trigger": "manual",
+  "tags": ["sales", "email", "leads", "agentmail"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}

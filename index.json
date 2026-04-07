@@ -1,24 +1,12 @@
 {
-  "generated": "2026-04-03T13:42:20.328Z",
+  "generated": "2026-04-07T18:00:48.062Z",
   "version": "1.0.0",
-  "count": 115,
+  "count": 118,
   "automations": [
     {
       "name": "100-Platform Launch Blitz",
       "slug": "launch-blitz",
-      "displayName": null,
-      "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "launch",
-        "directories",
-        "product-hunt"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "launch",
         "directories",
@@ -27,32 +15,29 @@
         "marketing"
       ],
       "difficulty": "intermediate",
+      "estimated_setup_time": "15 minutes",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.",
+      "version": "1.0.0",
+      "requires": [
+        "launch",
+        "directories",
+        "product-hunt"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/launch-blitz/"
     },
     {
       "name": "A/B Test Automator",
       "slug": "ab-test-automator",
-      "displayName": null,
-      "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
-      "author": "unknown",
-      "version": "1.0.0",
-      "category": null,
       "categories": [
         "analytics",
         "growth",
         "optimization"
       ],
-      "requires": [
-        "agent-analytics",
-        "ab-testing",
-        "conversion",
-        "optimization"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "ab-testing",
         "conversion",
@@ -60,27 +45,25 @@
         "landing-pages"
       ],
       "difficulty": "advanced",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.",
+      "version": "1.0.0",
+      "requires": [
+        "agent-analytics",
+        "ab-testing",
+        "conversion",
+        "optimization"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/ab-test-automator/"
     },
     {
       "name": "Affiliate Army Builder",
       "slug": "affiliate-builder",
-      "displayName": null,
-      "description": "Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "affiliates",
-        "partnerships",
-        "content-creators"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "affiliates",
         "partnerships",
@@ -88,30 +71,34 @@
         "revenue"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.",
+      "version": "1.0.0",
+      "requires": [
+        "affiliates",
+        "partnerships",
+        "content-creators"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/affiliate-builder/"
     },
     {
       "name": "agent-drift-detector",
-      "slug": "agent-drift-detector",
       "displayName": "Agent Drift Detector",
       "description": "Compare your agent's recent behavior against their original SOUL.md to detect personality and goal drift",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "repository": "https://github.com/Cluka-399/clawflows-registry",
+      "license": "MIT",
       "categories": [
         "agent-management",
         "alignment",
         "monitoring"
       ],
-      "requires": [
-        "exec",
-        "discord"
-      ],
-      "trigger": "manual",
-      "schedule": "0 9 * * 0",
       "tags": [
         "drift",
         "soul",
@@ -120,21 +107,33 @@
         "personality",
         "weekly-check"
       ],
-      "difficulty": null,
+      "requires": [
+        "exec",
+        "discord"
+      ],
+      "capabilities": [
+        "file-system",
+        "llm-analysis",
+        "notifications"
+      ],
+      "features": [
+        "Weekly behavioral comparison",
+        "LLM-powered drift analysis",
+        "Configurable thresholds",
+        "Historical reports"
+      ],
+      "schedule": "0 9 * * 0",
+      "estimatedRuntime": "60s",
+      "createdAt": "2026-01-31",
+      "updatedAt": "2026-01-31",
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/agent-drift-detector/"
     },
     {
       "name": "api-health-check",
-      "slug": "api-health-check",
-      "displayName": null,
       "description": "Comprehensive API health monitoring with endpoint validation",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -145,21 +144,37 @@
         "monitoring",
         "devops"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/api-health-check/"
     },
     {
+      "name": "api-health-monitor",
+      "description": "Cron-friendly endpoint health checker with response time tracking and failure alerts",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "exec"
+      ],
+      "trigger": "schedule",
+      "schedule": "*/15 * * * *",
+      "tags": [
+        "api",
+        "monitoring",
+        "devops",
+        "alerts"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": true,
+      "url": "/automations/api-health-monitor/"
+    },
+    {
       "name": "app-store-reviews",
-      "slug": "app-store-reviews",
-      "displayName": null,
       "description": "Monitor App Store and Google Play reviews for your app",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -170,21 +185,16 @@
         "reviews",
         "mobile"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/app-store-reviews/"
     },
     {
       "name": "arxiv-paper-scout",
-      "slug": "arxiv-paper-scout",
-      "displayName": null,
       "description": "Find new arXiv papers matching your research interests",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
@@ -195,20 +205,16 @@
         "papers",
         "ai"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/arxiv-paper-scout/"
     },
     {
       "name": "audience-growth-report",
-      "slug": "audience-growth-report",
-      "displayName": null,
       "description": "Weekly report on audience growth and demographics",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
       "categories": [
         "analytics",
         "growth"
@@ -224,28 +230,15 @@
         "social",
         "analytics"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/audience-growth-report/"
     },
     {
       "name": "Backlink Hunter",
       "slug": "backlink-hunter",
-      "displayName": null,
-      "description": "Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "seo",
-      "categories": null,
-      "requires": [
-        "seo",
-        "backlinks",
-        "outreach"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "seo",
         "backlinks",
@@ -253,20 +246,25 @@
         "link-building"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.",
+      "version": "1.0.0",
+      "requires": [
+        "seo",
+        "backlinks",
+        "outreach"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/backlink-hunter/"
     },
     {
       "name": "bill-due-reminder",
-      "slug": "bill-due-reminder",
-      "displayName": null,
       "description": "Track recurring bills and send reminders before due dates",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron",
         "discord"
@@ -277,21 +275,16 @@
         "finance",
         "reminders"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/bill-due-reminder/"
     },
     {
       "name": "bitcoin-tracker",
-      "slug": "bitcoin-tracker",
-      "displayName": null,
       "description": "Track Bitcoin prediction markets and alert on significant price moves",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "prediction-markets",
         "chart-generation",
@@ -307,32 +300,24 @@
         "alerts",
         "charts"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/bitcoin-tracker/"
     },
     {
       "name": "bookmark-organizer",
-      "slug": "bookmark-organizer",
       "displayName": "Bookmark Organizer",
       "description": "Periodically organize and summarize your saved bookmarks/links",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
       "categories": [
         "productivity",
         "organization",
         "weekly"
       ],
-      "requires": [
-        "browser",
-        "exec",
-        "discord"
-      ],
-      "trigger": "manual",
-      "schedule": "0 10 * * 0",
       "tags": [
         "bookmarks",
         "links",
@@ -340,21 +325,27 @@
         "categorize",
         "cleanup"
       ],
-      "difficulty": null,
+      "requires": [
+        "browser",
+        "exec",
+        "discord"
+      ],
+      "capabilities": [
+        "file-system",
+        "web-fetch",
+        "llm-analysis",
+        "notifications"
+      ],
+      "schedule": "0 10 * * 0",
+      "createdAt": "2026-01-31",
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/bookmark-organizer/"
     },
     {
       "name": "break-reminder",
-      "slug": "break-reminder",
-      "displayName": null,
       "description": "Remind yourself to take regular breaks (Pomodoro-style)",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -365,21 +356,16 @@
         "productivity",
         "pomodoro"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/break-reminder/"
     },
     {
       "name": "budget-tracker",
-      "slug": "budget-tracker",
-      "displayName": null,
       "description": "Track spending against monthly budgets, alert when nearing limits",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "discord"
@@ -390,21 +376,16 @@
         "finance",
         "budgeting"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/budget-tracker/"
     },
     {
       "name": "changelog-monitor",
-      "slug": "changelog-monitor",
-      "displayName": null,
       "description": "Monitor GitHub releases and changelogs for projects you use",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "github"
       ],
@@ -415,21 +396,16 @@
         "github",
         "releases"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/changelog-monitor/"
     },
     {
       "name": "cicd-status-monitor",
-      "slug": "cicd-status-monitor",
-      "displayName": null,
       "description": "Monitor CI/CD pipeline status and alert on failures",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "github",
         "cron"
@@ -441,21 +417,16 @@
         "ci-cd",
         "monitoring"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/cicd-status-monitor/"
     },
     {
       "name": "code-quality-report",
-      "slug": "code-quality-report",
-      "displayName": null,
       "description": "Weekly code quality report with linting and complexity metrics",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "cron"
@@ -467,21 +438,16 @@
         "quality",
         "linting"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/code-quality-report/"
     },
     {
       "name": "code-review-reminder",
-      "slug": "code-review-reminder",
-      "displayName": null,
       "description": "Remind about pending code reviews older than threshold",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "github",
         "cron"
@@ -491,28 +457,15 @@
       "tags": [
         "developer"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/code-review-reminder/"
     },
     {
       "name": "Cold Email Personalizer",
       "slug": "cold-email-personalizer",
-      "displayName": null,
-      "description": "Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "sales",
-      "categories": null,
-      "requires": [
-        "email",
-        "outreach",
-        "sales"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "email",
         "outreach",
@@ -520,52 +473,43 @@
         "personalization"
       ],
       "difficulty": "advanced",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.",
+      "version": "1.0.0",
+      "requires": [
+        "email",
+        "outreach",
+        "sales"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/cold-email-personalizer/"
     },
     {
       "name": "comment-moderator",
-      "slug": "comment-moderator",
-      "displayName": null,
       "description": "Auto-moderate comments based on rules and sentiment",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "discord"
       ],
       "trigger": "webhook",
-      "schedule": null,
       "tags": [
         "social",
         "moderation"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/comment-moderator/"
     },
     {
       "name": "Community Infiltrator",
       "slug": "community-infiltrator",
-      "displayName": null,
-      "description": "Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "community",
-        "slack",
-        "discord"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "community",
         "slack",
@@ -574,27 +518,24 @@
         "social-selling"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Monitor Slack, Discord, and Facebook groups for questions your product answers. Get alerts with suggested responses.",
+      "version": "1.0.0",
+      "requires": [
+        "community",
+        "slack",
+        "discord"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/community-infiltrator/"
     },
     {
       "name": "Competitor Shadow",
       "slug": "competitor-shadow",
-      "displayName": null,
-      "description": "Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "competitive-intelligence",
-        "monitoring",
-        "alerts"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "competitive-intelligence",
         "monitoring",
@@ -602,27 +543,32 @@
         "marketing"
       ],
       "difficulty": "beginner",
+      "estimated_setup_time": "5 minutes",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "use_cases": [
+        "Track competitor pricing changes",
+        "Monitor feature announcements",
+        "Detect hiring signals (expansion, new tech)",
+        "Stay ahead of market moves"
+      ],
+      "example_output": "🔍 **Acme Corp Update Detected**\n\nSource: check_careers\nChanged: 3 new ML Engineer positions added\n\nAnalysis: Significant ML hiring suggests AI feature development in next 6 months",
+      "description": "Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.",
+      "version": "1.0.0",
+      "requires": [
+        "competitive-intelligence",
+        "monitoring",
+        "alerts"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/competitor-shadow/"
     },
     {
       "name": "Content Syndication Network",
       "slug": "content-syndication",
-      "displayName": null,
-      "description": "Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "content",
-      "categories": null,
-      "requires": [
-        "content",
-        "syndication",
-        "cross-posting"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "content",
         "syndication",
@@ -630,20 +576,25 @@
         "marketing"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.",
+      "version": "1.0.0",
+      "requires": [
+        "content",
+        "syndication",
+        "cross-posting"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/content-syndication/"
     },
     {
       "name": "content-calendar",
-      "slug": "content-calendar",
-      "displayName": null,
       "description": "Plan and schedule content across platforms with reminders",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "cron"
@@ -654,97 +605,74 @@
         "social",
         "content"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/content-calendar/"
     },
     {
       "name": "content-repurposer",
-      "slug": "content-repurposer",
-      "displayName": null,
       "description": "Generate multi-platform content from single source",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "social",
         "content"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/content-repurposer/"
     },
     {
       "name": "content-to-anima",
-      "slug": "content-to-anima",
-      "displayName": null,
       "description": "Find trending ideas on Reddit/X, generate visual concepts with Gemini, then build on Anima",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "browser",
         "discord"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "content",
         "anima",
         "design",
         "generative"
       ],
-      "difficulty": null,
-      "lobster_ready": false,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": false,
       "url": "/automations/content-to-anima/"
     },
     {
       "name": "context-switcher",
-      "slug": "context-switcher",
-      "displayName": null,
       "description": "Save and restore workspace state when switching between projects",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "productivity",
         "developer"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/context-switcher/"
     },
     {
       "name": "crypto-dca-reminder",
-      "slug": "crypto-dca-reminder",
-      "displayName": null,
       "description": "Dollar-cost averaging reminders on your schedule with current prices",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "cron"
@@ -755,21 +683,16 @@
         "finance",
         "crypto"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/crypto-dca-reminder/"
     },
     {
       "name": "crypto-portfolio",
-      "slug": "crypto-portfolio",
-      "displayName": null,
       "description": "Track your crypto portfolio value and alert on significant changes",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "cron"
@@ -781,48 +704,37 @@
         "finance",
         "portfolio"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/crypto-portfolio/"
     },
     {
       "name": "customer-enrichment",
-      "slug": "customer-enrichment",
-      "displayName": null,
       "description": "Enrich customer/lead data from email or domain with company info, people, and pain points",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "browser"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "sales",
         "leads",
         "enrichment",
         "research"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/customer-enrichment/"
     },
     {
       "name": "daily-affirmation",
-      "slug": "daily-affirmation",
-      "displayName": null,
       "description": "Start your day with a positive affirmation",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -833,21 +745,16 @@
         "motivation",
         "daily"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/daily-affirmation/"
     },
     {
       "name": "daily-news-digest",
-      "slug": "daily-news-digest",
-      "displayName": null,
       "description": "Aggregate and summarize news from multiple sources into a morning briefing",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "rss"
@@ -862,21 +769,16 @@
         "rss",
         "productivity"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/daily-news-digest/"
     },
     {
       "name": "daily-standup-generator",
-      "slug": "daily-standup-generator",
-      "displayName": null,
       "description": "Generate standup update from git commits, completed tasks, and calendar",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "calendar"
@@ -888,21 +790,16 @@
         "developer",
         "standup"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/daily-standup-generator/"
     },
     {
       "name": "daily-standup-prep",
-      "slug": "daily-standup-prep",
-      "displayName": null,
       "description": "Prepare your daily standup by summarizing recent activity",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "calendar"
@@ -914,21 +811,16 @@
         "standup",
         "daily"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/daily-standup-prep/"
     },
     {
       "name": "database-backup-verifier",
-      "slug": "database-backup-verifier",
-      "displayName": null,
       "description": "Verify database backups exist and can be restored",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -940,21 +832,16 @@
         "database",
         "backup"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/database-backup-verifier/"
     },
     {
       "name": "deadline-tracker",
-      "slug": "deadline-tracker",
-      "displayName": null,
       "description": "Escalating reminders as deadlines approach - 7d, 3d, 1d, same day",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar"
       ],
@@ -965,21 +852,16 @@
         "reminders",
         "deadlines"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/deadline-tracker/"
     },
     {
       "name": "deep-work-protector",
-      "slug": "deep-work-protector",
-      "displayName": null,
       "description": "Auto-decline meetings during protected focus hours, suggest alternatives",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "email"
@@ -991,21 +873,16 @@
         "focus",
         "calendar"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/deep-work-protector/"
     },
     {
       "name": "dependency-updater",
-      "slug": "dependency-updater",
-      "displayName": null,
       "description": "Weekly check for outdated dependencies with PR creation",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "github"
@@ -1017,44 +894,33 @@
         "security",
         "dependencies"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/dependency-updater/"
     },
     {
       "name": "doc-reviewer",
-      "slug": "doc-reviewer",
-      "displayName": null,
       "description": "Upload a document and get a plain-English summary with flagged clauses and key takeaways",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "productivity",
         "legal",
         "documents"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/doc-reviewer/"
     },
     {
       "name": "docker-image-scanner",
-      "slug": "docker-image-scanner",
-      "displayName": null,
       "description": "Scan Docker images for vulnerabilities on schedule",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -1064,21 +930,16 @@
         "developer",
         "security"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/docker-image-scanner/"
     },
     {
       "name": "domain-expiry-monitor",
-      "slug": "domain-expiry-monitor",
-      "displayName": null,
       "description": "Monitor domain registration expiration dates",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -1089,21 +950,16 @@
         "monitoring",
         "business"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/domain-expiry-monitor/"
     },
     {
       "name": "email-digest",
-      "slug": "email-digest",
-      "displayName": null,
       "description": "Summarize unread emails into a daily digest",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email"
       ],
@@ -1114,20 +970,16 @@
         "productivity",
         "digest"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/email-digest/"
     },
     {
       "name": "engagement-analyzer",
-      "slug": "engagement-analyzer",
-      "displayName": null,
       "description": "Analyze which content types get best engagement",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
       "categories": [
         "analytics",
         "growth"
@@ -1142,28 +994,15 @@
         "social",
         "analytics"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/engagement-analyzer/"
     },
     {
       "name": "Event Hijacker",
       "slug": "event-hijacker",
-      "displayName": null,
-      "description": "Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "events",
-        "cfp",
-        "speaking"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "events",
         "cfp",
@@ -1171,44 +1010,43 @@
         "networking"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Monitor EventBrite, Luma, Meetup, and CFP boards. Auto-register, submit CFPs, prepare networking intel.",
+      "version": "1.0.0",
+      "requires": [
+        "events",
+        "cfp",
+        "speaking"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/event-hijacker/"
     },
     {
       "name": "exercise-tracker",
-      "slug": "exercise-tracker",
-      "displayName": null,
       "description": "Log workouts, track streaks, celebrate milestones",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "health",
         "fitness"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/exercise-tracker/"
     },
     {
       "name": "expense-categorizer",
-      "slug": "expense-categorizer",
-      "displayName": null,
       "description": "Auto-categorize expenses from email receipts and bank notifications",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email"
       ],
@@ -1217,21 +1055,16 @@
       "tags": [
         "finance"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/expense-categorizer/"
     },
     {
       "name": "expense-tracker",
-      "slug": "expense-tracker",
-      "displayName": null,
       "description": "Track and categorize expenses with weekly summaries",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -1242,21 +1075,16 @@
         "expenses",
         "budget"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/expense-tracker/"
     },
     {
       "name": "eye-strain-break",
-      "slug": "eye-strain-break",
-      "displayName": null,
       "description": "20-20-20 rule reminders - every 20 min look 20 feet away for 20 sec",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -1266,21 +1094,16 @@
         "health",
         "ergonomics"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/eye-strain-break/"
     },
     {
       "name": "financial-snapshot",
-      "slug": "financial-snapshot",
-      "displayName": null,
       "description": "Weekly financial health summary - income, expenses, net worth trends",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -1289,21 +1112,16 @@
       "tags": [
         "finance"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/financial-snapshot/"
     },
     {
       "name": "focus-mode-scheduler",
-      "slug": "focus-mode-scheduler",
-      "displayName": null,
       "description": "Automatically enable DND/focus mode during calendar deep work blocks",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar"
       ],
@@ -1313,31 +1131,24 @@
         "productivity",
         "calendar"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/focus-mode-scheduler/"
     },
     {
       "name": "focus-time-report",
-      "slug": "focus-time-report",
       "displayName": "Focus Time Report",
       "description": "Track and report on your deep work vs fragmented time",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
       "categories": [
         "productivity",
         "time-tracking",
         "weekly"
       ],
-      "requires": [
-        "calendar",
-        "cron"
-      ],
-      "trigger": "schedule",
-      "schedule": "0 18 * * 5",
       "tags": [
         "focus",
         "deep-work",
@@ -1345,21 +1156,28 @@
         "time-management",
         "meetings"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
+      "capabilities": [
+        "calendar",
+        "llm-analysis",
+        "notifications"
+      ],
+      "schedule": "0 18 * * 5",
+      "createdAt": "2026-01-31",
+      "requires": [
+        "calendar",
+        "cron"
+      ],
+      "trigger": "schedule",
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/focus-time-report/"
     },
     {
       "name": "follower-milestone",
-      "slug": "follower-milestone",
-      "displayName": null,
       "description": "Celebrate follower milestones with custom alerts",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "discord"
@@ -1371,32 +1189,18 @@
         "milestones",
         "notifications"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/follower-milestone/"
     },
     {
       "name": "Full-Funnel Attribution Detective",
       "slug": "attribution-detective",
-      "displayName": null,
-      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
-      "author": "unknown",
-      "version": "1.0.0",
-      "category": null,
       "categories": [
         "analytics",
         "growth"
       ],
-      "requires": [
-        "agent-analytics",
-        "attribution",
-        "analytics",
-        "customer-journey"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "attribution",
         "analytics",
@@ -1404,20 +1208,26 @@
         "data"
       ],
       "difficulty": "advanced",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
+      "version": "1.0.0",
+      "requires": [
+        "agent-analytics",
+        "attribution",
+        "analytics",
+        "customer-journey"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/attribution-detective/"
     },
     {
       "name": "git-branch-cleaner",
-      "slug": "git-branch-cleaner",
-      "displayName": null,
       "description": "Identify and clean up stale git branches",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "cron"
@@ -1429,56 +1239,43 @@
         "git",
         "cleanup"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/git-branch-cleaner/"
     },
     {
       "name": "git-stale-branch-cleaner",
-      "slug": "git-stale-branch-cleaner",
-      "displayName": null,
       "description": "Identify and clean up merged or stale git branches",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "developer",
         "maintenance",
         "git"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/git-stale-branch-cleaner/"
     },
     {
       "name": "github-stale-prs",
-      "slug": "github-stale-prs",
       "displayName": "GitHub Stale PRs",
       "description": "Alert on pull requests that have been open too long or need attention",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
       "categories": [
         "development",
         "github",
         "daily"
       ],
-      "requires": [
-        "github",
-        "cron"
-      ],
-      "trigger": "schedule",
-      "schedule": "0 9 * * 1-5",
       "tags": [
         "github",
         "pull-requests",
@@ -1486,21 +1283,27 @@
         "stale",
         "engineering"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
+      "capabilities": [
+        "github",
+        "notifications"
+      ],
+      "schedule": "0 9 * * 1-5",
+      "createdAt": "2026-01-31",
+      "requires": [
+        "github",
+        "cron"
+      ],
+      "trigger": "schedule",
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/github-stale-prs/"
     },
     {
       "name": "github-trending",
-      "slug": "github-trending",
-      "displayName": null,
       "description": "Daily digest of trending GitHub repositories",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "cron"
@@ -1512,21 +1315,16 @@
         "github",
         "trending"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/github-trending/"
     },
     {
       "name": "habit-streaks",
-      "slug": "habit-streaks",
-      "displayName": null,
       "description": "Track daily habits with streak counters and accountability",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron",
         "discord"
@@ -1538,27 +1336,21 @@
         "productivity",
         "habits"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/habit-streaks/"
     },
     {
       "name": "Hacker News Timing Bot",
       "slug": "hn-timing-bot",
-      "displayName": null,
       "description": "Monitor HN activity patterns, detect optimal posting conditions, alert when it is time to submit.",
-      "author": "unknown",
       "version": "1.0.0",
-      "category": "marketing",
-      "categories": null,
       "requires": [
         "web_fetch",
         "messaging"
       ],
-      "trigger": "manual",
-      "schedule": null,
+      "category": "marketing",
       "tags": [
         "hacker-news",
         "timing",
@@ -1566,45 +1358,37 @@
         "content"
       ],
       "difficulty": "beginner",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/hn-timing-bot/"
     },
     {
       "name": "hashtag-researcher",
-      "slug": "hashtag-researcher",
-      "displayName": null,
       "description": "Research trending and relevant hashtags for your niche",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "social",
         "marketing",
         "hashtags"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/hashtag-researcher/"
     },
     {
       "name": "hydration-reminder",
-      "slug": "hydration-reminder",
-      "displayName": null,
       "description": "Smart water reminders adjusted for activity and weather",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "weather",
         "cron",
@@ -1617,31 +1401,24 @@
         "reminders",
         "hydration"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/hydration-reminder/"
     },
     {
       "name": "inbox-zero-helper",
-      "slug": "inbox-zero-helper",
       "displayName": "Inbox Zero Helper",
       "description": "Categorize, summarize, and draft responses for your email inbox",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
       "categories": [
         "productivity",
         "email",
         "daily"
       ],
-      "requires": [
-        "email",
-        "cron"
-      ],
-      "trigger": "schedule",
-      "schedule": "0 8,14,18 * * *",
       "tags": [
         "email",
         "inbox-zero",
@@ -1649,21 +1426,28 @@
         "drafts",
         "summary"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
+      "capabilities": [
+        "email",
+        "llm-analysis",
+        "notifications"
+      ],
+      "schedule": "0 8,14,18 * * *",
+      "createdAt": "2026-01-31",
+      "requires": [
+        "email",
+        "cron"
+      ],
+      "trigger": "schedule",
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/inbox-zero-helper/"
     },
     {
       "name": "invoice-reminder",
-      "slug": "invoice-reminder",
-      "displayName": null,
       "description": "Track unpaid invoices and send payment reminders at configurable intervals",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email"
       ],
@@ -1675,21 +1459,37 @@
         "email",
         "reminders"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/invoice-reminder/"
     },
     {
+      "name": "lead-qualifier",
+      "description": "Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "email",
+        "exec"
+      ],
+      "trigger": "manual",
+      "tags": [
+        "sales",
+        "email",
+        "leads",
+        "agentmail"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": true,
+      "url": "/automations/lead-qualifier/"
+    },
+    {
       "name": "learning-digest",
-      "slug": "learning-digest",
-      "displayName": null,
       "description": "Curate educational content based on your interests and learning goals",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
@@ -1701,23 +1501,22 @@
         "digest",
         "productivity"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/learning-digest/"
     },
     {
       "name": "learning-goal-reminder",
-      "slug": "learning-goal-reminder",
-      "displayName": null,
       "description": "Track learning goals with progress milestones, deadlines, and escalating reminders",
       "author": "smartrus",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron",
+        "file-system",
+        "notifications"
+      ],
+      "capabilities": [
         "file-system",
         "notifications"
       ],
@@ -1730,21 +1529,16 @@
         "reminders",
         "goals"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-03-23",
       "updated": "2026-03-23",
+      "lobster_ready": true,
       "url": "/automations/learning-goal-reminder/"
     },
     {
       "name": "log-analyzer",
-      "slug": "log-analyzer",
-      "displayName": null,
       "description": "Analyze application logs for errors, patterns, and anomalies",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -1756,21 +1550,16 @@
         "logs",
         "devops"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/log-analyzer/"
     },
     {
       "name": "meal-planner",
-      "slug": "meal-planner",
-      "displayName": null,
       "description": "Weekly meal planning with shopping list generation",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [],
       "trigger": "schedule",
       "schedule": "0 10 * * 0",
@@ -1780,21 +1569,16 @@
         "meals",
         "shopping"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/meal-planner/"
     },
     {
       "name": "medication-reminder",
-      "slug": "medication-reminder",
-      "displayName": null,
       "description": "Configurable medication reminders with confirmation tracking",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "discord"
       ],
@@ -1805,21 +1589,16 @@
         "reminders",
         "medication"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/medication-reminder/"
     },
     {
       "name": "meeting-prep",
-      "slug": "meeting-prep",
-      "displayName": null,
       "description": "Prepare briefings for upcoming meetings with context and agenda",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "email"
@@ -1831,21 +1610,16 @@
         "meetings",
         "calendar"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/meeting-prep/"
     },
     {
       "name": "meeting-prep-assistant",
-      "slug": "meeting-prep-assistant",
-      "displayName": null,
       "description": "Generate meeting briefs 30 min before - attendees, agenda, relevant docs",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar"
       ],
@@ -1856,28 +1630,15 @@
         "meetings",
         "calendar"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/meeting-prep-assistant/"
     },
     {
       "name": "Micro-Influencer Outreach Machine",
       "slug": "influencer-outreach",
-      "displayName": null,
-      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "influencer",
-        "outreach",
-        "social"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "influencer",
         "outreach",
@@ -1885,20 +1646,25 @@
         "partnerships"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
+      "version": "1.0.0",
+      "requires": [
+        "influencer",
+        "outreach",
+        "social"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/influencer-outreach/"
     },
     {
       "name": "molt-price-alert",
-      "slug": "molt-price-alert",
-      "displayName": null,
       "description": "Monitor MOLT (Moltbook) coin price with visual charts and alerts on significant moves",
       "author": "Cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web_fetch",
         "chart-generation",
@@ -1915,21 +1681,16 @@
         "defi",
         "base"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-31",
       "updated": "2026-01-31",
+      "lobster_ready": true,
       "url": "/automations/molt-price-alert/"
     },
     {
       "name": "mood-tracker",
-      "slug": "mood-tracker",
-      "displayName": null,
       "description": "Daily mood check-ins with pattern analysis and insights",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "discord"
       ],
@@ -1941,21 +1702,16 @@
         "mood",
         "tracking"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/mood-tracker/"
     },
     {
       "name": "morning-brief",
-      "slug": "morning-brief",
-      "displayName": null,
       "description": "Daily morning briefing with calendar, weather, and optional audio",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "weather",
@@ -1971,33 +1727,19 @@
         "tts",
         "productivity"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/morning-brief/"
     },
     {
       "name": "Newsletter Growth Engine",
       "slug": "newsletter-growth",
-      "displayName": null,
-      "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
-      "author": "unknown",
-      "version": "1.0.0",
-      "category": null,
       "categories": [
         "growth",
         "content",
         "marketing"
       ],
-      "requires": [
-        "agent-analytics",
-        "newsletter",
-        "growth",
-        "cross-promotion"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "newsletter",
         "growth",
@@ -2005,20 +1747,26 @@
         "churn"
       ],
       "difficulty": "beginner",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
+      "version": "1.0.0",
+      "requires": [
+        "agent-analytics",
+        "newsletter",
+        "growth",
+        "cross-promotion"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/newsletter-growth/"
     },
     {
       "name": "npm-audit-scheduler",
-      "slug": "npm-audit-scheduler",
-      "displayName": null,
       "description": "Weekly npm audit with severity-based notifications",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "discord"
@@ -2031,28 +1779,15 @@
         "npm",
         "audit"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/npm-audit-scheduler/"
     },
     {
       "name": "Partnership Scout",
       "slug": "partnership-scout",
-      "displayName": null,
-      "description": "Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "partnerships",
-        "co-marketing",
-        "b2b"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "partnerships",
         "co-marketing",
@@ -2060,20 +1795,25 @@
         "outreach"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.",
+      "version": "1.0.0",
+      "requires": [
+        "partnerships",
+        "co-marketing",
+        "b2b"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/partnership-scout/"
     },
     {
       "name": "performance-benchmark",
-      "slug": "performance-benchmark",
-      "displayName": null,
       "description": "Run scheduled performance benchmarks and track trends",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -2085,21 +1825,16 @@
         "benchmarks",
         "monitoring"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/performance-benchmark/"
     },
     {
       "name": "personal-crm",
-      "slug": "personal-crm",
-      "displayName": null,
       "description": "Scan emails and calendar to find contacts you haven't reached out to recently, then draft follow-ups",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email",
         "calendar",
@@ -2112,21 +1847,16 @@
         "networking",
         "email"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/personal-crm/"
     },
     {
       "name": "podcast-tracker",
-      "slug": "podcast-tracker",
-      "displayName": null,
       "description": "Track new episodes from your podcast subscriptions",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "rss",
         "cron"
@@ -2138,21 +1868,16 @@
         "podcasts",
         "entertainment"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/podcast-tracker/"
     },
     {
       "name": "post-scheduler",
-      "slug": "post-scheduler",
-      "displayName": null,
       "description": "Schedule and auto-post content at optimal times",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "cron"
@@ -2164,21 +1889,16 @@
         "content",
         "scheduling"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/post-scheduler/"
     },
     {
       "name": "posture-check",
-      "slug": "posture-check",
-      "displayName": null,
       "description": "Regular posture reminders during work hours",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron",
         "discord"
@@ -2190,28 +1910,15 @@
         "ergonomics",
         "reminders"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/posture-check/"
     },
     {
       "name": "PR Newsjacking Bot",
       "slug": "pr-newsjacking",
-      "displayName": null,
-      "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "pr",
-      "categories": null,
-      "requires": [
-        "pr",
-        "news",
-        "journalists"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "pr",
         "news",
@@ -2220,20 +1927,25 @@
         "thought-leadership"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
+      "version": "1.0.0",
+      "requires": [
+        "pr",
+        "news",
+        "journalists"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/pr-newsjacking/"
     },
     {
       "name": "prediction-market-tracker",
-      "slug": "prediction-market-tracker",
-      "displayName": null,
       "description": "Monitor Polymarket prediction markets by topic, track probability changes, alert on significant moves",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "polymarket",
         "web-search",
@@ -2247,28 +1959,15 @@
         "polymarket",
         "monitoring"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/prediction-market-tracker/"
     },
     {
       "name": "Pricing Page Intelligence",
       "slug": "pricing-intelligence",
-      "displayName": null,
-      "description": "Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "competitive-intelligence",
-      "categories": null,
-      "requires": [
-        "pricing",
-        "competitors",
-        "monitoring"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "pricing",
         "competitors",
@@ -2276,20 +1975,25 @@
         "strategy"
       ],
       "difficulty": "beginner",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Monitor competitor pricing pages, alert on changes, analyze positioning shifts, recommend responses.",
+      "version": "1.0.0",
+      "requires": [
+        "pricing",
+        "competitors",
+        "monitoring"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/pricing-intelligence/"
     },
     {
       "name": "product-hunt-daily",
-      "slug": "product-hunt-daily",
-      "displayName": null,
       "description": "Daily digest of top Product Hunt launches",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "cron"
@@ -2301,21 +2005,16 @@
         "startups",
         "daily"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/product-hunt-daily/"
     },
     {
       "name": "project-milestone-alert",
-      "slug": "project-milestone-alert",
-      "displayName": null,
       "description": "Track project milestones and alert team on completion or delays",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "github",
         "discord",
@@ -2328,21 +2027,16 @@
         "projects",
         "alerts"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/project-milestone-alert/"
     },
     {
       "name": "repeat-task-detector",
-      "slug": "repeat-task-detector",
-      "displayName": null,
       "description": "Analyze your agent's activity logs to find repetitive patterns that could be automated",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "cron"
@@ -2356,28 +2050,15 @@
         "patterns",
         "automation-discovery"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/repeat-task-detector/"
     },
     {
       "name": "Review Farm Defense System",
       "slug": "review-defense",
-      "displayName": null,
-      "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "reviews",
-        "reputation",
-        "customer-success"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "reviews",
         "reputation",
@@ -2385,20 +2066,25 @@
         "alerts"
       ],
       "difficulty": "beginner",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.",
+      "version": "1.0.0",
+      "requires": [
+        "reviews",
+        "reputation",
+        "customer-success"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/review-defense/"
     },
     {
       "name": "rss-digest",
-      "slug": "rss-digest",
-      "displayName": null,
       "description": "Aggregate multiple RSS feeds into a daily digest",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "rss",
         "cron"
@@ -2410,21 +2096,16 @@
         "news",
         "rss"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/rss-digest/"
     },
     {
       "name": "savings-goal-tracker",
-      "slug": "savings-goal-tracker",
-      "displayName": null,
       "description": "Track progress toward savings goals with milestone celebrations",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec",
         "discord",
@@ -2437,21 +2118,16 @@
         "savings",
         "goals"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/savings-goal-tracker/"
     },
     {
       "name": "security-advisory-monitor",
-      "slug": "security-advisory-monitor",
-      "displayName": null,
       "description": "Monitor security advisories for your tech stack",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "exec"
@@ -2463,28 +2139,22 @@
         "security",
         "monitoring"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/security-advisory-monitor/"
     },
     {
       "name": "SEO Gap Assassin",
       "slug": "seo-gap-assassin",
-      "displayName": null,
       "description": "Analyze competitors, find keywords they rank for that you do not, generate content briefs for the top gaps.",
-      "author": "unknown",
       "version": "1.0.0",
-      "category": "seo",
-      "categories": null,
       "requires": [
         "web_search",
         "web_fetch",
         "file_system"
       ],
-      "trigger": "manual",
-      "schedule": null,
+      "category": "seo",
       "tags": [
         "seo",
         "keywords",
@@ -2492,20 +2162,42 @@
         "competitive-analysis"
       ],
       "difficulty": "intermediate",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/seo-gap-assassin/"
     },
     {
+      "name": "skill-release-radar",
+      "description": "Daily scan for newly published or newly discovered AI-agent skills, with a shortlist of the ones worth installing or adapting",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "browser",
+        "web-search",
+        "database"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 9 * * *",
+      "tags": [
+        "skills",
+        "discovery",
+        "research",
+        "automation",
+        "clawhub"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": false,
+      "url": "/automations/skill-release-radar/"
+    },
+    {
       "name": "sleep-schedule-optimizer",
-      "slug": "sleep-schedule-optimizer",
-      "displayName": null,
       "description": "Analyze sleep patterns and suggest optimal bedtimes based on calendar",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "exec"
@@ -2517,28 +2209,15 @@
         "sleep",
         "wellness"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/sleep-schedule-optimizer/"
     },
     {
       "name": "Social Proof Collector",
       "slug": "social-proof-collector",
-      "displayName": null,
-      "description": "Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "marketing",
-      "categories": null,
-      "requires": [
-        "testimonials",
-        "social-proof",
-        "monitoring"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "testimonials",
         "social-proof",
@@ -2547,19 +2226,33 @@
         "content"
       ],
       "difficulty": "beginner",
+      "estimated_setup_time": "3 minutes",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "use_cases": [
+        "Build testimonial library automatically",
+        "Find quotable customer praise",
+        "Never miss positive mentions",
+        "Organize social proof by page type"
+      ],
+      "example_output": "📣 **3 new testimonials found!**\n\nBest quote:\n> \"OpenClaw literally changed how I work. It's like having a second brain.\"\n— @developer_jane",
+      "description": "Automatically find and collect positive mentions of your brand across Twitter, Reddit, LinkedIn, and Hacker News. Build your testimonial library on autopilot.",
+      "version": "1.0.0",
+      "requires": [
+        "testimonials",
+        "social-proof",
+        "monitoring"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/social-proof-collector/"
     },
     {
       "name": "social-engagement-tracker",
-      "slug": "social-engagement-tracker",
-      "displayName": null,
       "description": "Track engagement metrics across social platforms",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
       "categories": [
         "analytics",
         "growth",
@@ -2577,21 +2270,16 @@
         "analytics",
         "marketing"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/social-engagement-tracker/"
     },
     {
       "name": "social-mentions",
-      "slug": "social-mentions",
-      "displayName": null,
       "description": "Track brand mentions across social platforms",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
@@ -2602,21 +2290,16 @@
         "marketing",
         "mentions"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/social-mentions/"
     },
     {
       "name": "ssl-certificate-monitor",
-      "slug": "ssl-certificate-monitor",
-      "displayName": null,
       "description": "Monitor SSL certificate expiration dates",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -2627,31 +2310,24 @@
         "ssl",
         "monitoring"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/ssl-certificate-monitor/"
     },
     {
       "name": "standup-notes",
-      "slug": "standup-notes",
       "displayName": "Standup Notes",
       "description": "Auto-generate daily standup notes from yesterday's activity",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
       "categories": [
         "productivity",
         "team",
         "daily"
       ],
-      "requires": [
-        "calendar",
-        "exec"
-      ],
-      "trigger": "manual",
-      "schedule": "0 9 * * 1-5",
       "tags": [
         "standup",
         "daily",
@@ -2659,21 +2335,26 @@
         "team",
         "async"
       ],
-      "difficulty": null,
+      "requires": [
+        "calendar",
+        "exec"
+      ],
+      "capabilities": [
+        "file-system",
+        "calendar",
+        "llm-analysis",
+        "notifications"
+      ],
+      "schedule": "0 9 * * 1-5",
+      "createdAt": "2026-01-31",
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/standup-notes/"
     },
     {
       "name": "stock-watchlist-alert",
-      "slug": "stock-watchlist-alert",
-      "displayName": null,
       "description": "Monitor stock prices and alert on significant moves or target prices",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
@@ -2684,21 +2365,16 @@
         "investing",
         "stocks"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/stock-watchlist-alert/"
     },
     {
       "name": "subscription-auditor",
-      "slug": "subscription-auditor",
-      "displayName": null,
       "description": "Monthly audit of active subscriptions, flag unused or duplicate services",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email",
         "exec"
@@ -2710,28 +2386,15 @@
         "subscriptions",
         "audit"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/subscription-auditor/"
     },
     {
       "name": "Support-to-Content Pipeline",
       "slug": "support-to-content",
-      "displayName": null,
-      "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
-      "author": "unknown",
-      "version": "1.0.0",
       "category": "content",
-      "categories": null,
-      "requires": [
-        "support",
-        "content",
-        "documentation"
-      ],
-      "trigger": "manual",
-      "schedule": null,
       "tags": [
         "support",
         "content",
@@ -2739,20 +2402,25 @@
         "customer-success"
       ],
       "difficulty": "beginner",
+      "credit": {
+        "inspired_by": "@alex_prompter",
+        "source": "https://x.com/alex_prompter/status/2017044857764688132"
+      },
+      "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
+      "version": "1.0.0",
+      "requires": [
+        "support",
+        "content",
+        "documentation"
+      ],
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/support-to-content/"
     },
     {
       "name": "task-prioritizer",
-      "slug": "task-prioritizer",
-      "displayName": null,
       "description": "Daily task sorting using Eisenhower matrix based on deadlines and importance",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -2763,21 +2431,16 @@
         "tasks",
         "planning"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/task-prioritizer/"
     },
     {
       "name": "tax-document-organizer",
-      "slug": "tax-document-organizer",
-      "displayName": null,
       "description": "Auto-sort tax-related documents into categorized folders by year",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "email",
         "exec"
@@ -2789,21 +2452,16 @@
         "tax",
         "documents"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/tax-document-organizer/"
     },
     {
       "name": "test-coverage-monitor",
-      "slug": "test-coverage-monitor",
-      "displayName": null,
       "description": "Track test coverage trends and alert on drops below threshold",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -2814,21 +2472,16 @@
         "quality",
         "testing"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/test-coverage-monitor/"
     },
     {
       "name": "time-block-optimizer",
-      "slug": "time-block-optimizer",
-      "displayName": null,
       "description": "Analyze calendar patterns and suggest optimal meeting-free blocks",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar"
       ],
@@ -2839,21 +2492,16 @@
         "calendar",
         "scheduling"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/time-block-optimizer/"
     },
     {
       "name": "trending-topic-alert",
-      "slug": "trending-topic-alert",
-      "displayName": null,
       "description": "Alert when topics in your niche start trending",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search"
       ],
@@ -2864,21 +2512,16 @@
         "marketing",
         "trends"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/trending-topic-alert/"
     },
     {
       "name": "uptime-monitor",
-      "slug": "uptime-monitor",
-      "displayName": null,
       "description": "Monitor website uptime and response times",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "exec"
       ],
@@ -2889,21 +2532,16 @@
         "uptime",
         "devops"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/uptime-monitor/"
     },
     {
       "name": "water-reminder",
-      "slug": "water-reminder",
-      "displayName": null,
       "description": "Periodic reminders to stay hydrated",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "cron"
       ],
@@ -2914,21 +2552,16 @@
         "wellness",
         "reminder"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/water-reminder/"
     },
     {
       "name": "weather-commute",
-      "slug": "weather-commute",
-      "displayName": null,
       "description": "Weather-based commute recommendations",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "weather"
       ],
@@ -2939,31 +2572,28 @@
         "commute",
         "daily"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/weather-commute/"
     },
     {
       "name": "weekly-retro-generator",
-      "slug": "weekly-retro-generator",
       "displayName": "Weekly Retro Generator",
       "description": "Generate a weekly retrospective from your agent's activity and accomplishments",
-      "author": "cluka",
       "version": "1.0.0",
-      "category": null,
+      "author": "cluka",
+      "authorUrl": "https://moltbook.com/u/Cluka",
+      "license": "MIT",
+      "requires": [
+        "calendar",
+        "exec"
+      ],
       "categories": [
         "productivity",
         "reflection",
         "weekly"
       ],
-      "requires": [
-        "calendar",
-        "exec"
-      ],
-      "trigger": "manual",
-      "schedule": "0 17 * * 5",
       "tags": [
         "retro",
         "retrospective",
@@ -2971,21 +2601,22 @@
         "accomplishments",
         "planning"
       ],
-      "difficulty": null,
+      "capabilities": [
+        "file-system",
+        "calendar",
+        "llm-analysis",
+        "notifications"
+      ],
+      "schedule": "0 17 * * 5",
+      "createdAt": "2026-01-31",
       "lobster_ready": true,
-      "created": "2026-04-03",
-      "updated": "2026-04-03",
       "url": "/automations/weekly-retro-generator/"
     },
     {
       "name": "weekly-review-generator",
-      "slug": "weekly-review-generator",
-      "displayName": null,
       "description": "Generate weekly summary from completed tasks, commits, and calendar events",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "calendar",
         "exec"
@@ -2997,21 +2628,16 @@
         "weekly",
         "review"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/weekly-review-generator/"
     },
     {
       "name": "wellness-weekly-report",
-      "slug": "wellness-weekly-report",
-      "displayName": null,
       "description": "Weekly health summary - sleep, exercise, mood, habits",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [],
       "trigger": "schedule",
       "schedule": "0 9 * * 0",
@@ -3020,27 +2646,21 @@
         "wellness",
         "weekly"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/wellness-weekly-report/"
     },
     {
       "name": "x-audio-brief",
-      "slug": "x-audio-brief",
-      "displayName": null,
       "description": "Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "web-search",
         "tts"
       ],
       "trigger": "manual",
-      "schedule": null,
       "tags": [
         "social-media",
         "audio",
@@ -3048,21 +2668,16 @@
         "tts",
         "x-twitter"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/x-audio-brief/"
     },
     {
       "name": "youtube-competitor-tracker",
-      "slug": "youtube-competitor-tracker",
-      "displayName": null,
       "description": "Track competitor YouTube channels, store stats in SQLite, generate weekly charts",
       "author": "cluka",
       "version": "1.0.0",
-      "category": null,
-      "categories": null,
       "requires": [
         "youtube-data",
         "database",
@@ -3078,10 +2693,9 @@
         "sqlite",
         "weekly-report"
       ],
-      "difficulty": null,
-      "lobster_ready": true,
       "created": "2026-01-30",
       "updated": "2026-01-30",
+      "lobster_ready": true,
       "url": "/automations/youtube-competitor-tracker/"
     }
   ]

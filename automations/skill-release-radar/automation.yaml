@@ -1,0 +1,63 @@
+name: skill-release-radar
+description: Daily scan for newly published or newly discovered AI-agent skills, with a shortlist of the ones worth installing or adapting
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: browser
+  - capability: web-search
+  - capability: database
+
+trigger:
+  schedule: "0 9 * * *"
+
+config:
+  query:
+    description: "Discovery query for skills, MCP servers, and agent tooling"
+    default: "OpenClaw skill ClawHub MCP agent skill GitHub"
+
+  sources:
+    description: "Primary places to scan"
+    default:
+      - "clawhub.ai"
+      - "github.com"
+      - "docs.openclaw.ai"
+
+  max_results:
+    description: "How many candidates to review per run"
+    default: 12
+
+steps:
+  - name: search-sources
+    capability: web-search
+    method: search
+    args:
+      query: "${config.query}"
+      limit: "${config.max_results}"
+    capture: candidates
+
+  - name: inspect-candidates
+    capability: browser
+    method: snapshot
+    args:
+      urls: "${candidates.map(c => c.url)}"
+    capture: pages
+
+  - name: dedupe-against-history
+    capability: database
+    method: diffSeen
+    args:
+      namespace: "skill-release-radar"
+      items: "${pages}"
+    capture: fresh
+
+  - name: rank-opportunities
+    action: template
+    template: |
+      ${fresh.length === 0 ? "No new skills worth flagging today." :
+        fresh.map(item => `- ${item.title}: ${item.summary} (${item.url})`).join('\n')}
+    capture: shortlist
+
+  - name: notify
+    action: notify
+    message: "🧰 Skill Release Radar\n\n${shortlist}"

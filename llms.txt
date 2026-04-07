@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (115 total)
+## Current Automations (118 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -21,7 +21,7 @@ Submit your SaaS to 100+ launch directories automatically. Stagger submissions, 
 
 ### A/B Test Automator
 Generate headline variations, implement tests, monitor statistical significance, auto-promote winners.
-- Requires: ab-testing, conversion, optimization
+- Requires: agent-analytics, ab-testing, conversion, optimization
 - URL: https://clawflows.com/automations/ab-test-automator/
 
 ### Affiliate Army Builder
@@ -41,6 +41,12 @@ Comprehensive API health monitoring with endpoint validation
 - Schedule: */15 * * * *
 - URL: https://clawflows.com/automations/api-health-check/
 
+### api-health-monitor
+Cron-friendly endpoint health checker with response time tracking and failure alerts
+- Requires: exec
+- Schedule: */15 * * * *
+- URL: https://clawflows.com/automations/api-health-monitor/
+
 ### app-store-reviews
 Monitor App Store and Google Play reviews for your app
 - Requires: exec
@@ -55,7 +61,7 @@ Find new arXiv papers matching your research interests
 
 ### audience-growth-report
 Weekly report on audience growth and demographics
-- Requires: web-search, chart-image
+- Requires: agent-analytics, web-search, chart-image
 - Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/audience-growth-report/
 
@@ -254,7 +260,7 @@ Summarize unread emails into a daily digest
 
 ### engagement-analyzer
 Analyze which content types get best engagement
-- Requires: web-search
+- Requires: agent-analytics, web-search
 - Schedule: 0 10 * * 1
 - URL: https://clawflows.com/automations/engagement-analyzer/
 
@@ -312,7 +318,7 @@ Celebrate follower milestones with custom alerts
 
 ### Full-Funnel Attribution Detective
 Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.
-- Requires: attribution, analytics, customer-journey
+- Requires: agent-analytics, attribution, analytics, customer-journey
 - URL: https://clawflows.com/automations/attribution-detective/
 
 ### git-branch-cleaner
@@ -371,6 +377,11 @@ Track unpaid invoices and send payment reminders at configurable intervals
 - Requires: email
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/invoice-reminder/
+
+### lead-qualifier
+Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules
+- Requires: email, exec
+- URL: https://clawflows.com/automations/lead-qualifier/
 
 ### learning-digest
 Curate educational content based on your interests and learning goals
@@ -439,7 +450,7 @@ Daily morning briefing with calendar, weather, and optional audio
 
 ### Newsletter Growth Engine
 Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.
-- Requires: newsletter, growth, cross-promotion
+- Requires: agent-analytics, newsletter, growth, cross-promotion
 - URL: https://clawflows.com/automations/newsletter-growth/
 
 ### npm-audit-scheduler
@@ -545,6 +556,12 @@ Analyze competitors, find keywords they rank for that you do not, generate conte
 - Requires: web_search, web_fetch, file_system
 - URL: https://clawflows.com/automations/seo-gap-assassin/
 
+### skill-release-radar
+Daily scan for newly published or newly discovered AI-agent skills, with a shortlist of the ones worth installing or adapting
+- Requires: browser, web-search, database
+- Schedule: 0 9 * * *
+- URL: https://clawflows.com/automations/skill-release-radar/
+
 ### sleep-schedule-optimizer
 Analyze sleep patterns and suggest optimal bedtimes based on calendar
 - Requires: calendar, exec
@@ -558,7 +575,7 @@ Automatically find and collect positive mentions of your brand across Twitter, R
 
 ### social-engagement-tracker
 Track engagement metrics across social platforms
-- Requires: web-search, exec
+- Requires: agent-analytics, web-search, exec
 - Schedule: 0 8 * * *
 - URL: https://clawflows.com/automations/social-engagement-tracker/
 

@@ -1,0 +1,12 @@
+{
+  "name": "skill-release-radar",
+  "description": "Daily scan for newly published or newly discovered AI-agent skills, with a shortlist of the ones worth installing or adapting",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["browser", "web-search", "database"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * *",
+  "tags": ["skills", "discovery", "research", "automation", "clawhub"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}
