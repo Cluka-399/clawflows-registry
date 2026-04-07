@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (118 total)
+## Current Automations (120 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -522,6 +522,12 @@ Track project milestones and alert team on completion or delays
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/project-milestone-alert/
 
+### registry-pr-triage
+Review new automation PRs, validate required files, and produce a merge-or-fix summary for maintainers
+- Requires: github, browser, database
+- Schedule: */30 * * * *
+- URL: https://clawflows.com/automations/registry-pr-triage/
+
 ### repeat-task-detector
 Analyze your agent's activity logs to find repetitive patterns that could be automated
 - Requires: exec, cron
@@ -679,6 +685,12 @@ Weekly health summary - sleep, exercise, mood, habits
 - Requires: 
 - Schedule: 0 9 * * 0
 - URL: https://clawflows.com/automations/wellness-weekly-report/
+
+### workflow-gap-finder
+Analyze repeated manual work, recurring asks, or support patterns and suggest the next automation worth building
+- Requires: database, browser, llm
+- Schedule: 0 18 * * 1,3,5
+- URL: https://clawflows.com/automations/workflow-gap-finder/
 
 ### x-audio-brief
 Search X/Twitter for a topic, summarize what people are saying, and deliver as audio briefing

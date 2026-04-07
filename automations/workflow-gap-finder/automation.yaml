@@ -1,0 +1,52 @@
+name: workflow-gap-finder
+description: Analyze repeated manual work, recurring asks, or support patterns and suggest the next automation worth building
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: database
+  - capability: browser
+  - capability: llm
+
+trigger:
+  schedule: "0 18 * * 1,3,5"
+
+config:
+  sources:
+    description: "Where recurring manual work is logged"
+    default:
+      - "support inbox"
+      - "task tracker"
+      - "ops notes"
+
+  minimum_repetition:
+    description: "How many repeats before a pattern is worth flagging"
+    default: 3
+
+steps:
+  - name: collect-patterns
+    capability: database
+    method: queryRecurringWork
+    args:
+      sources: "${config.sources}"
+      minimum_repetition: "${config.minimum_repetition}"
+    capture: patterns
+
+  - name: inspect-context
+    capability: browser
+    method: snapshot
+    args:
+      refs: "${patterns.map(p => p.reference)}"
+    capture: context
+
+  - name: generate-shortlist
+    capability: llm
+    method: summarize
+    args:
+      prompt: "From these repeated tasks, pick the top automation opportunities, explain why they matter, and suggest the minimal workflow to build first."
+      input: "${context}"
+    capture: shortlist
+
+  - name: notify
+    action: notify
+    message: "🛠️ Workflow Gap Finder\n\n${shortlist}"

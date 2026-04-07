@@ -1,0 +1,12 @@
+{
+  "name": "workflow-gap-finder",
+  "description": "Analyze repeated manual work, recurring asks, or support patterns and suggest the next automation worth building",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["database", "browser", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 18 * * 1,3,5",
+  "tags": ["meta", "automation-discovery", "analysis", "ops", "workflow"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}

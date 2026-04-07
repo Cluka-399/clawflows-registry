@@ -1,0 +1,56 @@
+name: registry-pr-triage
+description: Review new automation PRs, validate required files, and produce a merge-or-fix summary for maintainers
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: github
+  - capability: browser
+  - capability: database
+
+trigger:
+  schedule: "*/30 * * * *"
+
+config:
+  repo:
+    description: "Registry repository to monitor"
+    default: "Cluka-399/clawflows-registry"
+
+  label_filter:
+    description: "Optional PR label to focus on"
+    default: ""
+
+steps:
+  - name: fetch-open-prs
+    capability: github
+    method: listPullRequests
+    args:
+      repo: "${config.repo}"
+      state: "open"
+    capture: prs
+
+  - name: filter-unseen
+    capability: database
+    method: diffSeen
+    args:
+      namespace: "registry-pr-triage"
+      items: "${prs}"
+    capture: fresh_prs
+
+  - name: inspect-prs
+    capability: browser
+    method: snapshot
+    args:
+      urls: "${fresh_prs.map(pr => pr.url)}"
+    capture: pr_pages
+
+  - name: summarize
+    action: template
+    template: |
+      ${fresh_prs.length === 0 ? "No new registry PRs." :
+        fresh_prs.map(pr => `- #${pr.number} ${pr.title} by ${pr.author}: inspect changed automation files, metadata completeness, and portability before merge`).join('\n')}
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🧵 Registry PR Triage\n\n${summary}"

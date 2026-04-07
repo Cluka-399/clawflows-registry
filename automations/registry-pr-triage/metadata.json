@@ -1,0 +1,12 @@
+{
+  "name": "registry-pr-triage",
+  "description": "Review new automation PRs, validate required files, and produce a merge-or-fix summary for maintainers",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["github", "browser", "database"],
+  "trigger": "schedule",
+  "schedule": "*/30 * * * *",
+  "tags": ["github", "registry", "triage", "maintenance", "pull-requests"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}
