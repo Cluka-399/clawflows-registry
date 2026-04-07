@@ -1,0 +1,13 @@
+{
+  "name": "experiment-backlog-ranker",
+  "description": "Score experiment ideas by likely impact, implementation effort, and evidence strength so growth work stops being a random pile",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["database", "analytics", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["growth", "experiments", "prioritization", "analytics", "backlog"],
+  "categories": ["growth", "analytics"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}

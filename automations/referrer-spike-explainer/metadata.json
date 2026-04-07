@@ -1,0 +1,13 @@
+{
+  "name": "referrer-spike-explainer",
+  "description": "Detect unusual traffic spikes by referrer or campaign, explain what changed, and flag whether the spike looks promising or fake",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["analytics", "social-search", "llm"],
+  "trigger": "schedule",
+  "schedule": "*/30 * * * *",
+  "tags": ["growth", "analytics", "referrer", "traffic", "campaigns"],
+  "categories": ["growth", "analytics"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}

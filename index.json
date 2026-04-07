@@ -1,7 +1,7 @@
 {
-  "generated": "2026-04-07T19:06:49.574Z",
+  "generated": "2026-04-07T20:00:36.875Z",
   "version": "1.0.0",
-  "count": 120,
+  "count": 123,
   "automations": [
     {
       "name": "100-Platform Launch Blitz",
@@ -1081,6 +1081,34 @@
       "url": "/automations/expense-tracker/"
     },
     {
+      "name": "experiment-backlog-ranker",
+      "description": "Score experiment ideas by likely impact, implementation effort, and evidence strength so growth work stops being a random pile",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "database",
+        "analytics",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 9 * * 1",
+      "tags": [
+        "growth",
+        "experiments",
+        "prioritization",
+        "analytics",
+        "backlog"
+      ],
+      "categories": [
+        "growth",
+        "analytics"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": false,
+      "url": "/automations/experiment-backlog-ranker/"
+    },
+    {
       "name": "eye-strain-break",
       "description": "20-20-20 rule reminders - every 20 min look 20 feet away for 20 sec",
       "author": "cluka",
@@ -1222,6 +1250,34 @@
       ],
       "lobster_ready": true,
       "url": "/automations/attribution-detective/"
+    },
+    {
+      "name": "funnel-leak-watch",
+      "description": "Monitor funnel-step conversion rates, detect abnormal drop-offs, and flag the exact stage that started leaking",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "chart-generation",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 * * * *",
+      "tags": [
+        "growth",
+        "analytics",
+        "funnel",
+        "conversion",
+        "monitoring"
+      ],
+      "categories": [
+        "growth",
+        "analytics"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": false,
+      "url": "/automations/funnel-leak-watch/"
     },
     {
       "name": "git-branch-cleaner",
@@ -2031,6 +2087,34 @@
       "updated": "2026-01-30",
       "lobster_ready": true,
       "url": "/automations/project-milestone-alert/"
+    },
+    {
+      "name": "referrer-spike-explainer",
+      "description": "Detect unusual traffic spikes by referrer or campaign, explain what changed, and flag whether the spike looks promising or fake",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "social-search",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "*/30 * * * *",
+      "tags": [
+        "growth",
+        "analytics",
+        "referrer",
+        "traffic",
+        "campaigns"
+      ],
+      "categories": [
+        "growth",
+        "analytics"
+      ],
+      "created": "2026-04-07",
+      "updated": "2026-04-07",
+      "lobster_ready": false,
+      "url": "/automations/referrer-spike-explainer/"
     },
     {
       "name": "registry-pr-triage",

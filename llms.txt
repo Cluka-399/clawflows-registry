@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (120 total)
+## Current Automations (123 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -286,6 +286,12 @@ Track and categorize expenses with weekly summaries
 - Schedule: 0 18 * * 0
 - URL: https://clawflows.com/automations/expense-tracker/
 
+### experiment-backlog-ranker
+Score experiment ideas by likely impact, implementation effort, and evidence strength so growth work stops being a random pile
+- Requires: database, analytics, llm
+- Schedule: 0 9 * * 1
+- URL: https://clawflows.com/automations/experiment-backlog-ranker/
+
 ### eye-strain-break
 20-20-20 rule reminders - every 20 min look 20 feet away for 20 sec
 - Requires: cron
@@ -320,6 +326,12 @@ Celebrate follower milestones with custom alerts
 Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.
 - Requires: agent-analytics, attribution, analytics, customer-journey
 - URL: https://clawflows.com/automations/attribution-detective/
+
+### funnel-leak-watch
+Monitor funnel-step conversion rates, detect abnormal drop-offs, and flag the exact stage that started leaking
+- Requires: analytics, chart-generation, llm
+- Schedule: 0 * * * *
+- URL: https://clawflows.com/automations/funnel-leak-watch/
 
 ### git-branch-cleaner
 Identify and clean up stale git branches
@@ -521,6 +533,12 @@ Track project milestones and alert team on completion or delays
 - Requires: github, discord, cron
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/project-milestone-alert/
+
+### referrer-spike-explainer
+Detect unusual traffic spikes by referrer or campaign, explain what changed, and flag whether the spike looks promising or fake
+- Requires: analytics, social-search, llm
+- Schedule: */30 * * * *
+- URL: https://clawflows.com/automations/referrer-spike-explainer/
 
 ### registry-pr-triage
 Review new automation PRs, validate required files, and produce a merge-or-fix summary for maintainers

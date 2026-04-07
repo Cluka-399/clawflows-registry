@@ -1,0 +1,49 @@
+name: experiment-backlog-ranker
+description: Score experiment ideas by likely impact, implementation effort, and evidence strength so growth work stops being a random pile
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: database
+  - capability: analytics
+  - capability: llm
+
+trigger:
+  schedule: "0 9 * * 1"
+
+config:
+  backlog_source:
+    description: "Where experiment ideas are stored"
+    default: "growth-experiments"
+
+  max_candidates:
+    description: "How many ideas to rank"
+    default: 20
+
+steps:
+  - name: load-backlog
+    capability: database
+    method: listItems
+    args:
+      source: "${config.backlog_source}"
+      limit: "${config.max_candidates}"
+    capture: ideas
+
+  - name: fetch-evidence
+    capability: analytics
+    method: getExperimentContext
+    args:
+      ideas: "${ideas}"
+    capture: evidence
+
+  - name: rank-ideas
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Rank these experiment ideas by likely impact, effort, confidence, and supporting evidence. Return the best 5 to run next and explain why."
+      input: "${{ ideas, evidence }}"
+    capture: ranking
+
+  - name: notify
+    action: notify
+    message: "🧪 Experiment Backlog Ranker\n\n${ranking}"

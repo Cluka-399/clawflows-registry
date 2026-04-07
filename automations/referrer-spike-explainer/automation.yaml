@@ -1,0 +1,49 @@
+name: referrer-spike-explainer
+description: Detect unusual traffic spikes by referrer or campaign, explain what changed, and flag whether the spike looks promising or fake
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: social-search
+  - capability: llm
+
+trigger:
+  schedule: "*/30 * * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  minimum_spike_percent:
+    description: "Minimum relative lift before alerting"
+    default: 40
+
+steps:
+  - name: fetch-referrers
+    capability: analytics
+    method: getReferrerBreakdown
+    args:
+      project: "${config.project}"
+      compare_window: "last_30m_vs_previous_30m"
+    capture: referrer_data
+
+  - name: search-context
+    capability: social-search
+    method: search
+    args:
+      query: "${referrer_data.top_referrers.map(r => r.referrer).join(' OR ')}"
+    capture: chatter
+
+  - name: explain-spike
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Explain which referrer or campaign spiked, whether it looks like real interest or noisy traffic, and what to do next."
+      input: "${{ referrer_data, chatter }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "📈 Referrer Spike Explainer\n\n${summary}"

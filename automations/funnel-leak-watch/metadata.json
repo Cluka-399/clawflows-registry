@@ -1,0 +1,13 @@
+{
+  "name": "funnel-leak-watch",
+  "description": "Monitor funnel-step conversion rates, detect abnormal drop-offs, and flag the exact stage that started leaking",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["analytics", "chart-generation", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 * * * *",
+  "tags": ["growth", "analytics", "funnel", "conversion", "monitoring"],
+  "categories": ["growth", "analytics"],
+  "created": "2026-04-07",
+  "updated": "2026-04-07"
+}

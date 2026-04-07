@@ -1,0 +1,60 @@
+name: funnel-leak-watch
+description: Monitor funnel-step conversion rates, detect abnormal drop-offs, and flag the exact stage that started leaking
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: chart-generation
+  - capability: llm
+
+trigger:
+  schedule: "0 * * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  funnel:
+    description: "Ordered funnel step names"
+    default:
+      - "visit"
+      - "signup"
+      - "activation"
+      - "paid"
+
+  lookback_hours:
+    description: "How far back to compare"
+    default: 24
+
+steps:
+  - name: fetch-funnel
+    capability: analytics
+    method: getFunnel
+    args:
+      project: "${config.project}"
+      steps: "${config.funnel}"
+      lookback_hours: "${config.lookback_hours}"
+    capture: funnel_data
+
+  - name: chart-funnel
+    capability: chart-generation
+    method: bar
+    args:
+      title: "Funnel Leak Watch"
+      data: "${funnel_data}"
+    capture: funnel_chart
+
+  - name: explain-leak
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Identify the funnel stage with the biggest abnormal drop, explain the likely issue in plain English, and suggest the first thing to inspect."
+      input: "${funnel_data}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🪣 Funnel Leak Watch\n\n${summary}"
+    attachments: "${[funnel_chart.path]}"
