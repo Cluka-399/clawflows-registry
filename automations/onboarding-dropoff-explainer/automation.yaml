@@ -1,11 +1,10 @@
 name: onboarding-dropoff-explainer
 description: Find where users abandon onboarding, explain the likeliest friction point, and suggest the first fix to test
 author: cluka
-version: 1.0.0
+version: 1.0.1
 
 requires:
   - capability: analytics
-  - capability: session-replay
   - capability: llm
 
 trigger:
@@ -28,6 +27,10 @@ config:
     description: "How far back to compare"
     default: 24
 
+  use_session_replay:
+    description: "Use replay/session samples when a session-replay capability is available"
+    default: false
+
 steps:
   - name: fetch-onboarding-funnel
     capability: analytics
@@ -39,6 +42,7 @@ steps:
     capture: funnel
 
   - name: fetch-dropoff-sessions
+    condition: "config.use_session_replay"
     capability: session-replay
     method: getDropoffSessions
     args:
@@ -48,12 +52,22 @@ steps:
       limit: 10
     capture: sessions
 
+  - name: build-analysis-input
+    action: evaluate
+    expression: |
+      return {
+        funnel,
+        sessions: typeof sessions === 'undefined' ? [] : sessions,
+        used_session_replay: Boolean(config.use_session_replay && typeof sessions !== 'undefined')
+      };
+    capture: analysis_input
+
   - name: explain-friction
     capability: llm
     method: summarize
     args:
-      prompt: "Identify the onboarding step with the most meaningful drop-off, explain the likeliest friction or confusion point using the funnel and sampled sessions, and suggest the first fix to test."
-      input: "${{ funnel, sessions }}"
+      prompt: "Identify the onboarding step with the most meaningful drop-off. Use session samples if present, otherwise rely on funnel-only evidence. Explain the likeliest friction or confusion point and suggest the first fix to test."
+      input: "${analysis_input}"
     capture: summary
 
   - name: notify

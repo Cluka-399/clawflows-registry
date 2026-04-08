@@ -142,7 +142,7 @@
         <h1>Onboarding Dropoff Explainer</h1>
         <p class="description">Find where users abandon onboarding, explain the likeliest friction point, and suggest the first fix to test</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.0.1</span>
           <span>by cluka</span>
           <span>schedule 0 */4 * * *</span>
           
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install onboarding-dropoff-explainer</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">analytics</span><span class="tag">session-replay</span><span class="tag">llm</span>
+          <span class="tag">analytics</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,18 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>Pulls the onboarding funnel from analytics</li><li>Fetches example drop-off sessions around the weak step</li><li>Uses an LLM to explain the likeliest source of friction</li><li>Recommends the first fix worth testing</li><li>Turns vague onboarding anxiety into a concrete diagnosis</li></ol>
+        <ol><li>Pulls the onboarding funnel from analytics</li><li>Optionally fetches example drop-off sessions when replay tooling is available</li><li>Uses an LLM to explain the likeliest source of friction</li><li>Recommends the first fix worth testing</li><li>Turns vague onboarding anxiety into a concrete diagnosis</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. fetch-onboarding-funnel</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">2. fetch-dropoff-sessions</div><div class="step-detail">session-replay</div></div><div class="step"><div class="step-title">3. explain-friction</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-onboarding-funnel</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">2. fetch-dropoff-sessions</div><div class="step-detail">session-replay</div></div><div class="step"><div class="step-title">3. build-analysis-input</div><div class="step-detail">evaluate</div></div><div class="step"><div class="step-title">4. explain-friction</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">5. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">onboarding_steps</div><div class="kv-meta">Ordered onboarding steps to inspect</div></div><div class="kv"><div class="kv-name">lookback_hours</div><div class="kv-meta">How far back to compare · default: 24</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">onboarding_steps</div><div class="kv-meta">Ordered onboarding steps to inspect</div></div><div class="kv"><div class="kv-name">lookback_hours</div><div class="kv-meta">How far back to compare · default: 24</div></div><div class="kv"><div class="kv-name">use_session_replay</div><div class="kv-meta">Use replay/session samples when a session-replay capability is available · default: false</div></div></div>
         
       </section>
       <section class="panel">
@@ -195,9 +195,10 @@
 
     <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>If people hit your signup flow and vanish, this workflow is for figuring out where they bailed and what probably made them bounce.</p>
 <h3>What It Does</h3>
-<ol><li>Pulls the onboarding funnel from analytics</li><li>Fetches example drop-off sessions around the weak step</li><li>Uses an LLM to explain the likeliest source of friction</li><li>Recommends the first fix worth testing</li><li>Turns vague onboarding anxiety into a concrete diagnosis</li></ol>
+<ol><li>Pulls the onboarding funnel from analytics</li><li>Optionally fetches example drop-off sessions when replay tooling is available</li><li>Uses an LLM to explain the likeliest source of friction</li><li>Recommends the first fix worth testing</li><li>Turns vague onboarding anxiety into a concrete diagnosis</li></ol>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`session-replay`</td><td>replay/session tools</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
+<p>Session replay is optional. If your environment has a <code>session-replay</code> capability, enable <code>use_session_replay: true</code> for richer diagnosis.</p>
 <h3>Schedule</h3>
 <p>Default: every 4 hours.</p>
 <pre class="code-block"><code data-lang="yaml">trigger:

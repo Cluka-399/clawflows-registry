@@ -5,7 +5,7 @@ If people hit your signup flow and vanish, this workflow is for figuring out whe
 ## What It Does
 
 1. Pulls the onboarding funnel from analytics
-2. Fetches example drop-off sessions around the weak step
+2. Optionally fetches example drop-off sessions when replay tooling is available
 3. Uses an LLM to explain the likeliest source of friction
 4. Recommends the first fix worth testing
 5. Turns vague onboarding anxiety into a concrete diagnosis
@@ -15,8 +15,9 @@ If people hit your signup flow and vanish, this workflow is for figuring out whe
 | Capability | Example Skills |
 |------------|----------------|
 | `analytics` | agent-analytics |
-| `session-replay` | replay/session tools |
 | `llm` | summarization/reasoning model |
+
+Session replay is optional. If your environment has a `session-replay` capability, enable `use_session_replay: true` for richer diagnosis.
 
 ## Schedule
 
