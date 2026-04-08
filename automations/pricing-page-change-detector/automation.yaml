@@ -1,0 +1,46 @@
+name: pricing-page-change-detector
+description: Watch competitor pricing pages, detect meaningful changes, and explain whether the move affects your packaging or positioning
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: browser
+  - capability: web-search
+  - capability: llm
+
+trigger:
+  schedule: "0 */8 * * *"
+
+config:
+  targets:
+    description: "Pricing pages to watch"
+    default:
+      - "https://example.com/pricing"
+
+steps:
+  - name: capture-pages
+    capability: browser
+    method: snapshot
+    args:
+      urls: "${config.targets}"
+    capture: pages
+
+  - name: gather-context
+    capability: web-search
+    method: search
+    args:
+      query: "pricing update package plan increase discount launch"
+      limit: 8
+    capture: context
+
+  - name: explain-change
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Identify pricing or packaging changes, explain whether they matter competitively, and suggest whether the team should react, monitor, or ignore."
+      input: "${{ pages, context }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "💸 Pricing Page Change Detector\n\n${summary}"

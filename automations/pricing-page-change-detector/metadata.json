@@ -1,0 +1,13 @@
+{
+  "name": "pricing-page-change-detector",
+  "description": "Watch competitor pricing pages, detect meaningful changes, and explain whether the move affects your packaging or positioning",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["browser", "web-search", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 */8 * * *",
+  "tags": ["pricing", "competition", "positioning", "research", "packaging"],
+  "categories": ["research", "growth"],
+  "created": "2026-04-08",
+  "updated": "2026-04-08"
+}

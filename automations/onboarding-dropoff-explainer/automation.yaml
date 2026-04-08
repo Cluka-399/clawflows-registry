@@ -1,0 +1,61 @@
+name: onboarding-dropoff-explainer
+description: Find where users abandon onboarding, explain the likeliest friction point, and suggest the first fix to test
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: session-replay
+  - capability: llm
+
+trigger:
+  schedule: "0 */4 * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  onboarding_steps:
+    description: "Ordered onboarding steps to inspect"
+    default:
+      - "landing"
+      - "signup"
+      - "workspace_created"
+      - "first_value"
+
+  lookback_hours:
+    description: "How far back to compare"
+    default: 24
+
+steps:
+  - name: fetch-onboarding-funnel
+    capability: analytics
+    method: getFunnel
+    args:
+      project: "${config.project}"
+      steps: "${config.onboarding_steps}"
+      lookback_hours: "${config.lookback_hours}"
+    capture: funnel
+
+  - name: fetch-dropoff-sessions
+    capability: session-replay
+    method: getDropoffSessions
+    args:
+      project: "${config.project}"
+      steps: "${config.onboarding_steps}"
+      lookback_hours: "${config.lookback_hours}"
+      limit: 10
+    capture: sessions
+
+  - name: explain-friction
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Identify the onboarding step with the most meaningful drop-off, explain the likeliest friction or confusion point using the funnel and sampled sessions, and suggest the first fix to test."
+      input: "${{ funnel, sessions }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🚪 Onboarding Dropoff Explainer\n\n${summary}"

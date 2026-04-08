@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (126 total)
+## Current Automations (129 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -483,6 +483,12 @@ Weekly npm audit with severity-based notifications
 - Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/npm-audit-scheduler/
 
+### onboarding-dropoff-explainer
+Find where users abandon onboarding, explain the likeliest friction point, and suggest the first fix to test
+- Requires: analytics, session-replay, llm
+- Schedule: 0 */4 * * *
+- URL: https://clawflows.com/automations/onboarding-dropoff-explainer/
+
 ### Partnership Scout
 Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.
 - Requires: partnerships, co-marketing, b2b
@@ -534,6 +540,12 @@ Monitor competitor pricing pages, alert on changes, analyze positioning shifts, 
 - Requires: pricing, competitors, monitoring
 - URL: https://clawflows.com/automations/pricing-intelligence/
 
+### pricing-page-change-detector
+Watch competitor pricing pages, detect meaningful changes, and explain whether the move affects your packaging or positioning
+- Requires: browser, web-search, llm
+- Schedule: 0 */8 * * *
+- URL: https://clawflows.com/automations/pricing-page-change-detector/
+
 ### product-hunt-daily
 Daily digest of top Product Hunt launches
 - Requires: web-search, cron
@@ -574,6 +586,12 @@ Monitor retention cohorts, catch meaningful drops early, and explain which cohor
 Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.
 - Requires: reviews, reputation, customer-success
 - URL: https://clawflows.com/automations/review-defense/
+
+### revival-campaign-picker
+Find dormant or slipping user segments, explain who is most worth reviving, and suggest the reactivation angle to try first
+- Requires: analytics, email, llm
+- Schedule: 0 10 * * 2,5
+- URL: https://clawflows.com/automations/revival-campaign-picker/
 
 ### rss-digest
 Aggregate multiple RSS feeds into a daily digest

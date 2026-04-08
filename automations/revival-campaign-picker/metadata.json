@@ -1,0 +1,13 @@
+{
+  "name": "revival-campaign-picker",
+  "description": "Find dormant or slipping user segments, explain who is most worth reviving, and suggest the reactivation angle to try first",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["analytics", "email", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 10 * * 2,5",
+  "tags": ["reactivation", "email", "segments", "retention", "growth"],
+  "categories": ["growth", "retention"],
+  "created": "2026-04-08",
+  "updated": "2026-04-08"
+}

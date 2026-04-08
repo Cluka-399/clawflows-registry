@@ -1,0 +1,50 @@
+name: revival-campaign-picker
+description: Find dormant or slipping user segments, explain who is most worth reviving, and suggest the reactivation angle to try first
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: email
+  - capability: llm
+
+trigger:
+  schedule: "0 10 * * 2,5"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  dormant_days:
+    description: "How long before a user is considered dormant"
+    default: 14
+
+steps:
+  - name: fetch-dormant-segments
+    capability: analytics
+    method: getDormantSegments
+    args:
+      project: "${config.project}"
+      dormant_days: "${config.dormant_days}"
+    capture: segments
+
+  - name: draft-revival-angle
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Rank the dormant segments by recovery potential and suggest the best reactivation angle or message for each."
+      input: "${segments}"
+    capture: plan
+
+  - name: prepare-campaign
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${segments}"
+      brief: "${plan}"
+    capture: campaign
+
+  - name: notify
+    action: notify
+    message: "🧟 Revival Campaign Picker\n\n${plan}"

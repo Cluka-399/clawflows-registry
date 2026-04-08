@@ -1,7 +1,7 @@
 {
-  "generated": "2026-04-08T07:12:20.701Z",
+  "generated": "2026-04-08T08:45:51.786Z",
   "version": "1.0.0",
-  "count": 126,
+  "count": 129,
   "automations": [
     {
       "name": "100-Platform Launch Blitz",
@@ -1897,6 +1897,35 @@
       "url": "/automations/npm-audit-scheduler/"
     },
     {
+      "name": "onboarding-dropoff-explainer",
+      "description": "Find where users abandon onboarding, explain the likeliest friction point, and suggest the first fix to test",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "session-replay",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 */4 * * *",
+      "tags": [
+        "onboarding",
+        "dropoff",
+        "growth",
+        "analytics",
+        "ux"
+      ],
+      "categories": [
+        "growth",
+        "analytics",
+        "product"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/onboarding-dropoff-explainer/"
+    },
+    {
       "name": "Partnership Scout",
       "slug": "partnership-scout",
       "category": "marketing",
@@ -2102,6 +2131,34 @@
       "url": "/automations/pricing-intelligence/"
     },
     {
+      "name": "pricing-page-change-detector",
+      "description": "Watch competitor pricing pages, detect meaningful changes, and explain whether the move affects your packaging or positioning",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "browser",
+        "web-search",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 */8 * * *",
+      "tags": [
+        "pricing",
+        "competition",
+        "positioning",
+        "research",
+        "packaging"
+      ],
+      "categories": [
+        "research",
+        "growth"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/pricing-page-change-detector/"
+    },
+    {
       "name": "product-hunt-daily",
       "description": "Daily digest of top Product Hunt launches",
       "author": "cluka",
@@ -2271,6 +2328,34 @@
       ],
       "lobster_ready": true,
       "url": "/automations/review-defense/"
+    },
+    {
+      "name": "revival-campaign-picker",
+      "description": "Find dormant or slipping user segments, explain who is most worth reviving, and suggest the reactivation angle to try first",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "email",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 10 * * 2,5",
+      "tags": [
+        "reactivation",
+        "email",
+        "segments",
+        "retention",
+        "growth"
+      ],
+      "categories": [
+        "growth",
+        "retention"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/revival-campaign-picker/"
     },
     {
       "name": "rss-digest",
