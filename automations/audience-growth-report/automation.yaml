@@ -1,11 +1,59 @@
-name: Audience Growth Report
-description: Weekly report on audience growth and demographics
+name: audience-growth-report
+description: Track audience growth across channels, surface the strongest gainers or laggards, and generate a weekly plain-English report
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - agent-analytics
-  - web_fetch
-  - file_system
-tags:
-  - social
-  - analytics
+  - capability: analytics
+  - capability: chart-generation
+  - capability: llm
+
+trigger:
+  schedule: "0 9 * * 1"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  channels:
+    description: "Audience channels or segments to compare"
+    default:
+      - "twitter"
+      - "linkedin"
+      - "newsletter"
+
+  lookback_days:
+    description: "Comparison window in days"
+    default: 7
+
+steps:
+  - name: fetch-audience-growth
+    capability: analytics
+    method: getAudienceGrowth
+    args:
+      project: "${config.project}"
+      channels: "${config.channels}"
+      lookback_days: "${config.lookback_days}"
+    capture: audience_growth
+
+  - name: chart-growth
+    capability: chart-generation
+    method: line
+    args:
+      title: "Audience Growth Report"
+      data: "${audience_growth}"
+    capture: growth_chart
+
+  - name: explain-growth
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Summarize the most important audience growth changes over the last reporting window. Call out the strongest-growing channel, any lagging or declining channel, and the first thing to investigate or double down on."
+      input: "${audience_growth}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "📣 Audience Growth Report\n\n${summary}"
+    attachments: "${[growth_chart.path]}"

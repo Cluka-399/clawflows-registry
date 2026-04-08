@@ -60,8 +60,8 @@ Find new arXiv papers matching your research interests
 - URL: https://clawflows.com/automations/arxiv-paper-scout/
 
 ### audience-growth-report
-Weekly report on audience growth and demographics
-- Requires: agent-analytics, web-search, chart-image
+Track audience growth across channels, surface the strongest gainers or laggards, and generate a weekly plain-English report
+- Requires: analytics, chart-generation, llm
 - Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/audience-growth-report/
 

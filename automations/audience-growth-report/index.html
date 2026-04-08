@@ -140,48 +140,53 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Audience Growth Report</h1>
-        <p class="description">Weekly report on audience growth and demographics</p>
+        <p class="description">Track audience growth across channels, surface the strongest gainers or laggards, and generate a weekly plain-English report</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 9 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
         <div class="pill-row"><span class="tag">Analytics</span><span class="tag">Growth</span></div>
-        <div class="tag-row"><span class="pill">social</span><span class="pill">analytics</span></div>
+        <div class="tag-row"><span class="pill">social</span><span class="pill">analytics</span><span class="pill">growth</span><span class="pill">reporting</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install audience-growth-report</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">agent-analytics</span><span class="tag">web_fetch</span><span class="tag">file_system</span><span class="tag">web-search</span><span class="tag">chart-image</span>
+          <span class="tag">analytics</span><span class="tag">chart-generation</span><span class="tag">llm</span>
         </div>
-        <p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://clawhub.ai/skill/agent-analytics" target="_blank" rel="noopener">Agent Analytics skill ↗</a></p>
+        
       </aside>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Fetches metrics** - Pulls audience data from configured social platforms</li><li>**Tracks growth** - Compares week-over-week changes</li><li>**Generates report** - Summary with key growth metrics and trends</li></ol>
+        <ol><li>Pulls audience growth data from analytics for the selected channels or segments</li><li>Compares the latest reporting window across those channels</li><li>Generates a chart so growth and slowdown are obvious at a glance</li><li>Produces a plain-English summary that says what is winning, what is stalling, and what to inspect next</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. setup</div></div><div class="step"><div class="step-title">2. fetch-audience</div></div><div class="step"><div class="step-title">3. extract-metrics</div></div><div class="step"><div class="step-title">4. load-state</div></div><div class="step"><div class="step-title">5. compute-growth</div></div><div class="step"><div class="step-title">6. save-state</div></div><div class="step"><div class="step-title">7. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-audience-growth</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">2. chart-growth</div><div class="step-detail">chart-generation</div></div><div class="step"><div class="step-title">3. explain-growth</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">username</div><div class="kv-meta">GitHub username (or account identifier for custom API) · default: octocat</div></div><div class="kv"><div class="kv-name">api_url</div><div class="kv-meta">API endpoint returning JSON with follower data. Use {username} as placeholder. · default: https://api.github.com/users/{username}</div></div><div class="kv"><div class="kv-name">followers_jq</div><div class="kv-meta">jq expression to extract follower count from API response · default: .followers</div></div><div class="kv"><div class="kv-name">extras_jq</div><div class="kv-meta">jq expression to extract extra metrics (repos, etc.) as a JSON object · default: {public_repos: .public_repos, public_gists: .public_gists}</div></div><div class="kv"><div class="kv-name">state_dir</div><div class="kv-meta">Directory to persist state between runs · default: /tmp/audience-growth-state</div></div><div class="kv"><div class="kv-name">report_weeks</div><div class="kv-meta">Number of past data points to include in trend · default: 4</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">channels</div><div class="kv-meta">Audience channels or segments to compare</div></div><div class="kv"><div class="kv-name">lookback_days</div><div class="kv-meta">Comparison window in days · default: 7</div></div></div>
         <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  platforms: [&quot;twitter&quot;, &quot;linkedin&quot;]</code></pre>
+  project:
+    default: &quot;main-site&quot;
+  channels:
+    default: [&quot;twitter&quot;, &quot;linkedin&quot;, &quot;newsletter&quot;]
+  lookback_days:
+    default: 7</code></pre>
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
-        
+        <p><strong>Cron:</strong> <code>0 9 * * 1</code></p>
         <p>Weekly on Monday at 9am: <code>0 9 * * 1</code></p>
         
       </section>
@@ -348,16 +353,23 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Weekly report on audience growth and demographics across your social platforms.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Weekly audience-growth pulse for teams who want to know what is actually moving, not just stare at charts and vibe.</p>
 <h3>What It Does</h3>
-<ol><li>**Fetches metrics** - Pulls audience data from configured social platforms</li><li>**Tracks growth** - Compares week-over-week changes</li><li>**Generates report** - Summary with key growth metrics and trends</li></ol>
+<ol><li>Pulls audience growth data from analytics for the selected channels or segments</li><li>Compares the latest reporting window across those channels</li><li>Generates a chart so growth and slowdown are obvious at a glance</li><li>Produces a plain-English summary that says what is winning, what is stalling, and what to inspect next</li></ol>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>social platform APIs</td></tr><tr><td>`chart-image`</td><td>trend visualization</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`chart-generation`</td><td>chart-image</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
 <h3>Configuration</h3>
 <pre class="code-block"><code data-lang="yaml">config:
-  platforms: [&quot;twitter&quot;, &quot;linkedin&quot;]</code></pre>
+  project:
+    default: &quot;main-site&quot;
+  channels:
+    default: [&quot;twitter&quot;, &quot;linkedin&quot;, &quot;newsletter&quot;]
+  lookback_days:
+    default: 7</code></pre>
 <h3>Schedule</h3>
 <p>Weekly on Monday at 9am: <code>0 9 * * 1</code></p>
+<h3>Why It Exists</h3>
+<p>Because "audience is up" is too vague to help anyone decide what to do next.</p>
 <h3>Author</h3>
 <p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
 
