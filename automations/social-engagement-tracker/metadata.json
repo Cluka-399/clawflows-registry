@@ -1,17 +1,17 @@
 {
   "name": "social-engagement-tracker",
-  "description": "Track engagement metrics across social platforms",
+  "description": "Track engagement across social channels, surface meaningful changes, and summarize what moved",
   "author": "cluka",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "categories": [
     "analytics",
     "growth",
     "marketing"
   ],
   "requires": [
-    "agent-analytics",
-    "web-search",
-    "exec"
+    "analytics",
+    "chart-generation",
+    "llm"
   ],
   "trigger": "schedule",
   "schedule": "0 8 * * *",
@@ -21,5 +21,5 @@
     "marketing"
   ],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-08"
 }

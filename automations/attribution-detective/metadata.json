@@ -1,27 +1,25 @@
 {
-  "name": "Full-Funnel Attribution Detective",
-  "slug": "attribution-detective",
+  "name": "attribution-detective",
+  "description": "Correlate conversion paths across touchpoints, identify the journeys that actually close, and summarize where budget or content should move",
+  "author": "cluka",
+  "version": "1.1.0",
   "categories": [
     "analytics",
     "growth"
   ],
+  "requires": [
+    "analytics",
+    "database",
+    "llm"
+  ],
+  "trigger": "schedule",
+  "schedule": "0 6 * * 1",
   "tags": [
     "attribution",
     "analytics",
     "customer-journey",
     "data"
   ],
-  "difficulty": "advanced",
-  "credit": {
-    "inspired_by": "@alex_prompter",
-    "source": "https://x.com/alex_prompter/status/2017044857764688132"
-  },
-  "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
-  "version": "1.0.0",
-  "requires": [
-    "agent-analytics",
-    "attribution",
-    "analytics",
-    "customer-journey"
-  ]
+  "created": "2026-01-30",
+  "updated": "2026-04-08"
 }

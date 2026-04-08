@@ -1,18 +1,20 @@
 # Engagement Analyzer
 
-Analyze which content types get the best engagement across your social channels.
+Finds what content is actually earning attention so your content plan stops being guesswork.
 
 ## What It Does
 
-1. **Fetches metrics** - Pulls engagement data from your content
-2. **Analyzes patterns** - Identifies top-performing content types
-3. **Reports insights** - Recommends what to post more of
+1. Pulls recent content engagement data from analytics
+2. Identifies formats or content types that outperform the rest
+3. Calls out weak performers
+4. Produces a plain-English recommendation for what to publish more often next
 
 ## Requirements
 
 | Capability | Example Skills |
 |------------|----------------|
-| `web-search` | web-search |
+| `analytics` | agent-analytics |
+| `llm` | summarization/reasoning model |
 
 ## Schedule
 

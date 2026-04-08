@@ -59,6 +59,12 @@ Find new arXiv papers matching your research interests
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/arxiv-paper-scout/
 
+### attribution-detective
+Correlate conversion paths across touchpoints, identify the journeys that actually close, and summarize where budget or content should move
+- Requires: analytics, database, llm
+- Schedule: 0 6 * * 1
+- URL: https://clawflows.com/automations/attribution-detective/
+
 ### audience-growth-report
 Track audience growth across channels, surface the strongest gainers or laggards, and generate a weekly plain-English report
 - Requires: analytics, chart-generation, llm
@@ -265,8 +271,8 @@ Summarize unread emails into a daily digest
 - URL: https://clawflows.com/automations/email-digest/
 
 ### engagement-analyzer
-Analyze which content types get best engagement
-- Requires: agent-analytics, web-search
+Analyze which content types and formats are earning the strongest engagement, then recommend what to publish more often
+- Requires: analytics, llm
 - Schedule: 0 10 * * 1
 - URL: https://clawflows.com/automations/engagement-analyzer/
 
@@ -327,11 +333,6 @@ Celebrate follower milestones with custom alerts
 - Requires: web-search, discord
 - Schedule: 0 9 * * *
 - URL: https://clawflows.com/automations/follower-milestone/
-
-### Full-Funnel Attribution Detective
-Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.
-- Requires: agent-analytics, attribution, analytics, customer-journey
-- URL: https://clawflows.com/automations/attribution-detective/
 
 ### funnel-leak-watch
 Monitor funnel-step conversion rates, detect abnormal drop-offs, and flag the exact stage that started leaking
@@ -472,9 +473,10 @@ Daily morning briefing with calendar, weather, and optional audio
 - Schedule: 30 7 * * *
 - URL: https://clawflows.com/automations/morning-brief/
 
-### Newsletter Growth Engine
-Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.
-- Requires: agent-analytics, newsletter, growth, cross-promotion
+### newsletter-growth
+Find promising newsletter partnership targets, analyze churn pressure, and draft the first outreach or swap angle
+- Requires: analytics, web-search, llm, email
+- Schedule: 0 8 * * 1
 - URL: https://clawflows.com/automations/newsletter-growth/
 
 ### npm-audit-scheduler
@@ -634,8 +636,8 @@ Automatically find and collect positive mentions of your brand across Twitter, R
 - URL: https://clawflows.com/automations/social-proof-collector/
 
 ### social-engagement-tracker
-Track engagement metrics across social platforms
-- Requires: agent-analytics, web-search, exec
+Track engagement across social channels, surface meaningful changes, and summarize what moved
+- Requires: analytics, chart-generation, llm
 - Schedule: 0 8 * * *
 - URL: https://clawflows.com/automations/social-engagement-tracker/
 

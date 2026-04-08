@@ -1,11 +1,41 @@
-name: Engagement Analyzer
-description: Analyze which content types get best engagement
+name: engagement-analyzer
+description: Analyze which content types and formats are earning the strongest engagement, then recommend what to publish more often
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - agent-analytics
-  - web_fetch
-  - file_system
-tags:
-  - social
-  - analytics
+  - capability: analytics
+  - capability: llm
+
+trigger:
+  schedule: "0 10 * * 1"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  lookback_days:
+    description: "How far back to analyze content performance"
+    default: 7
+
+steps:
+  - name: fetch-content-engagement
+    capability: analytics
+    method: getContentEngagement
+    args:
+      project: "${config.project}"
+      lookback_days: "${config.lookback_days}"
+    capture: engagement_data
+
+  - name: explain-winners
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Analyze this engagement data. Identify the content types or formats that performed best, call out any weak performers, and recommend what to publish more often next week."
+      input: "${engagement_data}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "💬 Engagement Analyzer\n\n${summary}"

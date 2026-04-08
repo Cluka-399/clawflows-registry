@@ -1,28 +1,27 @@
 {
-  "name": "Newsletter Growth Engine",
-  "slug": "newsletter-growth",
+  "name": "newsletter-growth",
+  "description": "Find promising newsletter partnership targets, analyze churn pressure, and draft the first outreach or swap angle",
+  "author": "cluka",
+  "version": "1.1.0",
   "categories": [
     "growth",
     "content",
     "marketing"
   ],
+  "requires": [
+    "analytics",
+    "web-search",
+    "llm",
+    "email"
+  ],
+  "trigger": "schedule",
+  "schedule": "0 8 * * 1",
   "tags": [
     "newsletter",
     "growth",
     "cross-promotion",
     "churn"
   ],
-  "difficulty": "beginner",
-  "credit": {
-    "inspired_by": "@alex_prompter",
-    "source": "https://x.com/alex_prompter/status/2017044857764688132"
-  },
-  "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
-  "version": "1.0.0",
-  "requires": [
-    "agent-analytics",
-    "newsletter",
-    "growth",
-    "cross-promotion"
-  ]
+  "created": "2026-01-30",
+  "updated": "2026-04-08"
 }

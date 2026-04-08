@@ -140,47 +140,47 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Engagement Analyzer</h1>
-        <p class="description">Analyze which content types get best engagement</p>
+        <p class="description">Analyze which content types and formats are earning the strongest engagement, then recommend what to publish more often</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 10 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
         <div class="pill-row"><span class="tag">Analytics</span><span class="tag">Growth</span></div>
-        <div class="tag-row"><span class="pill">social</span><span class="pill">analytics</span></div>
+        <div class="tag-row"><span class="pill">social</span><span class="pill">analytics</span><span class="pill">content</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install engagement-analyzer</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">agent-analytics</span><span class="tag">web_fetch</span><span class="tag">file_system</span><span class="tag">web-search</span>
+          <span class="tag">analytics</span><span class="tag">llm</span>
         </div>
-        <p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://clawhub.ai/skill/agent-analytics" target="_blank" rel="noopener">Agent Analytics skill ↗</a></p>
+        
       </aside>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Fetches metrics** - Pulls engagement data from your content</li><li>**Analyzes patterns** - Identifies top-performing content types</li><li>**Reports insights** - Recommends what to post more of</li></ol>
+        <ol><li>Pulls recent content engagement data from analytics</li><li>Identifies formats or content types that outperform the rest</li><li>Calls out weak performers</li><li>Produces a plain-English recommendation for what to publish more often next</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. load-data</div></div><div class="step"><div class="step-title">2. analyze-by-type</div></div><div class="step"><div class="step-title">3. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-content-engagement</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">2. explain-winners</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">data_file</div><div class="kv-meta">Path to JSON file with engagement data · default: /tmp/clawflows-engagement-data.json</div></div><div class="kv"><div class="kv-name">min_impressions</div><div class="kv-meta">Minimum impressions to include in analysis · default: 10</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">lookback_days</div><div class="kv-meta">How far back to analyze content performance · default: 7</div></div></div>
         
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
-        
+        <p><strong>Cron:</strong> <code>0 10 * * 1</code></p>
         <p>Default: Monday 10:00am weekly.</p>
 <pre class="code-block"><code data-lang="yaml">trigger:
   schedule: &quot;0 10 * * 1&quot;</code></pre>
@@ -297,11 +297,11 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Analyze which content types get the best engagement across your social channels.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Finds what content is actually earning attention so your content plan stops being guesswork.</p>
 <h3>What It Does</h3>
-<ol><li>**Fetches metrics** - Pulls engagement data from your content</li><li>**Analyzes patterns** - Identifies top-performing content types</li><li>**Reports insights** - Recommends what to post more of</li></ol>
+<ol><li>Pulls recent content engagement data from analytics</li><li>Identifies formats or content types that outperform the rest</li><li>Calls out weak performers</li><li>Produces a plain-English recommendation for what to publish more often next</li></ol>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>web-search</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
 <h3>Schedule</h3>
 <p>Default: Monday 10:00am weekly.</p>
 <pre class="code-block"><code data-lang="yaml">trigger:

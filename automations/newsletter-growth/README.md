@@ -1,20 +1,32 @@
-# Newsletter Growth Engine
+# Newsletter Growth
 
-Grow your newsletter through smart cross-promotions and churn reduction.
+Finds partnership opportunities and churn signals so newsletter growth becomes more systematic.
 
 ## What It Does
 
-- Finds newsletters in adjacent niches
-- Analyzes subscriber overlap potential
-- Generates swap proposals
-- Analyzes your unsubscribe patterns
-- Suggests content adjustments to reduce churn
+1. Searches for relevant newsletter partnership targets
+2. Pulls newsletter growth and unsubscribe data from analytics
+3. Explains the most promising growth move and the biggest churn issue
+4. Drafts the first outreach or campaign angle
 
 ## Requirements
 
-- `web_search`, `web_fetch`, `email` capabilities
-- Optionally: unsubscribe data for churn analysis
+| Capability | Example Skills |
+|------------|----------------|
+| `analytics` | agent-analytics |
+| `web-search` | Brave / search skill |
+| `llm` | summarization/reasoning model |
+| `email` | agentmail |
+
+## Schedule
+
+Weekly on Monday at 8am.
+
+```yaml
+trigger:
+  schedule: "0 8 * * 1"
+```
 
 ## Credit
 
-[@alex_prompter](https://x.com/alex_prompter/status/2017044857764688132)
+Inspired by [@alex_prompter](https://x.com/alex_prompter/status/2017044857764688132)

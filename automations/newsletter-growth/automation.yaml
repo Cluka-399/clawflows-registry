@@ -1,74 +1,66 @@
-name: Newsletter Growth Engine
-description: Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.
-version: 1.0.0
-author: Cluka (inspired by @alex_prompter)
+name: newsletter-growth
+description: Find promising newsletter partnership targets, analyze churn pressure, and draft the first outreach or swap angle
+author: cluka
+version: 1.1.0
 
 requires:
-  - agent-analytics
-  - web_search
-  - web_fetch
-  - email
+  - capability: analytics
+  - capability: web-search
+  - capability: llm
+  - capability: email
 
 trigger:
-  schedule: "0 8 * * 1"  # Weekly Monday
+  schedule: "0 8 * * 1"
 
-parameters:
-  - name: your_newsletter
-    required: true
-  - name: your_niche
-    required: true
-  - name: subscriber_count
-    required: true
-  - name: unsubscribe_data_path
-    description: CSV of unsubscribes with timestamps
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  niche:
+    description: "Newsletter niche or audience theme"
+    default: "ai design"
+
+  subscriber_count:
+    description: "Current subscriber count"
+    default: 1000
+
+  unsubscribe_window_days:
+    description: "How far back to inspect churn patterns"
+    default: 30
 
 steps:
-  - name: find_newsletters
-    action: web_search
-    params:
-      query: "{{your_niche}} newsletter substack beehiiv"
+  - name: find-partner-targets
+    capability: web-search
+    method: search
+    args:
+      query: "${config.niche} newsletter Substack Beehiiv cross-promotion"
+    capture: targets
 
-  - name: analyze_overlap
-    action: analyze
-    for_each: "{{newsletters}}"
-    prompt: |
-      Analyze {{newsletter}} for swap potential:
-      - Subscriber count (similar to ours?)
-      - Audience overlap (complementary?)
-      - Content style match?
-      - Have they done swaps before?
-      
-      Rate swap potential: HIGH / MEDIUM / LOW
+  - name: fetch-newsletter-health
+    capability: analytics
+    method: getNewsletterGrowth
+    args:
+      project: "${config.project}"
+      unsubscribe_window_days: "${config.unsubscribe_window_days}"
+    capture: newsletter_health
 
-  - name: generate_proposal
-    condition: "potential == 'HIGH'"
-    action: generate
-    prompt: |
-      Generate newsletter swap proposal:
-      
-      Our newsletter: {{your_newsletter}} ({{subscriber_count}} subs)
-      Their newsletter: {{target_newsletter}}
-      
-      Propose:
-      - Recommended mention for us in their newsletter
-      - What we'll say about them
-      - Timing coordination
+  - name: plan-growth-moves
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Using the newsletter search results and growth data, identify the most promising cross-promotion targets, summarize the churn pattern that matters most, and recommend the best next growth move."
+      input: "${{ targets, newsletter_health, subscriber_count: config.subscriber_count, niche: config.niche }}"
+    capture: plan
 
-  - name: analyze_churn
-    condition: "{{unsubscribe_data_path}}"
-    action: analyze
-    params:
-      data: "{{unsubscribe_data}}"
-    prompt: |
-      Analyze unsubscribe patterns:
-      - Which emails caused most churn?
-      - Topic patterns in high-churn emails?
-      - Time-based patterns?
-      - Recommendations for reducing churn
+  - name: draft-outreach
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${targets}"
+      brief: "${plan}"
+    capture: outreach_draft
 
-  - name: send_proposals
-    action: email
-    for_each: "{{proposals}}"
-
-state:
-  storage: memory/newsletter-growth-state.json
+  - name: notify
+    action: notify
+    message: "📰 Newsletter Growth\n\n${plan}"

@@ -1,11 +1,58 @@
-name: Social Engagement Tracker
-description: Track engagement metrics across social platforms
+name: social-engagement-tracker
+description: Track engagement across social channels, surface meaningful changes, and summarize what moved
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - agent-analytics
-  - web_fetch
-  - file_system
-tags:
-  - social
-  - analytics
+  - capability: analytics
+  - capability: chart-generation
+  - capability: llm
+
+trigger:
+  schedule: "0 8 * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  platforms:
+    description: "Channels to compare"
+    default:
+      - "x"
+      - "linkedin"
+
+  lookback_days:
+    description: "Reporting window in days"
+    default: 7
+
+steps:
+  - name: fetch-social-engagement
+    capability: analytics
+    method: getSocialEngagement
+    args:
+      project: "${config.project}"
+      platforms: "${config.platforms}"
+      lookback_days: "${config.lookback_days}"
+    capture: engagement_data
+
+  - name: chart-social-engagement
+    capability: chart-generation
+    method: line
+    args:
+      title: "Social Engagement Tracker"
+      data: "${engagement_data}"
+    capture: engagement_chart
+
+  - name: explain-engagement
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Summarize the most important engagement changes across these social channels. Call out what improved, what weakened, and which content pattern looks most worth repeating."
+      input: "${engagement_data}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "📱 Social Engagement Tracker\n\n${summary}"
+    attachments: "${[engagement_chart.path]}"

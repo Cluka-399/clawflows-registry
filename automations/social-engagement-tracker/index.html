@@ -140,11 +140,11 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Social Engagement Tracker</h1>
-        <p class="description">Track engagement metrics across social platforms</p>
+        <p class="description">Track engagement across social channels, surface meaningful changes, and summarize what moved</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 8 * * *</span>
           <span>Lobster workflow available</span>
         </div>
         <div class="pill-row"><span class="tag">Analytics</span><span class="tag">Growth</span><span class="tag">Marketing</span></div>
@@ -155,34 +155,38 @@
         <div class="install-box">clawflows install social-engagement-tracker</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">agent-analytics</span><span class="tag">web_fetch</span><span class="tag">file_system</span><span class="tag">web-search</span><span class="tag">exec</span>
+          <span class="tag">analytics</span><span class="tag">chart-generation</span><span class="tag">llm</span>
         </div>
-        <p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://clawhub.ai/skill/agent-analytics" target="_blank" rel="noopener">Agent Analytics skill ↗</a></p>
+        
       </aside>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Fetches metrics** - Pulls engagement data from configured platforms</li><li>**Tracks trends** - Compares with historical data</li><li>**Reports** - Summarizes top-performing content and engagement changes</li></ol>
+        <ol><li>Pulls engagement data for the selected platforms</li><li>Compares recent channel performance</li><li>Generates a chart for quick scanning</li><li>Produces a plain-English summary of what changed and what to repeat</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. load-state</div></div><div class="step"><div class="step-title">2. collect-twitter</div></div><div class="step"><div class="step-title">3. collect-external</div></div><div class="step"><div class="step-title">4. merge-snapshot</div></div><div class="step"><div class="step-title">5. compare-and-save</div></div><div class="step"><div class="step-title">6. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-social-engagement</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">2. chart-social-engagement</div><div class="step-detail">chart-generation</div></div><div class="step"><div class="step-title">3. explain-engagement</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">twitter_user</div><div class="kv-meta">Twitter/X username to track (without @)</div></div><div class="kv"><div class="kv-name">metrics_file</div><div class="kv-meta">Path to current metrics JSON (for platforms without API scraping)</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">Path to state file for historical tracking · default: /tmp/clawflows-social-tracker-state.json</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">platforms</div><div class="kv-meta">Channels to compare</div></div><div class="kv"><div class="kv-name">lookback_days</div><div class="kv-meta">Reporting window in days · default: 7</div></div></div>
         <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  platforms: &quot;x,linkedin&quot;   # Platforms to track
-  report_period: &quot;7d&quot;       # Reporting period</code></pre>
+  project:
+    default: &quot;main-site&quot;
+  platforms:
+    default: [&quot;x&quot;, &quot;linkedin&quot;]
+  lookback_days:
+    default: 7</code></pre>
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
-        
+        <p><strong>Cron:</strong> <code>0 8 * * *</code></p>
         <p>Daily at 8:00 AM.</p>
 <pre class="code-block"><code data-lang="yaml">trigger:
   schedule: &quot;0 8 * * *&quot;</code></pre>
@@ -335,21 +339,23 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Track engagement metrics (likes, replies, shares) across your social platforms and identify trends.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Tracks engagement across your main social channels so you can see momentum, slumps, and repeatable wins quickly.</p>
 <h3>What It Does</h3>
-<ol><li>**Fetches metrics** - Pulls engagement data from configured platforms</li><li>**Tracks trends** - Compares with historical data</li><li>**Reports** - Summarizes top-performing content and engagement changes</li></ol>
+<ol><li>Pulls engagement data for the selected platforms</li><li>Compares recent channel performance</li><li>Generates a chart for quick scanning</li><li>Produces a plain-English summary of what changed and what to repeat</li></ol>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>web-search</td></tr><tr><td>`exec`</td><td>shell</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`chart-generation`</td><td>chart-image</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
 <h3>Configuration</h3>
 <pre class="code-block"><code data-lang="yaml">config:
-  platforms: &quot;x,linkedin&quot;   # Platforms to track
-  report_period: &quot;7d&quot;       # Reporting period</code></pre>
+  project:
+    default: &quot;main-site&quot;
+  platforms:
+    default: [&quot;x&quot;, &quot;linkedin&quot;]
+  lookback_days:
+    default: 7</code></pre>
 <h3>Schedule</h3>
 <p>Daily at 8:00 AM.</p>
 <pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 8 * * *&quot;</code></pre>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="bash">openclaw install social-engagement-tracker</code></pre></section>
+  schedule: &quot;0 8 * * *&quot;</code></pre></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

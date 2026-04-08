@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-08T22:05:27.885Z",
+  "generated": "2026-04-08T22:12:05.183Z",
   "version": "1.0.0",
   "count": 129,
   "automations": [
@@ -209,6 +209,33 @@
       "updated": "2026-01-30",
       "lobster_ready": true,
       "url": "/automations/arxiv-paper-scout/"
+    },
+    {
+      "name": "attribution-detective",
+      "description": "Correlate conversion paths across touchpoints, identify the journeys that actually close, and summarize where budget or content should move",
+      "author": "cluka",
+      "version": "1.1.0",
+      "categories": [
+        "analytics",
+        "growth"
+      ],
+      "requires": [
+        "analytics",
+        "database",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 6 * * 1",
+      "tags": [
+        "attribution",
+        "analytics",
+        "customer-journey",
+        "data"
+      ],
+      "created": "2026-01-30",
+      "updated": "2026-04-08",
+      "lobster_ready": true,
+      "url": "/automations/attribution-detective/"
     },
     {
       "name": "audience-growth-report",
@@ -1007,25 +1034,26 @@
     },
     {
       "name": "engagement-analyzer",
-      "description": "Analyze which content types get best engagement",
+      "description": "Analyze which content types and formats are earning the strongest engagement, then recommend what to publish more often",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "categories": [
         "analytics",
         "growth"
       ],
       "requires": [
-        "agent-analytics",
-        "web-search"
+        "analytics",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 10 * * 1",
       "tags": [
         "social",
-        "analytics"
+        "analytics",
+        "content"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-08",
       "lobster_ready": true,
       "url": "/automations/engagement-analyzer/"
     },
@@ -1251,35 +1279,6 @@
       "updated": "2026-01-30",
       "lobster_ready": true,
       "url": "/automations/follower-milestone/"
-    },
-    {
-      "name": "Full-Funnel Attribution Detective",
-      "slug": "attribution-detective",
-      "categories": [
-        "analytics",
-        "growth"
-      ],
-      "tags": [
-        "attribution",
-        "analytics",
-        "customer-journey",
-        "data"
-      ],
-      "difficulty": "advanced",
-      "credit": {
-        "inspired_by": "@alex_prompter",
-        "source": "https://x.com/alex_prompter/status/2017044857764688132"
-      },
-      "description": "Trace customer journeys across touchpoints, correlate data from analytics/CRM/ads, build journey maps.",
-      "version": "1.0.0",
-      "requires": [
-        "agent-analytics",
-        "attribution",
-        "analytics",
-        "customer-journey"
-      ],
-      "lobster_ready": true,
-      "url": "/automations/attribution-detective/"
     },
     {
       "name": "funnel-leak-watch",
@@ -1847,32 +1846,31 @@
       "url": "/automations/morning-brief/"
     },
     {
-      "name": "Newsletter Growth Engine",
-      "slug": "newsletter-growth",
+      "name": "newsletter-growth",
+      "description": "Find promising newsletter partnership targets, analyze churn pressure, and draft the first outreach or swap angle",
+      "author": "cluka",
+      "version": "1.1.0",
       "categories": [
         "growth",
         "content",
         "marketing"
       ],
+      "requires": [
+        "analytics",
+        "web-search",
+        "llm",
+        "email"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 8 * * 1",
       "tags": [
         "newsletter",
         "growth",
         "cross-promotion",
         "churn"
       ],
-      "difficulty": "beginner",
-      "credit": {
-        "inspired_by": "@alex_prompter",
-        "source": "https://x.com/alex_prompter/status/2017044857764688132"
-      },
-      "description": "Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.",
-      "version": "1.0.0",
-      "requires": [
-        "agent-analytics",
-        "newsletter",
-        "growth",
-        "cross-promotion"
-      ],
+      "created": "2026-01-30",
+      "updated": "2026-04-08",
       "lobster_ready": true,
       "url": "/automations/newsletter-growth/"
     },
@@ -2528,18 +2526,18 @@
     },
     {
       "name": "social-engagement-tracker",
-      "description": "Track engagement metrics across social platforms",
+      "description": "Track engagement across social channels, surface meaningful changes, and summarize what moved",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "categories": [
         "analytics",
         "growth",
         "marketing"
       ],
       "requires": [
-        "agent-analytics",
-        "web-search",
-        "exec"
+        "analytics",
+        "chart-generation",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 8 * * *",
@@ -2549,7 +2547,7 @@
         "marketing"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-08",
       "lobster_ready": true,
       "url": "/automations/social-engagement-tracker/"
     },

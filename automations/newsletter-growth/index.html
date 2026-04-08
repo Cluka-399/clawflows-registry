@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Newsletter Growth Engine — ClawFlows</title>
+  <title>Newsletter Growth — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,11 +139,11 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>Newsletter Growth Engine</h1>
-        <p class="description">Find cross-promotion opportunities, analyze subscriber overlap, generate swap proposals, track churn patterns.</p>
+        <h1>Newsletter Growth</h1>
+        <p class="description">Find promising newsletter partnership targets, analyze churn pressure, and draft the first outreach or swap angle</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
           <span>schedule 0 8 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
@@ -155,33 +155,35 @@
         <div class="install-box">clawflows install newsletter-growth</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">agent-analytics</span><span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">newsletter</span><span class="tag">growth</span><span class="tag">cross-promotion</span>
+          <span class="tag">analytics</span><span class="tag">web-search</span><span class="tag">llm</span><span class="tag">email</span>
         </div>
-        <p style="margin-top:1rem; color: var(--muted); font-size:.9rem;">This flow expects an analytics service layer. <a href="https://clawhub.ai/skill/agent-analytics" target="_blank" rel="noopener">Agent Analytics skill ↗</a></p>
+        
       </aside>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ul><li>Finds newsletters in adjacent niches</li><li>Analyzes subscriber overlap potential</li><li>Generates swap proposals</li><li>Analyzes your unsubscribe patterns</li><li>Suggests content adjustments to reduce churn</li></ul>
+        <ol><li>Searches for relevant newsletter partnership targets</li><li>Pulls newsletter growth and unsubscribe data from analytics</li><li>Explains the most promising growth move and the biggest churn issue</li><li>Drafts the first outreach or campaign angle</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. find_newsletters</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. analyze_overlap</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. Subscriber count (similar to ours?)</div></div><div class="step"><div class="step-title">4. Audience overlap (complementary?)</div></div><div class="step"><div class="step-title">5. Content style match?</div></div><div class="step"><div class="step-title">6. Have they done swaps before?</div></div><div class="step"><div class="step-title">7. generate_proposal</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">8. Recommended mention for us in their newsletter</div></div><div class="step"><div class="step-title">9. What we&#39;ll say about them</div></div><div class="step"><div class="step-title">10. Timing coordination</div></div><div class="step"><div class="step-title">11. analyze_churn</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">12. Which emails caused most churn?</div></div><div class="step"><div class="step-title">13. Topic patterns in high-churn emails?</div></div><div class="step"><div class="step-title">14. Time-based patterns?</div></div><div class="step"><div class="step-title">15. Recommendations for reducing churn</div></div><div class="step"><div class="step-title">16. send_proposals</div><div class="step-detail">email</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. find-partner-targets</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. fetch-newsletter-health</div><div class="step-detail">analytics</div></div><div class="step"><div class="step-title">3. plan-growth-moves</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. draft-outreach</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">5. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">your_newsletter</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">your_niche</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">subscriber_count</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">unsubscribe_data_path</div><div class="kv-meta">CSV of unsubscribes with timestamps</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">project</div><div class="kv-meta">Analytics project or property name · default: main-site</div></div><div class="kv"><div class="kv-name">niche</div><div class="kv-meta">Newsletter niche or audience theme · default: ai design</div></div><div class="kv"><div class="kv-name">subscriber_count</div><div class="kv-meta">Current subscriber count · default: 1000</div></div><div class="kv"><div class="kv-name">unsubscribe_window_days</div><div class="kv-meta">How far back to inspect churn patterns · default: 30</div></div></div>
         
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
         <p><strong>Cron:</strong> <code>0 8 * * 1</code></p>
-        
+        <p>Weekly on Monday at 8am.</p>
+<pre class="code-block"><code data-lang="yaml">trigger:
+  schedule: &quot;0 8 * * 1&quot;</code></pre>
         
       </section>
     </div>
@@ -377,13 +379,17 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Grow your newsletter through smart cross-promotions and churn reduction.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Finds partnership opportunities and churn signals so newsletter growth becomes more systematic.</p>
 <h3>What It Does</h3>
-<ul><li>Finds newsletters in adjacent niches</li><li>Analyzes subscriber overlap potential</li><li>Generates swap proposals</li><li>Analyzes your unsubscribe patterns</li><li>Suggests content adjustments to reduce churn</li></ul>
+<ol><li>Searches for relevant newsletter partnership targets</li><li>Pulls newsletter growth and unsubscribe data from analytics</li><li>Explains the most promising growth move and the biggest churn issue</li><li>Drafts the first outreach or campaign angle</li></ol>
 <h3>Requirements</h3>
-<ul><li>`web_search`, `web_fetch`, `email` capabilities</li><li>Optionally: unsubscribe data for churn analysis</li></ul>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`analytics`</td><td>agent-analytics</td></tr><tr><td>`web-search`</td><td>Brave / search skill</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr><tr><td>`email`</td><td>agentmail</td></tr></tbody></table></div>
+<h3>Schedule</h3>
+<p>Weekly on Monday at 8am.</p>
+<pre class="code-block"><code data-lang="yaml">trigger:
+  schedule: &quot;0 8 * * 1&quot;</code></pre>
 <h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<p>Inspired by <a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
