@@ -1,0 +1,54 @@
+name: landing-page-winner-detector
+description: Compare landing page variants, detect a credible winner, and explain whether the lift is real enough to ship
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: llm
+  - capability: database
+
+trigger:
+  schedule: "*/20 * * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  experiment_name:
+    description: "Experiment or page-test identifier"
+    default: "homepage-test"
+
+  minimum_conversions:
+    description: "Minimum conversion count before calling a winner"
+    default: 25
+
+steps:
+  - name: fetch-variants
+    capability: analytics
+    method: getExperimentResults
+    args:
+      project: "${config.project}"
+      experiment_name: "${config.experiment_name}"
+    capture: results
+
+  - name: check-history
+    capability: database
+    method: diffSeen
+    args:
+      namespace: "landing-page-winner-detector"
+      items: "${results}"
+    capture: changes
+
+  - name: explain-winner
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Decide whether this experiment has a credible winner yet, explain the evidence quality, and say whether to ship, wait, or gather more data."
+      input: "${{ results, changes }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🏁 Landing Page Winner Detector\n\n${summary}"

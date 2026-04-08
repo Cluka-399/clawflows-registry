@@ -1,7 +1,7 @@
 {
-  "generated": "2026-04-07T20:00:56.919Z",
+  "generated": "2026-04-08T07:12:09.512Z",
   "version": "1.0.0",
-  "count": 123,
+  "count": 126,
   "automations": [
     {
       "name": "100-Platform Launch Blitz",
@@ -564,6 +564,34 @@
       ],
       "lobster_ready": true,
       "url": "/automations/competitor-shadow/"
+    },
+    {
+      "name": "competitor-launch-explainer",
+      "description": "Detect competitor launches or updates, gather supporting context, and explain what actually matters for your positioning",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "web-search",
+        "social-search",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 */6 * * *",
+      "tags": [
+        "competitors",
+        "launches",
+        "positioning",
+        "research",
+        "strategy"
+      ],
+      "categories": [
+        "research",
+        "growth"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/competitor-launch-explainer/"
     },
     {
       "name": "Content Syndication Network",
@@ -1521,6 +1549,34 @@
       "url": "/automations/invoice-reminder/"
     },
     {
+      "name": "landing-page-winner-detector",
+      "description": "Compare landing page variants, detect a credible winner, and explain whether the lift is real enough to ship",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "llm",
+        "database"
+      ],
+      "trigger": "schedule",
+      "schedule": "*/20 * * * *",
+      "tags": [
+        "landing-page",
+        "experiments",
+        "ab-testing",
+        "conversion",
+        "growth"
+      ],
+      "categories": [
+        "growth",
+        "analytics"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/landing-page-winner-detector/"
+    },
+    {
       "name": "lead-qualifier",
       "description": "Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules",
       "author": "cluka",
@@ -2162,6 +2218,34 @@
       "updated": "2026-01-30",
       "lobster_ready": true,
       "url": "/automations/repeat-task-detector/"
+    },
+    {
+      "name": "retention-cohort-watch",
+      "description": "Monitor retention cohorts, catch meaningful drops early, and explain which cohort or time bucket started sliding",
+      "author": "cluka",
+      "version": "1.0.0",
+      "requires": [
+        "analytics",
+        "chart-generation",
+        "llm"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 8 * * *",
+      "tags": [
+        "retention",
+        "cohorts",
+        "analytics",
+        "growth",
+        "monitoring"
+      ],
+      "categories": [
+        "growth",
+        "analytics"
+      ],
+      "created": "2026-04-08",
+      "updated": "2026-04-08",
+      "lobster_ready": false,
+      "url": "/automations/retention-cohort-watch/"
     },
     {
       "name": "Review Farm Defense System",

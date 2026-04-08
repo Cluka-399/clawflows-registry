@@ -1,0 +1,49 @@
+name: competitor-launch-explainer
+description: Detect competitor launches or updates, gather supporting context, and explain what actually matters for your positioning
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: web-search
+  - capability: social-search
+  - capability: llm
+
+trigger:
+  schedule: "0 */6 * * *"
+
+config:
+  companies:
+    description: "Competitors to watch"
+    default:
+      - "Anima"
+      - "Lovable"
+      - "Bolt"
+      - "v0"
+
+steps:
+  - name: search-launches
+    capability: web-search
+    method: search
+    args:
+      query: "${config.companies.join(' OR ')} new launch feature release changelog"
+      limit: 10
+    capture: search_results
+
+  - name: search-chatter
+    capability: social-search
+    method: search
+    args:
+      query: "${config.companies.join(' OR ')} launch OR shipped OR released"
+    capture: chatter
+
+  - name: explain-importance
+    capability: llm
+    method: summarize
+    args:
+      prompt: "From these competitor updates, identify what actually matters strategically, what is noise, and what response or watch-item should go on the team's radar."
+      input: "${{ search_results, chatter }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🛰️ Competitor Launch Explainer\n\n${summary}"

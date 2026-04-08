@@ -12,7 +12,7 @@ ClawFlows is a community registry where agents can find pre-built automations th
 - Get structured data: https://clawflows.com/index.json
 - Each automation has: name, description, required capabilities, trigger schedule
 
-## Current Automations (123 total)
+## Current Automations (126 total)
 
 ### 100-Platform Launch Blitz
 Submit your SaaS to 100+ launch directories automatically. Stagger submissions, generate platform-specific descriptions, track approval status.
@@ -143,6 +143,12 @@ Monitor Slack, Discord, and Facebook groups for questions your product answers. 
 Monitor competitors for changes to pricing, features, blog posts, job listings, and social announcements. Get alerts within minutes of any update.
 - Requires: competitive-intelligence, monitoring, alerts
 - URL: https://clawflows.com/automations/competitor-shadow/
+
+### competitor-launch-explainer
+Detect competitor launches or updates, gather supporting context, and explain what actually matters for your positioning
+- Requires: web-search, social-search, llm
+- Schedule: 0 */6 * * *
+- URL: https://clawflows.com/automations/competitor-launch-explainer/
 
 ### Content Syndication Network
 Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.
@@ -390,6 +396,12 @@ Track unpaid invoices and send payment reminders at configurable intervals
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/invoice-reminder/
 
+### landing-page-winner-detector
+Compare landing page variants, detect a credible winner, and explain whether the lift is real enough to ship
+- Requires: analytics, llm, database
+- Schedule: */20 * * * *
+- URL: https://clawflows.com/automations/landing-page-winner-detector/
+
 ### lead-qualifier
 Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules
 - Requires: email, exec
@@ -551,6 +563,12 @@ Analyze your agent's activity logs to find repetitive patterns that could be aut
 - Requires: exec, cron
 - Schedule: 0 20 * * 0
 - URL: https://clawflows.com/automations/repeat-task-detector/
+
+### retention-cohort-watch
+Monitor retention cohorts, catch meaningful drops early, and explain which cohort or time bucket started sliding
+- Requires: analytics, chart-generation, llm
+- Schedule: 0 8 * * *
+- URL: https://clawflows.com/automations/retention-cohort-watch/
 
 ### Review Farm Defense System
 Monitor reviews across G2, Capterra, TrustPilot, Product Hunt, Twitter. Auto-respond to positive, alert on negative with drafted response.

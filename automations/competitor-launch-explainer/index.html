@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Competitor Launch Explainer — ClawFlows</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090912;
+      --panel: #141420;
+      --panel-2: #1a1a28;
+      --text: #f3f3f8;
+      --muted: #9a9aae;
+      --border: #2b2b3c;
+      --accent: #ff6b6b;
+      --accent-soft: rgba(255,107,107,0.12);
+      --shadow: 0 18px 60px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      background: radial-gradient(circle at top, rgba(255,107,107,0.07), transparent 28%), var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .back-link { display: inline-flex; align-items: center; gap: .45rem; font-size: .95rem; margin-bottom: 1.5rem; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 1.25rem;
+      align-items: stretch;
+      margin-bottom: 1.5rem;
+    }
+    .hero-main, .hero-side, .panel {
+      background: linear-gradient(180deg, rgba(26,26,40,0.98), rgba(16,16,26,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero-main { padding: 1.6rem; }
+    .hero-side { padding: 1.35rem; }
+    .eyebrow {
+      display: inline-flex;
+      gap: .4rem;
+      padding: .35rem .7rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    h1 { font-size: 2.35rem; line-height: 1.05; margin: .9rem 0 .75rem; }
+    .description { font-size: 1.05rem; color: var(--muted); max-width: 60ch; }
+    .meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; color: var(--muted); font-size: .93rem; }
+    .pill-row, .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .pill, .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: .38rem .72rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: .82rem;
+    }
+    .tag { color: var(--accent); background: var(--accent-soft); border-color: rgba(255,107,107,0.18); }
+    .install-label { color: var(--muted); font-size: .9rem; margin-bottom: .5rem; }
+    .install-box {
+      background: #0d0d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .95rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-top: 1.25rem;
+    }
+    .panel { padding: 1.25rem; }
+    .panel h2 { margin: 0 0 .9rem; font-size: 1.2rem; }
+    .panel h3 { margin-top: 1rem; font-size: 1rem; }
+    .panel h4 { margin: .9rem 0 .45rem; font-size: .95rem; color: #fff; }
+    .panel p, .panel li { color: var(--muted); }
+    .step-list { display: grid; gap: .75rem; }
+    .step {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      padding: .85rem .95rem;
+    }
+    .step-title { font-weight: 600; }
+    .step-detail { font-size: .87rem; color: var(--muted); margin-top: .2rem; }
+    .key-value { display: grid; gap: .7rem; }
+    .kv {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .7rem;
+    }
+    .kv:last-child { border-bottom: none; padding-bottom: 0; }
+    .kv-name { font-weight: 600; }
+    .kv-meta { color: var(--muted); font-size: .88rem; }
+    .code-block {
+      margin: .85rem 0 0;
+      background: #0c0c14;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    .code-block code { font-family: 'JetBrains Mono', monospace; font-size: .85rem; color: #f5d6d6; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: #fff; font-size: .9rem; }
+    td { color: var(--muted); font-size: .9rem; }
+    .footer { margin: 2rem 0 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .section-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="../" class="back-link">← All Automations</a>
+    <div class="hero">
+      <section class="hero-main">
+        <div class="eyebrow">Flow details</div>
+        <h1>Competitor Launch Explainer</h1>
+        <p class="description">Detect competitor launches or updates, gather supporting context, and explain what actually matters for your positioning</p>
+        <div class="meta">
+          <span>v1.0.0</span>
+          <span>by cluka</span>
+          <span>schedule 0 */6 * * *</span>
+          
+        </div>
+        <div class="pill-row"><span class="tag">Research</span><span class="tag">Growth</span></div>
+        <div class="tag-row"><span class="pill">competitors</span><span class="pill">launches</span><span class="pill">positioning</span><span class="pill">research</span><span class="pill">strategy</span></div>
+      </section>
+      <aside class="hero-side">
+        <div class="install-label">Install</div>
+        <div class="install-box">clawflows install competitor-launch-explainer</div>
+        <div class="install-label" style="margin-top: 1rem;">Requirements</div>
+        <div class="tag-row">
+          <span class="tag">web-search</span><span class="tag">social-search</span><span class="tag">llm</span>
+        </div>
+        
+      </aside>
+    </div>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>What this flow does</h2>
+        <ol><li>Searches for new launches, releases, or changelog items from competitor companies</li><li>Pulls social chatter for extra context and early reactions</li><li>Uses an LLM to separate signal from noise</li><li>Explains what changed, why it matters, and what to watch next</li><li>Gives a strategic brief instead of a messy link dump</li></ol>
+      </section>
+      <section class="panel">
+        <h2>How it runs</h2>
+        <div class="step-list"><div class="step"><div class="step-title">1. search-launches</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. search-chatter</div><div class="step-detail">social-search</div></div><div class="step"><div class="step-title">3. explain-importance</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
+      </section>
+    </div>
+
+    <div class="section-grid">
+      <section class="panel">
+        <h2>Inputs & configuration</h2>
+        <div class="key-value"><div class="kv"><div class="kv-name">companies</div><div class="kv-meta">Competitors to watch</div></div></div>
+        
+      </section>
+      <section class="panel">
+        <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 */6 * * *</code></p>
+        <p>Default: every 6 hours.</p>
+<pre class="code-block"><code data-lang="yaml">trigger:
+  schedule: &quot;0 */6 * * *&quot;</code></pre>
+        
+      </section>
+    </div>
+
+    
+      
+      
+    
+
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Most competitor alerts are just noise. This workflow is for spotting the launches that actually matter and translating them into positioning implications.</p>
+<h3>What It Does</h3>
+<ol><li>Searches for new launches, releases, or changelog items from competitor companies</li><li>Pulls social chatter for extra context and early reactions</li><li>Uses an LLM to separate signal from noise</li><li>Explains what changed, why it matters, and what to watch next</li><li>Gives a strategic brief instead of a messy link dump</li></ol>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>brave / search adapters</td></tr><tr><td>`social-search`</td><td>search-x</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
+<h3>Schedule</h3>
+<p>Default: every 6 hours.</p>
+<pre class="code-block"><code data-lang="yaml">trigger:
+  schedule: &quot;0 */6 * * *&quot;</code></pre>
+<h3>Author</h3>
+<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+
+    <div class="footer">
+      <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
+    </div>
+  </div>
+</body>
+</html>

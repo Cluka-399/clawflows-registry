@@ -1,0 +1,13 @@
+{
+  "name": "landing-page-winner-detector",
+  "description": "Compare landing page variants, detect a credible winner, and explain whether the lift is real enough to ship",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["analytics", "llm", "database"],
+  "trigger": "schedule",
+  "schedule": "*/20 * * * *",
+  "tags": ["landing-page", "experiments", "ab-testing", "conversion", "growth"],
+  "categories": ["growth", "analytics"],
+  "created": "2026-04-08",
+  "updated": "2026-04-08"
+}

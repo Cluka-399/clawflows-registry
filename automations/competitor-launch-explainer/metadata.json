@@ -1,0 +1,13 @@
+{
+  "name": "competitor-launch-explainer",
+  "description": "Detect competitor launches or updates, gather supporting context, and explain what actually matters for your positioning",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["web-search", "social-search", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 */6 * * *",
+  "tags": ["competitors", "launches", "positioning", "research", "strategy"],
+  "categories": ["research", "growth"],
+  "created": "2026-04-08",
+  "updated": "2026-04-08"
+}

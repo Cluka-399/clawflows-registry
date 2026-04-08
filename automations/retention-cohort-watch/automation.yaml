@@ -1,0 +1,59 @@
+name: retention-cohort-watch
+description: Monitor retention cohorts, catch meaningful drops early, and explain which cohort or time bucket started sliding
+author: cluka
+version: 1.0.0
+
+requires:
+  - capability: analytics
+  - capability: chart-generation
+  - capability: llm
+
+trigger:
+  schedule: "0 8 * * *"
+
+config:
+  project:
+    description: "Analytics project or property name"
+    default: "main-site"
+
+  cohort_type:
+    description: "Cohort grouping to inspect"
+    default: "signup_week"
+
+  periods:
+    description: "Retention periods to compare"
+    default:
+      - "day_1"
+      - "day_7"
+      - "day_30"
+
+steps:
+  - name: fetch-cohorts
+    capability: analytics
+    method: getRetentionCohorts
+    args:
+      project: "${config.project}"
+      cohort_type: "${config.cohort_type}"
+      periods: "${config.periods}"
+    capture: cohorts
+
+  - name: chart-cohorts
+    capability: chart-generation
+    method: line
+    args:
+      title: "Retention Cohort Watch"
+      data: "${cohorts}"
+    capture: cohort_chart
+
+  - name: explain-drops
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Find the retention drop that matters most, explain which cohort or period weakened, and suggest the first product or acquisition segment to inspect."
+      input: "${cohorts}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "♻️ Retention Cohort Watch\n\n${summary}"
+    attachments: "${[cohort_chart.path]}"

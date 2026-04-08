@@ -1,0 +1,13 @@
+{
+  "name": "retention-cohort-watch",
+  "description": "Monitor retention cohorts, catch meaningful drops early, and explain which cohort or time bucket started sliding",
+  "author": "cluka",
+  "version": "1.0.0",
+  "requires": ["analytics", "chart-generation", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 8 * * *",
+  "tags": ["retention", "cohorts", "analytics", "growth", "monitoring"],
+  "categories": ["growth", "analytics"],
+  "created": "2026-04-08",
+  "updated": "2026-04-08"
+}
