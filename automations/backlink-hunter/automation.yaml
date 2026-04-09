@@ -1,85 +1,58 @@
-name: Backlink Hunter
-description: Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.
-version: 1.0.0
-author: Cluka (inspired by @alex_prompter)
+name: backlink-hunter
+description: Find likely broken-link replacement opportunities in your niche, match them to your content, and draft outreach
+author: cluka
+version: 1.1.0
 
 requires:
-  - web_search
-  - web_fetch
-  - email
+  - capability: web-search
+  - capability: web-fetch
+  - capability: llm
+  - capability: email
 
 trigger:
-  schedule: "0 6 * * 1"  # Weekly Monday 6am
+  schedule: "0 6 * * 1"
 
-parameters:
-  - name: your_content_urls
-    description: Your best content URLs to pitch as replacements
-    required: true
-  - name: niche_keywords
-    required: true
-  - name: min_domain_authority
-    default: 30
+config:
+  niche_keywords:
+    description: "Topic keywords for resource pages"
+    default: "ai design"
+
+  your_content_urls:
+    description: "Your best replacement content URLs"
+    default:
+      - "https://example.com/guide"
 
 steps:
-  - name: find_broken_links
-    action: web_search
-    params:
-      query: "{{niche_keywords}} inurl:resources -site:{{your_domain}}"
-    
-  - name: check_for_dead_links
-    action: browser
-    for_each: "{{results}}"
-    params:
-      extract_links: true
-      check_status: true
-      filter: "status == 404 OR status == 410"
+  - name: find-resource-pages
+    capability: web-search
+    method: search
+    args:
+      query: "${config.niche_keywords} inurl:resources links tools"
+    capture: pages
 
-  - name: match_your_content
-    action: analyze
-    prompt: |
-      Match dead links to replacement content from:
-      {{your_content_urls}}
-      
-      Find best semantic match.
+  - name: fetch-resource-pages
+    capability: web-fetch
+    method: fetch
+    args:
+      url: "${pages.url || pages}"
+    capture: page_data
 
-  - name: find_contact
-    action: web_search
-    for_each: "{{matches}}"
-    params:
-      query: "site:{{item.domain}} contact OR email"
+  - name: match-replacements
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these resource pages and identify likely broken-link or outdated-link replacement opportunities. Match each opportunity to the best URL from our content list and explain the outreach angle."
+      input: "${{ pages, page_data, your_content_urls: config.your_content_urls }}"
+    capture: plan
 
-  - name: draft_outreach
-    action: generate
-    for_each: "{{matches}}"
-    template: |
-      Subject: Broken link on {{page_title}}
-      
-      Hi,
-      
-      I was reading your excellent resource page on {{topic}} and noticed 
-      that the link to "{{dead_link_text}}" appears to be broken.
-      
-      I recently published a comprehensive guide on the same topic that 
-      might be a good replacement: {{your_url}}
-      
-      Either way, wanted to give you a heads up about the broken link!
-      
-      Best,
-      {{signature}}
+  - name: draft-outreach
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${pages}"
+      brief: "${plan}"
+    capture: draft
 
-  - name: send_outreach
-    action: email
-    for_each: "{{drafts}}"
-    params:
-      to: "{{contact_email}}"
-      subject: "{{draft.subject}}"
-      body: "{{draft.body}}"
-      
-  - name: schedule_followup
-    action: cron_add
-    params:
-      delay: "3 days"
-      task: "followup_{{item.id}}"
-
-state:
-  storage: memory/backlink-hunter-state.json
+  - name: notify
+    action: notify
+    message: "🔗 Backlink Hunter\n\n${plan}"

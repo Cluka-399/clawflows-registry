@@ -1,78 +1,63 @@
-name: Affiliate Army Builder
-description: Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.
-version: 1.0.0
-author: Cluka (inspired by @alex_prompter)
+name: affiliate-builder
+description: Find promising affiliate partners, analyze whether they already monetize adjacent content, and draft personalized recruitment outreach
+author: cluka
+version: 1.1.0
 
 requires:
-  - web_search
-  - web_fetch
-  - email
+  - capability: web-search
+  - capability: web-fetch
+  - capability: llm
+  - capability: email
 
 trigger:
-  schedule: "0 10 * * 1"  # Weekly Monday
+  schedule: "0 10 * * 1"
 
-parameters:
-  - name: target_keywords
-    description: Keywords your affiliates should rank for
-    required: true
-  - name: your_product
-    required: true
-  - name: commission_details
-    required: true
+config:
+  target_keywords:
+    description: "Keywords affiliates should already rank for"
+    default:
+      - "best ai design tools"
+      - "website builder for designers"
+
+  your_product:
+    description: "Your product name"
+    default: "Your product"
+
+  commission_details:
+    description: "Affiliate commission summary"
+    default: "Revenue share available"
 
 steps:
-  - name: find_bloggers
-    action: web_search
-    for_each: "{{target_keywords}}"
-    params:
-      query: "{{keyword}} best tools guide"
-      filter: "NOT site:{{your_domain}}"
+  - name: find-affiliate-prospects
+    capability: web-search
+    method: search
+    args:
+      query: "${config.target_keywords.join(' OR ')} best tools guide affiliate review"
+    capture: prospects
 
-  - name: analyze_affiliate_potential
-    action: web_fetch
-    for_each: "{{bloggers}}"
-    params:
-      url: "{{blog_url}}"
-      extract:
-        - existing_affiliates
-        - traffic_indicators
-        - content_quality
+  - name: fetch-prospect-pages
+    capability: web-fetch
+    method: fetch
+    args:
+      url: "${prospects.url || prospects}"
+    capture: prospect_pages
 
-  - name: score_prospects
-    action: analyze
-    for_each: "{{bloggers}}"
-    prompt: |
-      Score affiliate prospect:
-      - Traffic indicators: {{traffic}}
-      - Existing affiliate relationships: {{affiliates}}
-      - Content quality: {{quality}}
-      - Do they mention competitors but not us?
-      
-      Score 1-10, explain rationale
+  - name: score-prospects
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these affiliate prospect pages. Identify which publishers already monetize adjacent content, mention competitors, or look likely to join an affiliate program. Recommend the best outreach targets and why."
+      input: "${{ prospects, prospect_pages, your_product: config.your_product, commission_details: config.commission_details }}"
+    capture: plan
 
-  - name: generate_pitch
-    condition: "score >= 7"
-    action: generate
-    prompt: |
-      Generate affiliate recruitment email:
-      
-      Blogger: {{blogger_name}} at {{blog_url}}
-      Their content: {{content_summary}}
-      Our product: {{your_product}}
-      Commission: {{commission_details}}
-      
-      Personalize based on their existing content.
-      Don't be generic.
+  - name: draft-affiliate-outreach
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${prospects}"
+      brief: "${plan}"
+    capture: draft
 
-  - name: find_contact
-    action: web_search
-    for_each: "{{prospects}}"
-    params:
-      query: "{{blogger_name}} contact email"
-
-  - name: send_pitches
-    action: email
-    for_each: "{{pitches}}"
-
-state:
-  storage: memory/affiliate-builder-state.json
+  - name: notify
+    action: notify
+    message: "🤝 Affiliate Builder\n\n${plan}"

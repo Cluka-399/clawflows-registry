@@ -140,22 +140,22 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Cold Email Personalizer</h1>
-        <p class="description">Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.</p>
+        <p class="description">Research target accounts, extract likely pain points from public sources, and draft personalized outbound emails</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
           
           <span>Lobster workflow available</span>
         </div>
-        <div class="pill-row"><span class="tag">Sales</span></div>
-        <div class="tag-row"><span class="pill">email</span><span class="pill">outreach</span><span class="pill">sales</span><span class="pill">personalization</span></div>
+        <div class="pill-row"><span class="tag">Outreach</span><span class="tag">Sales</span><span class="tag">Growth</span></div>
+        <div class="tag-row"><span class="pill">sales</span><span class="pill">email</span><span class="pill">personalization</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install cold-email-personalizer</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">outreach</span><span class="tag">sales</span>
+          <span class="tag">web-search</span><span class="tag">web-fetch</span><span class="tag">llm</span><span class="tag">email</span>
         </div>
         
       </aside>
@@ -164,19 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>Finds decision-makers at target accounts</li><li>Researches their LinkedIn, Twitter, company news</li><li>Identifies specific pain points from public info</li><li>Generates hyper-personalized emails</li><li>Finds verified email addresses</li><li>Sends with smart follow-up sequences</li></ol>
-<p>> "This isn't 'spray and pray.' It's 'I noticed you're hiring for X and your last quarter report mentioned Y' level personalization. At scale."</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. find_decision_makers</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. research_person</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">3. linkedin_posts</div></div><div class="step"><div class="step-title">4. twitter</div></div><div class="step"><div class="step-title">5. company_blog</div></div><div class="step"><div class="step-title">6. press_releases</div></div><div class="step"><div class="step-title">7. job_listings</div></div><div class="step"><div class="step-title">8. identify_pain_points</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">9. Recent posts/comments</div></div><div class="step"><div class="step-title">10. Company announcements</div></div><div class="step"><div class="step-title">11. Job listings (what are they hiring for?)</div></div><div class="step"><div class="step-title">12. Press mentions</div></div><div class="step"><div class="step-title">13. generate_email</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">14. step</div></div><div class="step"><div class="step-title">15. Connect their pain point to our solution</div></div><div class="step"><div class="step-title">16. NOT generic &quot;I noticed you&#39;re hiring for X</div></div><div class="step"><div class="step-title">17. Actually insightful personalization</div></div><div class="step"><div class="step-title">18. Under 150 words</div></div><div class="step"><div class="step-title">19. Clear CTA</div></div><div class="step"><div class="step-title">20. find_email</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">21. send_emails</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">22. schedule_followups</div><div class="step-detail">cron_add</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. find-decision-makers</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. fetch-public-context</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">3. craft-personalization</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. draft-emails</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">5. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">target_accounts</div><div class="kv-meta">List of company domains to target · required</div></div><div class="kv"><div class="kv-name">target_titles</div><div class="kv-meta">Job titles to find · default: [&quot;CEO&quot;, &quot;CTO&quot;, &quot;VP Engineering&quot;, &quot;Head of Product&quot;]</div></div><div class="kv"><div class="kv-name">emails_per_batch</div><div class="kv-meta">No description yet. · default: 10</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">target_accounts</div><div class="kv-meta">Target company domains or names</div></div><div class="kv"><div class="kv-name">target_titles</div><div class="kv-meta">Titles to look for</div></div></div>
         
       </section>
       <section class="panel">
@@ -455,14 +454,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Not spray and pray. Actually personalized cold outreach at scale.</p>
-<h3>What It Does</h3>
-<ol><li>Finds decision-makers at target accounts</li><li>Researches their LinkedIn, Twitter, company news</li><li>Identifies specific pain points from public info</li><li>Generates hyper-personalized emails</li><li>Finds verified email addresses</li><li>Sends with smart follow-up sequences</li></ol>
-<p>> "This isn't 'spray and pray.' It's 'I noticed you're hiring for X and your last quarter report mentioned Y' level personalization. At scale."</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turns public research into outreach that sounds like you actually did the homework.</p>
 <h3>Requirements</h3>
-<ul><li>`web_search`, `web_fetch`, `email` capabilities</li></ul>
-<h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr><tr><td>`email`</td><td>agentmail</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

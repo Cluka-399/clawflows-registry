@@ -1,23 +1,12 @@
 {
-  "name": "Cold Email Personalizer",
-  "slug": "cold-email-personalizer",
-  "category": "sales",
-  "tags": [
-    "email",
-    "outreach",
-    "sales",
-    "personalization"
-  ],
-  "difficulty": "advanced",
-  "credit": {
-    "inspired_by": "@alex_prompter",
-    "source": "https://x.com/alex_prompter/status/2017044857764688132"
-  },
-  "description": "Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.",
-  "version": "1.0.0",
-  "requires": [
-    "email",
-    "outreach",
-    "sales"
-  ]
+  "name": "cold-email-personalizer",
+  "description": "Research target accounts, extract likely pain points from public sources, and draft personalized outbound emails",
+  "author": "cluka",
+  "version": "1.1.0",
+  "categories": ["outreach", "sales", "growth"],
+  "requires": ["web-search", "web-fetch", "llm", "email"],
+  "trigger": "manual",
+  "tags": ["sales", "email", "personalization"],
+  "created": "2026-01-30",
+  "updated": "2026-04-09"
 }

@@ -1,21 +1,19 @@
-# Affiliate Army Builder
+# Affiliate Builder
 
-Turn content creators into your sales force.
+Finds affiliate prospects worth talking to instead of spraying generic recruitment emails everywhere.
 
 ## What It Does
 
-1. Finds bloggers ranking for your target keywords
-2. Analyzes their existing affiliate relationships
-3. Scores prospects by potential
-4. Generates personalized recruitment pitches
-5. Manages outreach
-
-> "Identifies bloggers who rank for your target keywords but don't mention your product."
+1. Searches for publishers ranking around your target keywords
+2. Pulls the most relevant prospect pages
+3. Scores who looks most likely to monetize adjacent content well
+4. Drafts personalized affiliate outreach for the best targets
 
 ## Requirements
 
-- `web_search`, `web_fetch`, `email` capabilities
-
-## Credit
-
-[@alex_prompter](https://x.com/alex_prompter/status/2017044857764688132)
+| Capability | Example Skills |
+|------------|----------------|
+| `web-search` | runtime search |
+| `web-fetch` | runtime fetch |
+| `llm` | summarization/reasoning model |
+| `email` | agentmail |

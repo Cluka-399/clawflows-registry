@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Affiliate Army Builder — ClawFlows</title>
+  <title>Affiliate Builder — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,23 +139,23 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>Affiliate Army Builder</h1>
-        <p class="description">Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.</p>
+        <h1>Affiliate Builder</h1>
+        <p class="description">Find promising affiliate partners, analyze whether they already monetize adjacent content, and draft personalized recruitment outreach</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
           <span>schedule 0 10 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
-        <div class="pill-row"><span class="tag">Marketing</span></div>
-        <div class="tag-row"><span class="pill">affiliates</span><span class="pill">partnerships</span><span class="pill">content-creators</span><span class="pill">revenue</span></div>
+        <div class="pill-row"><span class="tag">Growth</span><span class="tag">Partnerships</span><span class="tag">Outreach</span></div>
+        <div class="tag-row"><span class="pill">affiliate</span><span class="pill">growth</span><span class="pill">outreach</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install affiliate-builder</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">affiliates</span><span class="tag">partnerships</span><span class="tag">content-creators</span>
+          <span class="tag">web-search</span><span class="tag">web-fetch</span><span class="tag">llm</span><span class="tag">email</span>
         </div>
         
       </aside>
@@ -164,19 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>Finds bloggers ranking for your target keywords</li><li>Analyzes their existing affiliate relationships</li><li>Scores prospects by potential</li><li>Generates personalized recruitment pitches</li><li>Manages outreach</li></ol>
-<p>> "Identifies bloggers who rank for your target keywords but don't mention your product."</p>
+        <ol><li>Searches for publishers ranking around your target keywords</li><li>Pulls the most relevant prospect pages</li><li>Scores who looks most likely to monetize adjacent content well</li><li>Drafts personalized affiliate outreach for the best targets</li></ol>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. find_bloggers</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. analyze_affiliate_potential</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">3. existing_affiliates</div></div><div class="step"><div class="step-title">4. traffic_indicators</div></div><div class="step"><div class="step-title">5. content_quality</div></div><div class="step"><div class="step-title">6. score_prospects</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">7. step</div></div><div class="step"><div class="step-title">8. step</div></div><div class="step"><div class="step-title">9. step</div></div><div class="step"><div class="step-title">10. Do they mention competitors but not us?</div></div><div class="step"><div class="step-title">11. generate_pitch</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. find_contact</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">13. send_pitches</div><div class="step-detail">email</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. find-affiliate-prospects</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. fetch-prospect-pages</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">3. score-prospects</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. draft-affiliate-outreach</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">5. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">target_keywords</div><div class="kv-meta">Keywords your affiliates should rank for · required</div></div><div class="kv"><div class="kv-name">your_product</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">commission_details</div><div class="kv-meta">No description yet. · required</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">target_keywords</div><div class="kv-meta">Keywords affiliates should already rank for</div></div><div class="kv"><div class="kv-name">your_product</div><div class="kv-meta">Your product name · default: Your product</div></div><div class="kv"><div class="kv-name">commission_details</div><div class="kv-meta">Affiliate commission summary · default: Revenue share available</div></div></div>
         
       </section>
       <section class="panel">
@@ -423,14 +422,11 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turn content creators into your sales force.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Finds affiliate prospects worth talking to instead of spraying generic recruitment emails everywhere.</p>
 <h3>What It Does</h3>
-<ol><li>Finds bloggers ranking for your target keywords</li><li>Analyzes their existing affiliate relationships</li><li>Scores prospects by potential</li><li>Generates personalized recruitment pitches</li><li>Manages outreach</li></ol>
-<p>> "Identifies bloggers who rank for your target keywords but don't mention your product."</p>
+<ol><li>Searches for publishers ranking around your target keywords</li><li>Pulls the most relevant prospect pages</li><li>Scores who looks most likely to monetize adjacent content well</li><li>Drafts personalized affiliate outreach for the best targets</li></ol>
 <h3>Requirements</h3>
-<ul><li>`web_search`, `web_fetch`, `email` capabilities</li></ul>
-<h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr><tr><td>`email`</td><td>agentmail</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

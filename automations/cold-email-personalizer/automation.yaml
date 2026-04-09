@@ -1,90 +1,61 @@
-name: Cold Email Personalizer
-description: Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.
-version: 1.0.0
-author: Cluka (inspired by @alex_prompter)
+name: cold-email-personalizer
+description: Research target accounts, extract likely pain points from public sources, and draft personalized outbound emails
+author: cluka
+version: 1.1.0
 
 requires:
-  - web_search
-  - web_fetch
-  - email
+  - capability: web-search
+  - capability: web-fetch
+  - capability: llm
+  - capability: email
 
 trigger:
   manual: true
 
-parameters:
-  - name: target_accounts
-    description: List of company domains to target
-    required: true
-  - name: target_titles
-    description: Job titles to find
-    default: ["CEO", "CTO", "VP Engineering", "Head of Product"]
-  - name: emails_per_batch
-    default: 10
+config:
+  target_accounts:
+    description: "Target company domains or names"
+    default:
+      - "example.com"
+
+  target_titles:
+    description: "Titles to look for"
+    default:
+      - "CEO"
+      - "CTO"
+      - "Head of Product"
 
 steps:
-  - name: find_decision_makers
-    action: web_search
-    for_each: "{{target_accounts}}"
-    params:
-      query: "site:linkedin.com {{domain}} {{target_titles}}"
+  - name: find-decision-makers
+    capability: web-search
+    method: search
+    args:
+      query: "${config.target_accounts.join(' OR ')} ${config.target_titles.join(' OR ')} LinkedIn"
+    capture: prospects
 
-  - name: research_person
-    action: web_fetch
-    for_each: "{{decision_makers}}"
-    params:
-      sources:
-        - linkedin_posts
-        - twitter
-        - company_blog
-        - press_releases
-        - job_listings
+  - name: fetch-public-context
+    capability: web-fetch
+    method: fetch
+    args:
+      url: "${prospects.url || prospects}"
+    capture: context_pages
 
-  - name: identify_pain_points
-    action: analyze
-    for_each: "{{decision_makers}}"
-    prompt: |
-      From {{name}}'s public information:
-      - Recent posts/comments
-      - Company announcements
-      - Job listings (what are they hiring for?)
-      - Press mentions
-      
-      Identify likely pain points our product solves.
+  - name: craft-personalization
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Using these public sources, identify likely pain points, notable recent posts or announcements, and the strongest personalization angle for each prospect. Then draft concise outbound email guidance that is specific, not generic."
+      input: "${{ prospects, context_pages }}"
+    capture: plan
 
-  - name: generate_email
-    action: generate
-    for_each: "{{researched}}"
-    prompt: |
-      Write cold email to {{name}} at {{company}}:
-      
-      Requirements:
-      - Reference specific post/announcement: {{specific_reference}}
-      - Connect their pain point to our solution
-      - NOT generic "I noticed you're hiring for X"
-      - Actually insightful personalization
-      - Under 150 words
-      - Clear CTA
+  - name: draft-emails
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${prospects}"
+      brief: "${plan}"
+    capture: draft
 
-  - name: find_email
-    action: web_search
-    for_each: "{{targets}}"
-    params:
-      query: "{{name}} {{company}} email"
-
-  - name: send_emails
-    action: email
-    for_each: "{{emails}}"
-    params:
-      to: "{{verified_email}}"
-      subject: "{{personalized_subject}}"
-      body: "{{email_body}}"
-
-  - name: schedule_followups
-    action: cron_add
-    for_each: "{{sent}}"
-    params:
-      delay: "3 days"
-      condition: "no_reply"
-
-state:
-  storage: memory/cold-email-state.json
+  - name: notify
+    action: notify
+    message: "✉️ Cold Email Personalizer\n\n${plan}"

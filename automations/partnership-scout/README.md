@@ -1,20 +1,12 @@
 # Partnership Scout
 
-Find perfect co-marketing partners automatically.
-
-## What It Does
-
-1. Finds companies serving your audience (non-competitors)
-2. Analyzes their content for partnership signals
-3. Generates custom co-marketing pitches
-4. Sends outreach
-
-> "'Hey, I noticed you wrote about [topic] and we have complementary data. Want to co-author a report?' becomes an automated workflow."
+Finds complementary companies worth talking to and turns that research into a concrete partnership angle.
 
 ## Requirements
 
-- `web_search`, `web_fetch`, `email` capabilities
-
-## Credit
-
-[@alex_prompter](https://x.com/alex_prompter/status/2017044857764688132)
+| Capability | Example Skills |
+|------------|----------------|
+| `web-search` | runtime search |
+| `web-fetch` | runtime fetch |
+| `llm` | summarization/reasoning model |
+| `email` | agentmail |

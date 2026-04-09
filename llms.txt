@@ -24,9 +24,10 @@ Generate headline variations, implement tests, monitor statistical significance,
 - Requires: agent-analytics, ab-testing, conversion, optimization
 - URL: https://clawflows.com/automations/ab-test-automator/
 
-### Affiliate Army Builder
-Find potential affiliates ranking for your keywords, analyze their existing partnerships, generate recruitment pitches.
-- Requires: affiliates, partnerships, content-creators
+### affiliate-builder
+Find promising affiliate partners, analyze whether they already monetize adjacent content, and draft personalized recruitment outreach
+- Requires: web-search, web-fetch, llm, email
+- Schedule: 0 10 * * 1
 - URL: https://clawflows.com/automations/affiliate-builder/
 
 ### agent-drift-detector
@@ -71,9 +72,10 @@ Track audience growth across channels, surface the strongest gainers or laggards
 - Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/audience-growth-report/
 
-### Backlink Hunter
-Find broken links on high-DA sites pointing to content like yours. Auto-draft outreach offering your content as replacement.
-- Requires: seo, backlinks, outreach
+### backlink-hunter
+Find likely broken-link replacement opportunities in your niche, match them to your content, and draft outreach
+- Requires: web-search, web-fetch, llm, email
+- Schedule: 0 6 * * 1
 - URL: https://clawflows.com/automations/backlink-hunter/
 
 ### bill-due-reminder
@@ -130,9 +132,9 @@ Remind about pending code reviews older than threshold
 - Schedule: 0 10 * * 1-5
 - URL: https://clawflows.com/automations/code-review-reminder/
 
-### Cold Email Personalizer
-Research targets, find decision-makers, generate hyper-personalized emails referencing their specific posts and pain points.
-- Requires: email, outreach, sales
+### cold-email-personalizer
+Research target accounts, extract likely pain points from public sources, and draft personalized outbound emails
+- Requires: web-search, web-fetch, llm, email
 - URL: https://clawflows.com/automations/cold-email-personalizer/
 
 ### comment-moderator
@@ -491,9 +493,10 @@ Find where users abandon onboarding, explain the likeliest friction point, and s
 - Schedule: 0 */4 * * *
 - URL: https://clawflows.com/automations/onboarding-dropoff-explainer/
 
-### Partnership Scout
-Find companies serving your audience (non-competitors), analyze for partnership signals, generate co-marketing pitches.
-- Requires: partnerships, co-marketing, b2b
+### partnership-scout
+Find complementary companies serving the same audience, assess partnership fit, and draft a co-marketing outreach angle
+- Requires: web-search, web-fetch, llm, email
+- Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/partnership-scout/
 
 ### performance-benchmark
