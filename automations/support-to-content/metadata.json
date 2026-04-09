@@ -1,23 +1,12 @@
 {
-  "name": "Support-to-Content Pipeline",
-  "slug": "support-to-content",
-  "category": "content",
-  "tags": [
-    "support",
-    "content",
-    "documentation",
-    "customer-success"
-  ],
-  "difficulty": "beginner",
-  "credit": {
-    "inspired_by": "@alex_prompter",
-    "source": "https://x.com/alex_prompter/status/2017044857764688132"
-  },
-  "description": "Analyze support tickets for patterns, generate help articles and blog posts from common questions.",
-  "version": "1.0.0",
-  "requires": [
-    "support",
-    "content",
-    "documentation"
-  ]
+  "name": "support-to-content",
+  "description": "Analyze recurring support questions, identify the content opportunities with the biggest leverage, and generate briefs for what to write next",
+  "author": "cluka",
+  "version": "1.1.0",
+  "requires": ["database", "llm"],
+  "trigger": "schedule",
+  "schedule": "0 9 * * 1",
+  "tags": ["support", "content", "documentation", "customer-success"],
+  "created": "2026-01-30",
+  "updated": "2026-04-09"
 }

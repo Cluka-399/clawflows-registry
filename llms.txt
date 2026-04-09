@@ -158,21 +158,21 @@ Detect competitor launches or updates, gather supporting context, and explain wh
 - Schedule: 0 */6 * * *
 - URL: https://clawflows.com/automations/competitor-launch-explainer/
 
-### Content Syndication Network
-Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.
-- Requires: content, syndication, cross-posting
-- URL: https://clawflows.com/automations/content-syndication/
-
 ### content-calendar
-Plan and schedule content across platforms with reminders
-- Requires: calendar, cron
+Turn a rough content backlog into a prioritized publishing plan for the next week and summarize what should ship first
+- Requires: database, llm
 - Schedule: 0 9 * * *
 - URL: https://clawflows.com/automations/content-calendar/
 
 ### content-repurposer
-Generate multi-platform content from single source
-- Requires: exec
+Transform a source piece into platform-specific content variants and summarize the strongest angles to publish
+- Requires: database, llm
 - URL: https://clawflows.com/automations/content-repurposer/
+
+### content-syndication
+Reframe a source article for multiple publishing targets, produce platform-specific drafts, and summarize the best distribution plan
+- Requires: web-fetch, llm, database
+- URL: https://clawflows.com/automations/content-syndication/
 
 ### content-to-anima
 Find trending ideas on Reddit/X, generate visual concepts with Gemini, then build on Anima
@@ -674,9 +674,10 @@ Monthly audit of active subscriptions, flag unused or duplicate services
 - Schedule: 0 9 1 * *
 - URL: https://clawflows.com/automations/subscription-auditor/
 
-### Support-to-Content Pipeline
-Analyze support tickets for patterns, generate help articles and blog posts from common questions.
-- Requires: support, content, documentation
+### support-to-content
+Analyze recurring support questions, identify the content opportunities with the biggest leverage, and generate briefs for what to write next
+- Requires: database, llm
+- Schedule: 0 9 * * 1
 - URL: https://clawflows.com/automations/support-to-content/
 
 ### task-prioritizer

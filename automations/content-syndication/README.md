@@ -1,26 +1,11 @@
-# Content Syndication Network
+# Content Syndication
 
-Write once, publish everywhere. Each version platform-native, not copy-paste garbage.
-
-## What It Does
-
-One blog post becomes:
-- Medium article (reformatted for their editor)
-- Dev.to post (with tags and series)
-- Hashnode article (with canonical URL)
-- LinkedIn article (professional angle)
-- Twitter thread (key points extracted)
-- Reddit posts to 5 subreddits (different angles each)
-
-Then monitors engagement on each platform.
-
-> "Each version is platform-native. Not copy-paste garbage. Actually optimized for how each platform works."
+Creates platform-native draft directions for a source article and stores the output for downstream publishing.
 
 ## Requirements
 
-- `browser` capability (for publishing)
-- Platform accounts configured
-
-## Credit
-
-[@alex_prompter](https://x.com/alex_prompter/status/2017044857764688132)
+| Capability | Example Skills |
+|------------|----------------|
+| `web-fetch` | runtime fetch |
+| `llm` | summarization/reasoning model |
+| `database` | runtime/local workflow state |

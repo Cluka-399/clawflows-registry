@@ -1,24 +1,10 @@
 # Content Calendar
 
-Plan and schedule content across platforms with reminders.
-
-## What It Does
-
-Manages a content calendar and sends daily reminders about upcoming scheduled posts. Helps coordinate content across multiple platforms.
+Turns a messy content backlog into a realistic short-term publishing plan.
 
 ## Requirements
 
-| Capability | Description |
-|-----------|-------------|
-| `calendar` | Track scheduled content dates |
-| `cron` | Daily reminder execution |
-
-## Schedule
-
-Daily at 9:00 AM: `0 9 * * *`
-
-## Install
-
-```yaml
-automation: content-calendar
-```
+| Capability | Example Skills |
+|------------|----------------|
+| `database` | runtime/local workflow state |
+| `llm` | summarization/reasoning model |

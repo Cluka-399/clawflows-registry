@@ -1,10 +1,41 @@
-name: Content Calendar
-description: Plan and schedule content across platforms with reminders
+name: content-calendar
+description: Turn a rough content backlog into a prioritized publishing plan for the next week and summarize what should ship first
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - file_system
-  - notifications
-tags:
-  - social
-  - content
+  - capability: database
+  - capability: llm
+
+trigger:
+  schedule: "0 9 * * *"
+
+config:
+  source:
+    description: "Backlog source identifier"
+    default: "content-backlog"
+
+  horizon_days:
+    description: "Planning window"
+    default: 7
+
+steps:
+  - name: load-backlog
+    capability: database
+    method: listItems
+    args:
+      source: "${config.source}"
+      limit: "50"
+    capture: backlog
+
+  - name: build-calendar
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Using this content backlog, create a practical content plan for the next ${config.horizon_days} days. Prioritize the highest-leverage items, suggest a reasonable publishing order, and call out what should be cut or delayed."
+      input: "${backlog}"
+    capture: plan
+
+  - name: notify
+    action: notify
+    message: "🗓️ Content Calendar\n\n${plan}"

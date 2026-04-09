@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Content Syndication Network — ClawFlows</title>
+  <title>Content Syndication — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,15 +139,15 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>Content Syndication Network</h1>
-        <p class="description">Write one blog post, get it published across Medium, Dev.to, Hashnode, LinkedIn, Twitter threads, and Reddit - each version platform-optimized.</p>
+        <h1>Content Syndication</h1>
+        <p class="description">Reframe a source article for multiple publishing targets, produce platform-specific drafts, and summarize the best distribution plan</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
-          <span>schedule 0 9 * * *</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
+          
           <span>Lobster workflow available</span>
         </div>
-        <div class="pill-row"><span class="tag">Content</span></div>
+        
         <div class="tag-row"><span class="pill">content</span><span class="pill">syndication</span><span class="pill">cross-posting</span><span class="pill">marketing</span></div>
       </section>
       <aside class="hero-side">
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install content-syndication</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">browser</span><span class="tag">web_fetch</span><span class="tag">file_system</span><span class="tag">content</span><span class="tag">syndication</span><span class="tag">cross-posting</span>
+          <span class="tag">web-fetch</span><span class="tag">llm</span><span class="tag">database</span>
         </div>
         
       </aside>
@@ -164,26 +164,23 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <p>One blog post becomes:</p>
-<ul><li>Medium article (reformatted for their editor)</li><li>Dev.to post (with tags and series)</li><li>Hashnode article (with canonical URL)</li><li>LinkedIn article (professional angle)</li><li>Twitter thread (key points extracted)</li><li>Reddit posts to 5 subreddits (different angles each)</li></ul>
-<p>Then monitors engagement on each platform.</p>
-<p>> "Each version is platform-native. Not copy-paste garbage. Actually optimized for how each platform works."</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. read_source</div><div class="step-detail">file_read</div></div><div class="step"><div class="step-title">2. transform_medium</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">3. Add pull quotes</div></div><div class="step"><div class="step-title">4. Shorter paragraphs</div></div><div class="step"><div class="step-title">5. Medium-style headers</div></div><div class="step"><div class="step-title">6. transform_devto</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">7. Add front matter with tags</div></div><div class="step"><div class="step-title">8. Code blocks with syntax highlighting</div></div><div class="step"><div class="step-title">9. Add series tag if applicable</div></div><div class="step"><div class="step-title">10. transform_hashnode</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">11. Add canonical URL</div></div><div class="step"><div class="step-title">12. Hashnode-specific tags</div></div><div class="step"><div class="step-title">13. transform_linkedin</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">14. Professional angle</div></div><div class="step"><div class="step-title">15. Business value focus</div></div><div class="step"><div class="step-title">16. Shorter, punchier</div></div><div class="step"><div class="step-title">17. transform_twitter</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">18. Hook in tweet 1</div></div><div class="step"><div class="step-title">19. Key points as numbered tweets</div></div><div class="step"><div class="step-title">20. Call to action with link at end</div></div><div class="step"><div class="step-title">21. Max 15 tweets</div></div><div class="step"><div class="step-title">22. transform_reddit</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">23. Match subreddit tone</div></div><div class="step"><div class="step-title">24. Different hook per community</div></div><div class="step"><div class="step-title">25. No self-promo feel</div></div><div class="step"><div class="step-title">26. publish_all</div><div class="step-detail">browser</div></div><div class="step"><div class="step-title">27. login_if_needed</div></div><div class="step"><div class="step-title">28. create_post</div></div><div class="step"><div class="step-title">29. step</div></div><div class="step"><div class="step-title">30. step</div></div><div class="step"><div class="step-title">31. publish</div></div><div class="step"><div class="step-title">32. track_engagement</div><div class="step-detail">cron_add</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-source-article</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">2. generate-platform-versions</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. save-drafts</div><div class="step-detail">database</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">source_post_path</div><div class="kv-meta">Path to your original blog post (markdown) · required</div></div><div class="kv"><div class="kv-name">canonical_url</div><div class="kv-meta">Your original blog URL for SEO · required</div></div><div class="kv"><div class="kv-name">target_platforms</div><div class="kv-meta">No description yet. · default: [&quot;medium&quot;, &quot;devto&quot;, &quot;hashnode&quot;, &quot;linkedin&quot;, &quot;twitter&quot;, &quot;reddit&quot;]</div></div><div class="kv"><div class="kv-name">reddit_subreddits</div><div class="kv-meta">No description yet. · default: []</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">source_url</div><div class="kv-meta">Canonical source article URL · default: https://example.com/post</div></div><div class="kv"><div class="kv-name">target_platforms</div><div class="kv-meta">Platforms to syndicate across</div></div></div>
         
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
-        <p><strong>Cron:</strong> <code>0 9 * * *</code></p>
+        <p>No schedule declared. This may be manual-only.</p>
         
         
       </section>
@@ -348,16 +345,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Write once, publish everywhere. Each version platform-native, not copy-paste garbage.</p>
-<h3>What It Does</h3>
-<p>One blog post becomes:</p>
-<ul><li>Medium article (reformatted for their editor)</li><li>Dev.to post (with tags and series)</li><li>Hashnode article (with canonical URL)</li><li>LinkedIn article (professional angle)</li><li>Twitter thread (key points extracted)</li><li>Reddit posts to 5 subreddits (different angles each)</li></ul>
-<p>Then monitors engagement on each platform.</p>
-<p>> "Each version is platform-native. Not copy-paste garbage. Actually optimized for how each platform works."</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Creates platform-native draft directions for a source article and stores the output for downstream publishing.</p>
 <h3>Requirements</h3>
-<ul><li>`browser` capability (for publishing)</li><li>Platform accounts configured</li></ul>
-<h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr><tr><td>`database`</td><td>runtime/local workflow state</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

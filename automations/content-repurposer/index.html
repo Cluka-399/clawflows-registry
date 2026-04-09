@@ -140,22 +140,22 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Content Repurposer</h1>
-        <p class="description">Generate multi-platform content from single source</p>
+        <p class="description">Transform a source piece into platform-specific content variants and summarize the strongest angles to publish</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
           
           <span>Lobster workflow available</span>
         </div>
         
-        <div class="tag-row"><span class="pill">social</span><span class="pill">content</span></div>
+        <div class="tag-row"><span class="pill">social</span><span class="pill">content</span><span class="pill">repurposing</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install content-repurposer</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">file_system</span><span class="tag">exec</span>
+          <span class="tag">database</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,18 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <p>Takes a piece of content (blog post, article, thread) and repurposes it into formats suitable for multiple platforms — tweets, LinkedIn posts, email newsletters, etc.</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. read-source</div></div><div class="step"><div class="step-title">2. extract-structure</div></div><div class="step"><div class="step-title">3. generate-variants</div></div><div class="step"><div class="step-title">4. repurpose</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-source</div><div class="step-detail">database</div></div><div class="step"><div class="step-title">2. repurpose-content</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">source_file</div><div class="kv-meta">Path to source content file (markdown)</div></div><div class="kv"><div class="kv-name">platforms</div><div class="kv-meta">Comma-separated target platforms · default: twitter,linkedin,blog-summary</div></div><div class="kv"><div class="kv-name">max_tweet_chars</div><div class="kv-meta">Max characters per tweet · default: 280</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">source</div><div class="kv-meta">Source content identifier or stored draft id · default: latest-post</div></div><div class="kv"><div class="kv-name">target_platforms</div><div class="kv-meta">Platforms to repurpose for</div></div></div>
         
       </section>
       <section class="panel">
@@ -306,15 +306,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Generate multi-platform content from a single source.</p>
-<h3>What It Does</h3>
-<p>Takes a piece of content (blog post, article, thread) and repurposes it into formats suitable for multiple platforms — tweets, LinkedIn posts, email newsletters, etc.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turns one source piece into platform-specific content directions without pretending every channel wants the same post.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Description</th></tr></thead><tbody><tr><td>`exec`</td><td>File system access for reading/writing content</td></tr></tbody></table></div>
-<h3>Trigger</h3>
-<p>Manual — run on demand when you have content to repurpose.</p>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="yaml">automation: content-repurposer</code></pre></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`database`</td><td>runtime/local workflow state</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

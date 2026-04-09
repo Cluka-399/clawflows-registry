@@ -140,22 +140,22 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Content Calendar</h1>
-        <p class="description">Plan and schedule content across platforms with reminders</p>
+        <p class="description">Turn a rough content backlog into a prioritized publishing plan for the next week and summarize what should ship first</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 9 * * *</span>
           <span>Lobster workflow available</span>
         </div>
         
-        <div class="tag-row"><span class="pill">social</span><span class="pill">content</span></div>
+        <div class="tag-row"><span class="pill">social</span><span class="pill">content</span><span class="pill">planning</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install content-calendar</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">file_system</span><span class="tag">notifications</span><span class="tag">calendar</span><span class="tag">cron</span>
+          <span class="tag">database</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,24 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <p>Manages a content calendar and sends daily reminders about upcoming scheduled posts. Helps coordinate content across multiple platforms.</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. ensure-calendar</div></div><div class="step"><div class="step-title">2. find-upcoming</div></div><div class="step"><div class="step-title">3. group-by-platform</div></div><div class="step"><div class="step-title">4. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-backlog</div><div class="step-detail">database</div></div><div class="step"><div class="step-title">2. build-calendar</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">calendar_file</div><div class="kv-meta">Path to JSON file with content calendar entries · default: /tmp/clawflows-content-calendar.json</div></div><div class="kv"><div class="kv-name">lookahead_days</div><div class="kv-meta">Number of days ahead to check for upcoming content · default: 7</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">source</div><div class="kv-meta">Backlog source identifier · default: content-backlog</div></div><div class="kv"><div class="kv-name">horizon_days</div><div class="kv-meta">Planning window · default: 7</div></div></div>
         
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 9 * * *</code></p>
         
-        <p>Daily at 9:00 AM: <code>0 9 * * *</code></p>
         
       </section>
     </div>
@@ -266,15 +266,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Plan and schedule content across platforms with reminders.</p>
-<h3>What It Does</h3>
-<p>Manages a content calendar and sends daily reminders about upcoming scheduled posts. Helps coordinate content across multiple platforms.</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turns a messy content backlog into a realistic short-term publishing plan.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Description</th></tr></thead><tbody><tr><td>`calendar`</td><td>Track scheduled content dates</td></tr><tr><td>`cron`</td><td>Daily reminder execution</td></tr></tbody></table></div>
-<h3>Schedule</h3>
-<p>Daily at 9:00 AM: <code>0 9 * * *</code></p>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="yaml">automation: content-calendar</code></pre></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`database`</td><td>runtime/local workflow state</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

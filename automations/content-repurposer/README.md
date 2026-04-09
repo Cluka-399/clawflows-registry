@@ -1,23 +1,10 @@
 # Content Repurposer
 
-Generate multi-platform content from a single source.
-
-## What It Does
-
-Takes a piece of content (blog post, article, thread) and repurposes it into formats suitable for multiple platforms — tweets, LinkedIn posts, email newsletters, etc.
+Turns one source piece into platform-specific content directions without pretending every channel wants the same post.
 
 ## Requirements
 
-| Capability | Description |
-|-----------|-------------|
-| `exec` | File system access for reading/writing content |
-
-## Trigger
-
-Manual — run on demand when you have content to repurpose.
-
-## Install
-
-```yaml
-automation: content-repurposer
-```
+| Capability | Example Skills |
+|------------|----------------|
+| `database` | runtime/local workflow state |
+| `llm` | summarization/reasoning model |

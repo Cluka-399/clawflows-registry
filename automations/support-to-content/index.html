@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support-to-Content Pipeline — ClawFlows</title>
+  <title>Support To Content — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,15 +139,15 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>Support-to-Content Pipeline</h1>
-        <p class="description">Analyze support tickets for patterns, generate help articles and blog posts from common questions.</p>
+        <h1>Support To Content</h1>
+        <p class="description">Analyze recurring support questions, identify the content opportunities with the biggest leverage, and generate briefs for what to write next</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
           <span>schedule 0 9 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
-        <div class="pill-row"><span class="tag">Content</span></div>
+        
         <div class="tag-row"><span class="pill">support</span><span class="pill">content</span><span class="pill">documentation</span><span class="pill">customer-success</span></div>
       </section>
       <aside class="hero-side">
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install support-to-content</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">file_system</span><span class="tag">messaging</span><span class="tag">support</span><span class="tag">content</span><span class="tag">documentation</span>
+          <span class="tag">database</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,19 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ul><li>Analyzes support tickets for patterns</li><li>Identifies top questions and frustrations</li><li>Generates content briefs for help articles and blog posts</li><li>Prioritizes by support load reduction potential</li></ul>
-<p>> "40% of tickets mention confusion about X feature. Here's a tutorial draft that addresses the top 5 misunderstandings."</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. load_tickets</div><div class="step-detail">file_read</div></div><div class="step"><div class="step-title">2. analyze_patterns</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. Most common questions (with count)</div></div><div class="step"><div class="step-title">4. Most common frustrations</div></div><div class="step"><div class="step-title">5. Feature confusion patterns</div></div><div class="step"><div class="step-title">6. Recurring technical issues</div></div><div class="step"><div class="step-title">7. prioritize_content</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">8. Frequency (how often asked)</div></div><div class="step"><div class="step-title">9. Impact (reduces support load)</div></div><div class="step"><div class="step-title">10. SEO potential (others searching this?)</div></div><div class="step"><div class="step-title">11. generate_briefs</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. Help article (if how-to)</div></div><div class="step"><div class="step-title">13. Blog post (if conceptual)</div></div><div class="step"><div class="step-title">14. Product improvement (if UX issue)</div></div><div class="step"><div class="step-title">15. save_briefs</div><div class="step-detail">file_write</div></div><div class="step"><div class="step-title">16. alert_summary</div><div class="step-detail">message</div></div><div class="step"><div class="step-title">17. {{topic}} ({{count}} tickets)</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. load-support-data</div><div class="step-detail">database</div></div><div class="step"><div class="step-title">2. analyze-content-opportunities</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">support_data_path</div><div class="kv-meta">Path to support tickets export (CSV/JSON) · required</div></div><div class="kv"><div class="kv-name">min_occurrences</div><div class="kv-meta">Minimum times a question must appear · default: 3</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">source</div><div class="kv-meta">Support export source identifier · default: support-tickets</div></div><div class="kv"><div class="kv-name">limit</div><div class="kv-meta">How many records to inspect · default: 100</div></div></div>
         
       </section>
       <section class="panel">
@@ -481,14 +480,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turn support headaches into content wins.</p>
-<h3>What It Does</h3>
-<ul><li>Analyzes support tickets for patterns</li><li>Identifies top questions and frustrations</li><li>Generates content briefs for help articles and blog posts</li><li>Prioritizes by support load reduction potential</li></ul>
-<p>> "40% of tickets mention confusion about X feature. Here's a tutorial draft that addresses the top 5 misunderstandings."</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Turns recurring support pain into a ranked content brief list instead of letting the same questions repeat forever.</p>
 <h3>Requirements</h3>
-<ul><li>`file_system`, `messaging` capabilities</li><li>Support ticket export (CSV/JSON)</li></ul>
-<h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`database`</td><td>runtime/local workflow state</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

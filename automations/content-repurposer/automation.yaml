@@ -1,9 +1,44 @@
-name: Content Repurposer
-description: Generate multi-platform content from single source
+name: content-repurposer
+description: Transform a source piece into platform-specific content variants and summarize the strongest angles to publish
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - file_system
-tags:
-  - social
-  - content
+  - capability: database
+  - capability: llm
+
+trigger:
+  manual: true
+
+config:
+  source:
+    description: "Source content identifier or stored draft id"
+    default: "latest-post"
+
+  target_platforms:
+    description: "Platforms to repurpose for"
+    default:
+      - "x"
+      - "linkedin"
+      - "newsletter"
+
+steps:
+  - name: load-source
+    capability: database
+    method: listItems
+    args:
+      source: "${config.source}"
+      limit: "1"
+    capture: source_content
+
+  - name: repurpose-content
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Repurpose this source content for the requested platforms. Produce the strongest angle for each target platform, explain how the format should change, and keep the output distinct rather than copy-paste. Platforms: ${config.target_platforms.join(', ')}."
+      input: "${source_content}"
+    capture: repurposed
+
+  - name: notify
+    action: notify
+    message: "♻️ Content Repurposer\n\n${repurposed}"
