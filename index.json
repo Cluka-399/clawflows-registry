@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-09T06:24:44.246Z",
+  "generated": "2026-04-09T06:27:48.872Z",
   "version": "1.0.0",
   "count": 129,
   "automations": [
@@ -154,11 +154,12 @@
     },
     {
       "name": "api-health-monitor",
-      "description": "Cron-friendly endpoint health checker with response time tracking and failure alerts",
+      "description": "Check a health endpoint on a schedule, flag obvious failures or slowness, and generate a concise operator summary",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "exec"
+        "web-fetch",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "*/15 * * * *",
@@ -169,7 +170,7 @@
         "alerts"
       ],
       "created": "2026-04-07",
-      "updated": "2026-04-07",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/api-health-monitor/"
     },
@@ -2412,12 +2413,12 @@
     },
     {
       "name": "security-advisory-monitor",
-      "description": "Monitor security advisories for your tech stack",
+      "description": "Search for security advisories relevant to your stack, surface the highest-risk findings, and summarize what needs attention",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
         "web-search",
-        "exec"
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 9 * * *",
@@ -2427,7 +2428,7 @@
         "monitoring"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/security-advisory-monitor/"
     },
@@ -2639,11 +2640,12 @@
     },
     {
       "name": "stock-watchlist-alert",
-      "description": "Monitor stock prices and alert on significant moves or target prices",
+      "description": "Check a stock watchlist for notable moves or target hits, then summarize what actually matters",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "web-search"
+        "web-search",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 16 * * 1-5",
@@ -2653,7 +2655,7 @@
         "stocks"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/stock-watchlist-alert/"
     },
@@ -2786,11 +2788,12 @@
     },
     {
       "name": "trending-topic-alert",
-      "description": "Alert when topics in your niche start trending",
+      "description": "Search for emerging topics in your niche, flag what looks like real momentum, and summarize what to jump on",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "web-search"
+        "web-search",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 */4 * * *",
@@ -2800,7 +2803,7 @@
         "trends"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/trending-topic-alert/"
     },

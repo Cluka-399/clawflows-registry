@@ -43,8 +43,8 @@ Comprehensive API health monitoring with endpoint validation
 - URL: https://clawflows.com/automations/api-health-check/
 
 ### api-health-monitor
-Cron-friendly endpoint health checker with response time tracking and failure alerts
-- Requires: exec
+Check a health endpoint on a schedule, flag obvious failures or slowness, and generate a concise operator summary
+- Requires: web-fetch, llm
 - Schedule: */15 * * * *
 - URL: https://clawflows.com/automations/api-health-monitor/
 
@@ -611,8 +611,8 @@ Track progress toward savings goals with milestone celebrations
 - URL: https://clawflows.com/automations/savings-goal-tracker/
 
 ### security-advisory-monitor
-Monitor security advisories for your tech stack
-- Requires: web-search, exec
+Search for security advisories relevant to your stack, surface the highest-risk findings, and summarize what needs attention
+- Requires: web-search, llm
 - Schedule: 0 9 * * *
 - URL: https://clawflows.com/automations/security-advisory-monitor/
 
@@ -663,8 +663,8 @@ Auto-generate daily standup notes from yesterday's activity
 - URL: https://clawflows.com/automations/standup-notes/
 
 ### stock-watchlist-alert
-Monitor stock prices and alert on significant moves or target prices
-- Requires: web-search
+Check a stock watchlist for notable moves or target hits, then summarize what actually matters
+- Requires: web-search, llm
 - Schedule: 0 16 * * 1-5
 - URL: https://clawflows.com/automations/stock-watchlist-alert/
 
@@ -704,8 +704,8 @@ Analyze calendar patterns and suggest optimal meeting-free blocks
 - URL: https://clawflows.com/automations/time-block-optimizer/
 
 ### trending-topic-alert
-Alert when topics in your niche start trending
-- Requires: web-search
+Search for emerging topics in your niche, flag what looks like real momentum, and summarize what to jump on
+- Requires: web-search, llm
 - Schedule: 0 */4 * * *
 - URL: https://clawflows.com/automations/trending-topic-alert/
 

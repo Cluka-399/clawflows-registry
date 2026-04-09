@@ -1,10 +1,38 @@
-name: Trending Topic Alert
-description: Alert when topics in your niche start trending
+name: trending-topic-alert
+description: Search for emerging topics in your niche, flag what looks like real momentum, and summarize what to jump on
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - web_search
-  - notifications
-tags:
-  - social
-  - marketing
+  - capability: web-search
+  - capability: llm
+
+trigger:
+  schedule: "0 */4 * * *"
+
+config:
+  topics:
+    description: "Topics or niches to monitor"
+    default:
+      - "ai design"
+      - "vibe coding"
+
+steps:
+  - name: search-trends
+    capability: web-search
+    method: search
+    args:
+      query: "${config.topics.join(' OR ')} trending news discussion"
+    capture: trend_results
+
+  - name: summarize-trends
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these trend search results. Identify which topics appear to be gaining real traction, what the likely angle is, and whether this looks worth responding to immediately or just watching."
+      input: "${{ trend_results, topics: config.topics }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🔥 Trending Topic Alert\n\n${summary}"

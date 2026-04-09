@@ -1,12 +1,12 @@
 {
   "name": "api-health-monitor",
-  "description": "Cron-friendly endpoint health checker with response time tracking and failure alerts",
+  "description": "Check a health endpoint on a schedule, flag obvious failures or slowness, and generate a concise operator summary",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["exec"],
+  "version": "1.1.0",
+  "requires": ["web-fetch", "llm"],
   "trigger": "schedule",
   "schedule": "*/15 * * * *",
   "tags": ["api", "monitoring", "devops", "alerts"],
   "created": "2026-04-07",
-  "updated": "2026-04-07"
+  "updated": "2026-04-09"
 }

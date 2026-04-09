@@ -140,11 +140,11 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Security Advisory Monitor</h1>
-        <p class="description">Monitor security advisories for your tech stack</p>
+        <p class="description">Search for security advisories relevant to your stack, surface the highest-risk findings, and summarize what needs attention</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 9 * * *</span>
           <span>Lobster workflow available</span>
         </div>
         
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install security-advisory-monitor</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_fetch</span><span class="tag">notifications</span><span class="tag">web-search</span><span class="tag">exec</span>
+          <span class="tag">web-search</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,28 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Fetches advisories** - Checks security feeds for your configured technologies</li><li>**Filters relevance** - Matches against your declared tech stack</li><li>**Notifies** - Alerts on critical or high-severity findings</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. load-state</div></div><div class="step"><div class="step-title">2. .ghsa_id,</div></div><div class="step"><div class="step-title">3. find-new</div></div><div class="step"><div class="step-title">4. save-state</div></div><div class="step"><div class="step-title">5. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. search-advisories</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. summarize-risk</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">ecosystem</div><div class="kv-meta">Package ecosystem: npm, pip, go, rubygems, nuget, maven, rust · default: npm</div></div><div class="kv"><div class="kv-name">severity</div><div class="kv-meta">Minimum severity: low, medium, high, critical · default: high</div></div><div class="kv"><div class="kv-name">packages</div><div class="kv-meta">Comma-separated package names to filter (empty = all in ecosystem)</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">No description yet. · default: /tmp/clawflows-secadvisory-state.json</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  tech_stack: &quot;node,python,docker&quot;  # Technologies to monitor
-  severity: &quot;critical,high&quot;          # Minimum severity</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">tech_stack</div><div class="kv-meta">Technologies to monitor</div></div><div class="kv"><div class="kv-name">min_severity</div><div class="kv-meta">Minimum severity to care about · default: high</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 9 * * *</code></p>
         
-        <p>Daily at 9:00 AM.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 9 * * *&quot;</code></pre>
         
       </section>
     </div>
@@ -314,21 +310,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Monitor security advisories (CVEs, GitHub advisories) relevant to your tech stack and get notified about critical vulnerabilities.</p>
-<h3>What It Does</h3>
-<ol><li>**Fetches advisories** - Checks security feeds for your configured technologies</li><li>**Filters relevance** - Matches against your declared tech stack</li><li>**Notifies** - Alerts on critical or high-severity findings</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Searches for relevant security advisories and distills them into a short operator brief.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>web-search</td></tr><tr><td>`exec`</td><td>shell</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">config:
-  tech_stack: &quot;node,python,docker&quot;  # Technologies to monitor
-  severity: &quot;critical,high&quot;          # Minimum severity</code></pre>
-<h3>Schedule</h3>
-<p>Daily at 9:00 AM.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 9 * * *&quot;</code></pre>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="bash">openclaw install security-advisory-monitor</code></pre></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

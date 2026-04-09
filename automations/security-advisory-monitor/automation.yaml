@@ -1,10 +1,43 @@
-name: Security Advisory Monitor
-description: Monitor security advisories for your tech stack
+name: security-advisory-monitor
+description: Search for security advisories relevant to your stack, surface the highest-risk findings, and summarize what needs attention
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - web_fetch
-  - notifications
-tags:
-  - developer
-  - security
+  - capability: web-search
+  - capability: llm
+
+trigger:
+  schedule: "0 9 * * *"
+
+config:
+  tech_stack:
+    description: "Technologies to monitor"
+    default:
+      - "node"
+      - "python"
+      - "docker"
+
+  min_severity:
+    description: "Minimum severity to care about"
+    default: "high"
+
+steps:
+  - name: search-advisories
+    capability: web-search
+    method: search
+    args:
+      query: "${config.tech_stack.join(' OR ')} security advisory CVE ${config.min_severity}"
+    capture: advisories
+
+  - name: summarize-risk
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these security advisory search results. Identify the findings most likely relevant to the declared tech stack, prioritize what looks most urgent, and say what should be verified or patched first."
+      input: "${{ advisories, tech_stack: config.tech_stack, min_severity: config.min_severity }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🔐 Security Advisory Monitor\n\n${summary}"

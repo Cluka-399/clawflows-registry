@@ -140,11 +140,11 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Stock Watchlist Alert</h1>
-        <p class="description">Monitor stock prices and alert on significant moves or target prices</p>
+        <p class="description">Check a stock watchlist for notable moves or target hits, then summarize what actually matters</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 16 * * 1-5</span>
           <span>Lobster workflow available</span>
         </div>
         
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install stock-watchlist-alert</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_fetch</span><span class="tag">notifications</span><span class="tag">web-search</span>
+          <span class="tag">web-search</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,29 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Fetches prices** - Checks current prices for your watchlist</li><li>**Detects moves** - Identifies significant daily changes</li><li>**Target alerts** - Notifies when stocks hit your price targets</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. fetch-prices</div></div><div class="step"><div class="step-title">2. load-state</div></div><div class="step"><div class="step-title">3. analyze</div></div><div class="step"><div class="step-title">4. save-state</div></div><div class="step"><div class="step-title">5. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. search-price-context</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. summarize-moves</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">symbols</div><div class="kv-meta">Comma-separated stock symbols to watch · default: AAPL,MSFT,GOOG</div></div><div class="kv"><div class="kv-name">alert_threshold</div><div class="kv-meta">Alert if any stock moves more than this percentage since last check · default: 5</div></div><div class="kv"><div class="kv-name">state_file</div><div class="kv-meta">Path to state file for tracking last known prices · default: /tmp/clawflows-stock-watchlist-state.json</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  symbols: &quot;AAPL,TSLA,NVDA&quot;       # Comma-separated tickers
-  threshold_pct: 3                  # Alert on moves &gt; this %
-  targets: &quot;AAPL:200,TSLA:300&quot;     # Optional price targets</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">symbols</div><div class="kv-meta">Ticker symbols to watch</div></div><div class="kv"><div class="kv-name">threshold_pct</div><div class="kv-meta">Alert on moves above this percent · default: 3</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 16 * * 1-5</code></p>
         
-        <p>Weekdays at market close (4:00 PM).</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 16 * * 1-5&quot;</code></pre>
         
       </section>
     </div>
@@ -353,22 +348,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Monitor stock prices and get alerted on significant moves or when target prices are hit.</p>
-<h3>What It Does</h3>
-<ol><li>**Fetches prices** - Checks current prices for your watchlist</li><li>**Detects moves** - Identifies significant daily changes</li><li>**Target alerts** - Notifies when stocks hit your price targets</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Watches a stock list and turns search results into a quick summary of the moves worth caring about.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>web-search</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">config:
-  symbols: &quot;AAPL,TSLA,NVDA&quot;       # Comma-separated tickers
-  threshold_pct: 3                  # Alert on moves &gt; this %
-  targets: &quot;AAPL:200,TSLA:300&quot;     # Optional price targets</code></pre>
-<h3>Schedule</h3>
-<p>Weekdays at market close (4:00 PM).</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 16 * * 1-5&quot;</code></pre>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="bash">openclaw install stock-watchlist-alert</code></pre></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

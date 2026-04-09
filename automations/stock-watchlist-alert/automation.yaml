@@ -1,10 +1,43 @@
-name: Stock Watchlist Alert
-description: Monitor stock prices and alert on significant moves or target prices
+name: stock-watchlist-alert
+description: Check a stock watchlist for notable moves or target hits, then summarize what actually matters
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - web_fetch
-  - notifications
-tags:
-  - finance
-  - investing
+  - capability: web-search
+  - capability: llm
+
+trigger:
+  schedule: "0 16 * * 1-5"
+
+config:
+  symbols:
+    description: "Ticker symbols to watch"
+    default:
+      - "AAPL"
+      - "TSLA"
+      - "NVDA"
+
+  threshold_pct:
+    description: "Alert on moves above this percent"
+    default: 3
+
+steps:
+  - name: search-price-context
+    capability: web-search
+    method: search
+    args:
+      query: "${config.symbols.join(' OR ')} stock price today percent change"
+    capture: watchlist_data
+
+  - name: summarize-moves
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these stock results. Identify which symbols appear to have moved the most, whether any move looks notable enough to alert on relative to the configured threshold, and what the operator should pay attention to first. Threshold percent: ${config.threshold_pct}."
+      input: "${{ watchlist_data, symbols: config.symbols, threshold_pct: config.threshold_pct }}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "📈 Stock Watchlist Alert\n\n${summary}"

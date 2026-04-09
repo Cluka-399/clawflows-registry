@@ -1,12 +1,12 @@
 {
   "name": "security-advisory-monitor",
-  "description": "Monitor security advisories for your tech stack",
+  "description": "Search for security advisories relevant to your stack, surface the highest-risk findings, and summarize what needs attention",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["web-search", "exec"],
+  "version": "1.1.0",
+  "requires": ["web-search", "llm"],
   "trigger": "schedule",
   "schedule": "0 9 * * *",
   "tags": ["developer", "security", "monitoring"],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-09"
 }

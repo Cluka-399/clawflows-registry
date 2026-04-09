@@ -1,11 +1,44 @@
-name: API Health Monitor
-description: Cron-friendly endpoint health checker with response time tracking and failure alerts
+name: api-health-monitor
+description: Check a health endpoint on a schedule, flag obvious failures or slowness, and generate a concise operator summary
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - curl
-  - jq
-tags:
-  - monitoring
-  - devops
-  - api
+  - capability: web-fetch
+  - capability: llm
+
+trigger:
+  schedule: "*/15 * * * *"
+
+config:
+  url:
+    description: "Health endpoint URL"
+    default: "https://example.com/health"
+
+  timeout_seconds:
+    description: "Request timeout"
+    default: 10
+
+  slow_threshold_ms:
+    description: "Latency considered slow"
+    default: 2000
+
+steps:
+  - name: fetch-health-endpoint
+    capability: web-fetch
+    method: fetch
+    args:
+      url: "${config.url}"
+    capture: health_response
+
+  - name: summarize-health
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Assess this API health response. Say whether it looks healthy, degraded, or broken, whether latency appears concerning relative to the configured slow threshold, and what the operator should inspect first if there is a problem. Slow threshold in ms: ${config.slow_threshold_ms}."
+      input: "${health_response}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🩺 API Health Monitor\n\n${summary}"

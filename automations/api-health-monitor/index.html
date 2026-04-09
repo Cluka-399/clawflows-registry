@@ -140,11 +140,11 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Api Health Monitor</h1>
-        <p class="description">Cron-friendly endpoint health checker with response time tracking and failure alerts</p>
+        <p class="description">Check a health endpoint on a schedule, flag obvious failures or slowness, and generate a concise operator summary</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule */15 * * * *</span>
           <span>Lobster workflow available</span>
         </div>
         
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install api-health-monitor</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">curl</span><span class="tag">jq</span><span class="tag">exec</span>
+          <span class="tag">web-fetch</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,38 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>Loads a JSON file of endpoints to monitor</li><li>Sends HTTP checks with per-endpoint timeout and expected status</li><li>Measures response time for every check</li><li>Flags slow endpoints separately from hard failures</li><li>Outputs both a human-readable report and structured JSON for downstream alerts</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. load-endpoints</div></div><div class="step"><div class="step-title">2. ping-endpoints</div></div><div class="step"><div class="step-title">3. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-health-endpoint</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">2. summarize-health</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">endpoints_file</div><div class="kv-meta">Path to JSON file with endpoints array [{name, url, method, expected_status, timeout_seconds}]</div></div><div class="kv"><div class="kv-name">slow_threshold_ms</div><div class="kv-meta">Response time threshold in ms to flag as slow · default: 2000</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">args:
-  endpoints_file: &quot;/path/to/endpoints.json&quot;
-  slow_threshold_ms: &quot;2000&quot;</code></pre>
-<p>Example endpoints file:</p>
-<pre class="code-block"><code data-lang="json">[
-  {
-    &quot;name&quot;: &quot;Main API&quot;,
-    &quot;url&quot;: &quot;https://api.example.com/health&quot;,
-    &quot;method&quot;: &quot;GET&quot;,
-    &quot;expected_status&quot;: 200,
-    &quot;timeout_seconds&quot;: 10
-  }
-]</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">url</div><div class="kv-meta">Health endpoint URL · default: https://example.com/health</div></div><div class="kv"><div class="kv-name">timeout_seconds</div><div class="kv-meta">Request timeout · default: 10</div></div><div class="kv"><div class="kv-name">slow_threshold_ms</div><div class="kv-meta">Latency considered slow · default: 2000</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
-        
+        <p><strong>Cron:</strong> <code>*/15 * * * *</code></p>
         <p>Default: every 15 minutes.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;*/15 * * * *&quot;</code></pre>
         
       </section>
     </div>
@@ -311,33 +297,11 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Check a list of endpoints on a schedule, measure latency, and flag failures before they turn into user pain.</p>
-<h3>What It Does</h3>
-<ol><li>Loads a JSON file of endpoints to monitor</li><li>Sends HTTP checks with per-endpoint timeout and expected status</li><li>Measures response time for every check</li><li>Flags slow endpoints separately from hard failures</li><li>Outputs both a human-readable report and structured JSON for downstream alerts</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Checks a health endpoint on a schedule and turns the result into a fast human-readable operator summary.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>shell/http tooling</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">args:
-  endpoints_file: &quot;/path/to/endpoints.json&quot;
-  slow_threshold_ms: &quot;2000&quot;</code></pre>
-<p>Example endpoints file:</p>
-<pre class="code-block"><code data-lang="json">[
-  {
-    &quot;name&quot;: &quot;Main API&quot;,
-    &quot;url&quot;: &quot;https://api.example.com/health&quot;,
-    &quot;method&quot;: &quot;GET&quot;,
-    &quot;expected_status&quot;: 200,
-    &quot;timeout_seconds&quot;: 10
-  }
-]</code></pre>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div>
 <h3>Schedule</h3>
-<p>Default: every 15 minutes.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;*/15 * * * *&quot;</code></pre>
-<h3>Output</h3>
-<ul><li>Summary text for humans</li><li>Structured JSON with pass/fail, latency, and alert status</li></ul>
-<h3>Author</h3>
-<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+<p>Default: every 15 minutes.</p></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

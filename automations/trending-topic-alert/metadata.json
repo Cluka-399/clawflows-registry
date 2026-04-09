@@ -1,12 +1,12 @@
 {
   "name": "trending-topic-alert",
-  "description": "Alert when topics in your niche start trending",
+  "description": "Search for emerging topics in your niche, flag what looks like real momentum, and summarize what to jump on",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["web-search"],
+  "version": "1.1.0",
+  "requires": ["web-search", "llm"],
   "trigger": "schedule",
   "schedule": "0 */4 * * *",
   "tags": ["social", "marketing", "trends"],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-09"
 }
