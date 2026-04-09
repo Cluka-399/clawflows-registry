@@ -109,3 +109,11 @@ jobs:
           
           console.log(`✅ All ${dirs.length} automations passed validation!`);
           EOF
+
+      - name: Setup ClawFlows CLI
+        run: npm install -g git+https://github.com/Cluka-399/clawflows-cli.git
+
+      - name: Dry-run smoke test curated workflows
+        env:
+          CLAWFLOWS_BIN: clawflows
+        run: node .github/scripts/dry-run-smoke.js

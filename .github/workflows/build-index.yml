@@ -23,6 +23,14 @@ jobs:
       - name: Validate automations
         run: node .github/scripts/validate.js
 
+      - name: Setup ClawFlows CLI
+        run: npm install -g git+https://github.com/Cluka-399/clawflows-cli.git
+
+      - name: Dry-run smoke test curated workflows
+        env:
+          CLAWFLOWS_BIN: clawflows
+        run: node .github/scripts/dry-run-smoke.js
+
       - name: Build index.json and llms.txt
         run: node .github/scripts/build-index.js
 
