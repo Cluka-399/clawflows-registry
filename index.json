@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-09T06:30:39.593Z",
+  "generated": "2026-04-09T13:04:56.047Z",
   "version": "1.0.0",
   "count": 129,
   "automations": [
@@ -884,11 +884,12 @@
     },
     {
       "name": "database-backup-verifier",
-      "description": "Verify database backups exist and can be restored",
+      "description": "Check backup artifacts with a shell command, summarize whether coverage looks healthy, and flag what needs attention first",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "exec"
+        "exec",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 6 * * *",
@@ -899,7 +900,7 @@
         "backup"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/database-backup-verifier/"
     },
@@ -946,12 +947,12 @@
     },
     {
       "name": "dependency-updater",
-      "description": "Weekly check for outdated dependencies with PR creation",
+      "description": "Run a dependency audit command, summarize the most important outdated or risky packages, and recommend the next upgrade move",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
         "exec",
-        "github"
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 10 * * 1",
@@ -961,7 +962,7 @@
         "dependencies"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/dependency-updater/"
     },
@@ -984,20 +985,22 @@
     },
     {
       "name": "docker-image-scanner",
-      "description": "Scan Docker images for vulnerabilities on schedule",
+      "description": "Run a container image scan command, summarize the most serious findings, and highlight what should be fixed first",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "exec"
+        "exec",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 3 * * *",
       "tags": [
         "developer",
-        "security"
+        "security",
+        "containers"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/docker-image-scanner/"
     },
@@ -2745,11 +2748,12 @@
     },
     {
       "name": "test-coverage-monitor",
-      "description": "Track test coverage trends and alert on drops below threshold",
+      "description": "Run a coverage command, summarize whether coverage looks healthy or slipping, and flag the first thing to investigate",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
-        "exec"
+        "exec",
+        "llm"
       ],
       "trigger": "schedule",
       "schedule": "0 9 * * 1-5",
@@ -2759,7 +2763,7 @@
         "testing"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/test-coverage-monitor/"
     },

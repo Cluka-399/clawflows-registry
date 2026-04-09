@@ -140,11 +140,11 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Dependency Updater</h1>
-        <p class="description">Weekly check for outdated dependencies with PR creation</p>
+        <p class="description">Run a dependency audit command, summarize the most important outdated or risky packages, and recommend the next upgrade move</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 10 * * 1</span>
           <span>Lobster workflow available</span>
         </div>
         
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install dependency-updater</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">exec</span><span class="tag">file_system</span><span class="tag">github</span>
+          <span class="tag">exec</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,24 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Scans dependencies** in your project (npm, pip, etc.)</li><li>**Identifies outdated packages** with available updates</li><li>**Creates a PR** with the dependency updates</li><li>**Reports security advisories** for vulnerable packages</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. .name,</div></div><div class="step"><div class="step-title">2. categorize</div></div><div class="step"><div class="step-title">3. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. inspect-dependencies</div><div class="step-detail">exec</div></div><div class="step"><div class="step-title">2. summarize-updates</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">project_dir</div><div class="kv-meta">Path to project directory · default: .</div></div><div class="kv"><div class="kv-name">package_manager</div><div class="kv-meta">Package manager: npm or pip · default: npm</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">command</div><div class="kv-meta">Command that lists outdated or vulnerable dependencies · default: npm outdated || true</div></div></div>
         
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 10 * * 1</code></p>
         
-        <p>Runs weekly on **Monday at 10:00 AM** (<code>0 10 * * 1</code>).</p>
         
       </section>
     </div>
@@ -330,15 +330,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Weekly check for outdated dependencies with automatic PR creation.</p>
-<h3>What It Does</h3>
-<ol><li>**Scans dependencies** in your project (npm, pip, etc.)</li><li>**Identifies outdated packages** with available updates</li><li>**Creates a PR** with the dependency updates</li><li>**Reports security advisories** for vulnerable packages</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Runs a dependency inspection command and turns the output into a prioritized upgrade brief.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>Shell access for package managers</td></tr><tr><td>`github`</td><td>GitHub API for PR creation</td></tr></tbody></table></div>
-<h3>Schedule</h3>
-<p>Runs weekly on **Monday at 10:00 AM** (<code>0 10 * * 1</code>).</p>
-<h3>Install</h3>
-<pre class="code-block"><code data-lang="bash">lobster install dependency-updater</code></pre></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>runtime shell</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

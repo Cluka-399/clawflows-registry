@@ -1,10 +1,36 @@
-name: Database Backup Verifier
-description: Verify database backups exist and can be restored
+name: database-backup-verifier
+description: Check backup artifacts with a shell command, summarize whether coverage looks healthy, and flag what needs attention first
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - exec
-  - notifications
-tags:
-  - developer
-  - devops
+  - capability: exec
+  - capability: llm
+
+trigger:
+  schedule: "0 6 * * *"
+
+config:
+  command:
+    description: "Shell command that inspects recent backups"
+    default: "ls -lah backups | tail -20"
+
+steps:
+  - name: inspect-backups
+    capability: exec
+    method: run
+    args:
+      command: "${config.command}"
+    capture: backup_output
+
+  - name: summarize-backup-health
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review this backup verification output. Say whether backups appear recent and sane, call out obvious missing or stale-backup signs, and suggest the first thing an operator should check if this looks bad."
+      input: "${backup_output}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "💾 Database Backup Verifier\n\n${summary}"

@@ -226,8 +226,8 @@ Prepare your daily standup by summarizing recent activity
 - URL: https://clawflows.com/automations/daily-standup-prep/
 
 ### database-backup-verifier
-Verify database backups exist and can be restored
-- Requires: exec
+Check backup artifacts with a shell command, summarize whether coverage looks healthy, and flag what needs attention first
+- Requires: exec, llm
 - Schedule: 0 6 * * *
 - URL: https://clawflows.com/automations/database-backup-verifier/
 
@@ -244,8 +244,8 @@ Auto-decline meetings during protected focus hours, suggest alternatives
 - URL: https://clawflows.com/automations/deep-work-protector/
 
 ### dependency-updater
-Weekly check for outdated dependencies with PR creation
-- Requires: exec, github
+Run a dependency audit command, summarize the most important outdated or risky packages, and recommend the next upgrade move
+- Requires: exec, llm
 - Schedule: 0 10 * * 1
 - URL: https://clawflows.com/automations/dependency-updater/
 
@@ -255,8 +255,8 @@ Upload a document and get a plain-English summary with flagged clauses and key t
 - URL: https://clawflows.com/automations/doc-reviewer/
 
 ### docker-image-scanner
-Scan Docker images for vulnerabilities on schedule
-- Requires: exec
+Run a container image scan command, summarize the most serious findings, and highlight what should be fixed first
+- Requires: exec, llm
 - Schedule: 0 3 * * *
 - URL: https://clawflows.com/automations/docker-image-scanner/
 
@@ -693,8 +693,8 @@ Auto-sort tax-related documents into categorized folders by year
 - URL: https://clawflows.com/automations/tax-document-organizer/
 
 ### test-coverage-monitor
-Track test coverage trends and alert on drops below threshold
-- Requires: exec
+Run a coverage command, summarize whether coverage looks healthy or slipping, and flag the first thing to investigate
+- Requires: exec, llm
 - Schedule: 0 9 * * 1-5
 - URL: https://clawflows.com/automations/test-coverage-monitor/
 

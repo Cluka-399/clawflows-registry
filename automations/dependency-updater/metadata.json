@@ -1,12 +1,12 @@
 {
   "name": "dependency-updater",
-  "description": "Weekly check for outdated dependencies with PR creation",
+  "description": "Run a dependency audit command, summarize the most important outdated or risky packages, and recommend the next upgrade move",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["exec", "github"],
+  "version": "1.1.0",
+  "requires": ["exec", "llm"],
   "trigger": "schedule",
   "schedule": "0 10 * * 1",
   "tags": ["developer", "security", "dependencies"],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-09"
 }

@@ -1,12 +1,12 @@
 {
   "name": "docker-image-scanner",
-  "description": "Scan Docker images for vulnerabilities on schedule",
+  "description": "Run a container image scan command, summarize the most serious findings, and highlight what should be fixed first",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["exec"],
+  "version": "1.1.0",
+  "requires": ["exec", "llm"],
   "trigger": "schedule",
   "schedule": "0 3 * * *",
-  "tags": ["developer", "security"],
+  "tags": ["developer", "security", "containers"],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-09"
 }

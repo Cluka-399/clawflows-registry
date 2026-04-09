@@ -1,10 +1,36 @@
-name: Dependency Updater
-description: Weekly check for outdated dependencies with PR creation
+name: dependency-updater
+description: Run a dependency audit command, summarize the most important outdated or risky packages, and recommend the next upgrade move
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - exec
-  - file_system
-tags:
-  - developer
-  - security
+  - capability: exec
+  - capability: llm
+
+trigger:
+  schedule: "0 10 * * 1"
+
+config:
+  command:
+    description: "Command that lists outdated or vulnerable dependencies"
+    default: "npm outdated || true"
+
+steps:
+  - name: inspect-dependencies
+    capability: exec
+    method: run
+    args:
+      command: "${config.command}"
+    capture: dependency_output
+
+  - name: summarize-updates
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review this dependency output. Identify the packages that matter most to update, call out any obvious security or compatibility risk, and recommend the most sensible next upgrade move."
+      input: "${dependency_output}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "📦 Dependency Updater\n\n${summary}"

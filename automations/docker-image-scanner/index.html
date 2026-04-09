@@ -140,22 +140,22 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Docker Image Scanner</h1>
-        <p class="description">Scan Docker images for vulnerabilities on schedule</p>
+        <p class="description">Run a container image scan command, summarize the most serious findings, and highlight what should be fixed first</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
-          
+          <span>schedule 0 3 * * *</span>
           <span>Lobster workflow available</span>
         </div>
         
-        <div class="tag-row"><span class="pill">developer</span><span class="pill">security</span></div>
+        <div class="tag-row"><span class="pill">developer</span><span class="pill">security</span><span class="pill">containers</span></div>
       </section>
       <aside class="hero-side">
         <div class="install-label">Install</div>
         <div class="install-box">clawflows install docker-image-scanner</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">exec</span><span class="tag">notifications</span>
+          <span class="tag">exec</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,28 +164,24 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Scans images** - Runs vulnerability scans against your Docker images</li><li>**Reports findings** - Summarizes CVEs by severity</li><li>**Alerts** - Notifies you of critical or high-severity vulnerabilities</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. scan-and-report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. scan-images</div><div class="step-detail">exec</div></div><div class="step"><div class="step-title">2. summarize-findings</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">max_image_size_mb</div><div class="kv-meta">Maximum image size in MB before warning · default: 1000</div></div><div class="kv"><div class="kv-name">check_dangling</div><div class="kv-meta">Report dangling (untagged) images · default: true</div></div><div class="kv"><div class="kv-name">check_vulnerabilities</div><div class="kv-meta">Run vulnerability scan (requires docker scout or trivy) · default: false</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">config:
-  images: &quot;myapp:latest,api:latest&quot;  # Images to scan
-  severity: &quot;HIGH,CRITICAL&quot;          # Minimum severity to alert on</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">command</div><div class="kv-meta">Command that scans Docker images · default: trivy image myapp:latest || true</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
+        <p><strong>Cron:</strong> <code>0 3 * * *</code></p>
         
-        <p>Default: 3:00am daily.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 3 * * *&quot;</code></pre>
         
       </section>
     </div>
@@ -292,21 +288,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Scan Docker images for vulnerabilities on a schedule and get notified about security issues.</p>
-<h3>What It Does</h3>
-<ol><li>**Scans images** - Runs vulnerability scans against your Docker images</li><li>**Reports findings** - Summarizes CVEs by severity</li><li>**Alerts** - Notifies you of critical or high-severity vulnerabilities</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Runs a container image scan command and distills the output into a short security brief.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>shell, docker</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">config:
-  images: &quot;myapp:latest,api:latest&quot;  # Images to scan
-  severity: &quot;HIGH,CRITICAL&quot;          # Minimum severity to alert on</code></pre>
-<h3>Schedule</h3>
-<p>Default: 3:00am daily.</p>
-<pre class="code-block"><code data-lang="yaml">trigger:
-  schedule: &quot;0 3 * * *&quot;</code></pre>
-<h3>Author</h3>
-<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`exec`</td><td>runtime shell</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

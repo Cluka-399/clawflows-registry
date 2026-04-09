@@ -1,10 +1,36 @@
-name: Docker Image Scanner
-description: Scan Docker images for vulnerabilities on schedule
+name: docker-image-scanner
+description: Run a container image scan command, summarize the most serious findings, and highlight what should be fixed first
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - exec
-  - notifications
-tags:
-  - developer
-  - security
+  - capability: exec
+  - capability: llm
+
+trigger:
+  schedule: "0 3 * * *"
+
+config:
+  command:
+    description: "Command that scans Docker images"
+    default: "trivy image myapp:latest || true"
+
+steps:
+  - name: scan-images
+    capability: exec
+    method: run
+    args:
+      command: "${config.command}"
+    capture: scan_output
+
+  - name: summarize-findings
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review this image scan output. Call out the most serious vulnerabilities or red flags, explain whether anything looks urgent, and say what should be remediated first."
+      input: "${scan_output}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🐳 Docker Image Scanner\n\n${summary}"

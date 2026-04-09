@@ -1,10 +1,40 @@
-name: Test Coverage Monitor
-description: Track test coverage trends and alert on drops below threshold
+name: test-coverage-monitor
+description: Run a coverage command, summarize whether coverage looks healthy or slipping, and flag the first thing to investigate
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - exec
-  - file_system
-tags:
-  - developer
-  - quality
+  - capability: exec
+  - capability: llm
+
+trigger:
+  schedule: "0 9 * * 1-5"
+
+config:
+  command:
+    description: "Coverage command to run"
+    default: "npm test -- --coverage || true"
+
+  threshold:
+    description: "Minimum acceptable coverage percentage"
+    default: 80
+
+steps:
+  - name: run-coverage
+    capability: exec
+    method: run
+    args:
+      command: "${config.command}"
+    capture: coverage_output
+
+  - name: summarize-coverage
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review this coverage output. Say whether coverage appears above or below the target threshold of ${config.threshold}, call out obvious regressions or weak areas, and recommend the first thing to investigate."
+      input: "${coverage_output}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🧪 Test Coverage Monitor\n\n${summary}"
