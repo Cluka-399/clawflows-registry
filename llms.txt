@@ -197,8 +197,8 @@ Track your crypto portfolio value and alert on significant changes
 - URL: https://clawflows.com/automations/crypto-portfolio/
 
 ### customer-enrichment
-Enrich customer/lead data from email or domain with company info, people, and pain points
-- Requires: web-search, browser
+Enrich a prospect from an email or domain using company pages, search context, and an LLM summary
+- Requires: web-fetch, web-search, llm
 - URL: https://clawflows.com/automations/customer-enrichment/
 
 ### daily-affirmation
@@ -393,6 +393,12 @@ Categorize, summarize, and draft responses for your email inbox
 - Schedule: 0 8,14,18 * * *
 - URL: https://clawflows.com/automations/inbox-zero-helper/
 
+### influencer-outreach
+Find likely niche influencers, assess audience overlap, and draft personalized outreach without pretending to auto-DM people
+- Requires: web-search, web-fetch, llm, email
+- Schedule: 0 8 * * 1
+- URL: https://clawflows.com/automations/influencer-outreach/
+
 ### invoice-reminder
 Track unpaid invoices and send payment reminders at configurable intervals
 - Requires: email
@@ -406,8 +412,8 @@ Compare landing page variants, detect a credible winner, and explain whether the
 - URL: https://clawflows.com/automations/landing-page-winner-detector/
 
 ### lead-qualifier
-Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules
-- Requires: email, exec
+Pull recent inbound messages, score likely lead quality, and summarize who deserves attention first
+- Requires: email, llm
 - URL: https://clawflows.com/automations/lead-qualifier/
 
 ### learning-digest
@@ -451,11 +457,6 @@ Generate meeting briefs 30 min before - attendees, agenda, relevant docs
 - Requires: calendar
 - Schedule: */30 8-18 * * 1-5
 - URL: https://clawflows.com/automations/meeting-prep-assistant/
-
-### Micro-Influencer Outreach Machine
-Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.
-- Requires: influencer, outreach, social
-- URL: https://clawflows.com/automations/influencer-outreach/
 
 ### molt-price-alert
 Monitor MOLT (Moltbook) coin price with visual charts and alerts on significant moves
@@ -529,9 +530,10 @@ Regular posture reminders during work hours
 - Schedule: 0 */1 9-17 * * 1-5
 - URL: https://clawflows.com/automations/posture-check/
 
-### PR Newsjacking Bot
-Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.
-- Requires: pr, news, journalists
+### pr-newsjacking
+Track breaking industry news, identify stories worth reacting to, and draft journalist-ready commentary or outreach
+- Requires: web-search, web-fetch, llm, email
+- Schedule: 0 */2 * * *
 - URL: https://clawflows.com/automations/pr-newsjacking/
 
 ### prediction-market-tracker

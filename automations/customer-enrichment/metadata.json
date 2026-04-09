@@ -1,11 +1,11 @@
 {
   "name": "customer-enrichment",
-  "description": "Enrich customer/lead data from email or domain with company info, people, and pain points",
+  "description": "Enrich a prospect from an email or domain using company pages, search context, and an LLM summary",
   "author": "cluka",
-  "version": "1.0.0",
-  "requires": ["web-search", "browser"],
+  "version": "1.1.0",
+  "requires": ["web-fetch", "web-search", "llm"],
   "trigger": "manual",
   "tags": ["sales", "leads", "enrichment", "research"],
   "created": "2026-01-30",
-  "updated": "2026-01-30"
+  "updated": "2026-04-09"
 }

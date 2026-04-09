@@ -1,11 +1,41 @@
-name: Lead Qualifier
-description: Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules
+name: lead-qualifier
+description: Pull recent inbound messages, score likely lead quality, and summarize who deserves attention first
 author: cluka
-version: 1.0.0
+version: 1.1.0
+
 requires:
-  - curl
-  - jq
-tags:
-  - sales
-  - email
-  - leads
+  - capability: email
+  - capability: llm
+
+trigger:
+  manual: true
+
+config:
+  inbox_id:
+    description: "Inbox id to review"
+    default: "cluka@agentmail.to"
+
+  limit:
+    description: "How many recent messages to inspect"
+    default: 20
+
+steps:
+  - name: fetch-messages
+    capability: email
+    method: listMessages
+    args:
+      inbox_id: "${config.inbox_id}"
+      limit: "${config.limit}"
+    capture: messages
+
+  - name: score-leads
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Review these inbound messages and rank them as hot, warm, cold, or spam. Call out who deserves immediate follow-up, why they look promising, and what the next action should be."
+      input: "${messages}"
+    capture: summary
+
+  - name: notify
+    action: notify
+    message: "🎯 Lead Qualifier\n\n${summary}"

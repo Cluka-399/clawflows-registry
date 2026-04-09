@@ -1,5 +1,5 @@
 {
-  "generated": "2026-04-09T13:05:08.823Z",
+  "generated": "2026-04-09T13:07:12.607Z",
   "version": "1.0.0",
   "count": 129,
   "automations": [
@@ -777,12 +777,13 @@
     },
     {
       "name": "customer-enrichment",
-      "description": "Enrich customer/lead data from email or domain with company info, people, and pain points",
+      "description": "Enrich a prospect from an email or domain using company pages, search context, and an LLM summary",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
+        "web-fetch",
         "web-search",
-        "browser"
+        "llm"
       ],
       "trigger": "manual",
       "tags": [
@@ -792,7 +793,7 @@
         "research"
       ],
       "created": "2026-01-30",
-      "updated": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/customer-enrichment/"
     },
@@ -1541,6 +1542,30 @@
       "url": "/automations/inbox-zero-helper/"
     },
     {
+      "name": "influencer-outreach",
+      "description": "Find likely niche influencers, assess audience overlap, and draft personalized outreach without pretending to auto-DM people",
+      "author": "cluka",
+      "version": "1.1.0",
+      "requires": [
+        "web-search",
+        "web-fetch",
+        "llm",
+        "email"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 8 * * 1",
+      "tags": [
+        "influencer",
+        "outreach",
+        "social",
+        "partnerships"
+      ],
+      "created": "2026-01-30",
+      "updated": "2026-04-09",
+      "lobster_ready": true,
+      "url": "/automations/influencer-outreach/"
+    },
+    {
       "name": "invoice-reminder",
       "description": "Track unpaid invoices and send payment reminders at configurable intervals",
       "author": "cluka",
@@ -1591,12 +1616,12 @@
     },
     {
       "name": "lead-qualifier",
-      "description": "Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules",
+      "description": "Pull recent inbound messages, score likely lead quality, and summarize who deserves attention first",
       "author": "cluka",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "requires": [
         "email",
-        "exec"
+        "llm"
       ],
       "trigger": "manual",
       "tags": [
@@ -1606,7 +1631,7 @@
         "agentmail"
       ],
       "created": "2026-04-07",
-      "updated": "2026-04-07",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/lead-qualifier/"
     },
@@ -1759,31 +1784,6 @@
       "updated": "2026-01-30",
       "lobster_ready": true,
       "url": "/automations/meeting-prep-assistant/"
-    },
-    {
-      "name": "Micro-Influencer Outreach Machine",
-      "slug": "influencer-outreach",
-      "category": "marketing",
-      "tags": [
-        "influencer",
-        "outreach",
-        "social",
-        "partnerships"
-      ],
-      "difficulty": "intermediate",
-      "credit": {
-        "inspired_by": "@alex_prompter",
-        "source": "https://x.com/alex_prompter/status/2017044857764688132"
-      },
-      "description": "Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.",
-      "version": "1.0.0",
-      "requires": [
-        "influencer",
-        "outreach",
-        "social"
-      ],
-      "lobster_ready": true,
-      "url": "/automations/influencer-outreach/"
     },
     {
       "name": "molt-price-alert",
@@ -2071,9 +2071,18 @@
       "url": "/automations/posture-check/"
     },
     {
-      "name": "PR Newsjacking Bot",
-      "slug": "pr-newsjacking",
-      "category": "pr",
+      "name": "pr-newsjacking",
+      "description": "Track breaking industry news, identify stories worth reacting to, and draft journalist-ready commentary or outreach",
+      "author": "cluka",
+      "version": "1.1.0",
+      "requires": [
+        "web-search",
+        "web-fetch",
+        "llm",
+        "email"
+      ],
+      "trigger": "schedule",
+      "schedule": "0 */2 * * *",
       "tags": [
         "pr",
         "news",
@@ -2081,18 +2090,8 @@
         "media",
         "thought-leadership"
       ],
-      "difficulty": "intermediate",
-      "credit": {
-        "inspired_by": "@alex_prompter",
-        "source": "https://x.com/alex_prompter/status/2017044857764688132"
-      },
-      "description": "Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.",
-      "version": "1.0.0",
-      "requires": [
-        "pr",
-        "news",
-        "journalists"
-      ],
+      "created": "2026-01-30",
+      "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/pr-newsjacking/"
     },

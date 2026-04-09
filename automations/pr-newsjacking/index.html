@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PR Newsjacking Bot — ClawFlows</title>
+  <title>Pr Newsjacking — ClawFlows</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,15 +139,15 @@
     <div class="hero">
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
-        <h1>PR Newsjacking Bot</h1>
-        <p class="description">Monitor breaking news in your industry, draft rapid responses, find relevant journalists, send pitches within hours.</p>
+        <h1>Pr Newsjacking</h1>
+        <p class="description">Track breaking industry news, identify stories worth reacting to, and draft journalist-ready commentary or outreach</p>
         <div class="meta">
-          <span>v1.0.0</span>
-          <span>by unknown</span>
+          <span>v1.1.0</span>
+          <span>by cluka</span>
           <span>schedule 0 */2 * * *</span>
           <span>Lobster workflow available</span>
         </div>
-        <div class="pill-row"><span class="tag">Pr</span></div>
+        
         <div class="tag-row"><span class="pill">pr</span><span class="pill">news</span><span class="pill">journalists</span><span class="pill">media</span><span class="pill">thought-leadership</span></div>
       </section>
       <aside class="hero-side">
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install pr-newsjacking</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_search</span><span class="tag">web_fetch</span><span class="tag">email</span><span class="tag">messaging</span><span class="tag">pr</span><span class="tag">news</span><span class="tag">journalists</span>
+          <span class="tag">web-search</span><span class="tag">web-fetch</span><span class="tag">llm</span><span class="tag">email</span>
         </div>
         
       </aside>
@@ -164,19 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ul><li>Monitors breaking news in your industry</li><li>Drafts rapid expert commentary</li><li>Finds journalists who covered similar stories</li><li>Sends personalized pitches within hours</li></ul>
-<p>> "Journalists need expert sources. You become the expert who responds fastest."</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. monitor_news</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">2. filter_relevant</div><div class="step-detail">analyze</div></div><div class="step"><div class="step-title">3. Is it breaking/trending?</div></div><div class="step"><div class="step-title">4. Can we add expert commentary?</div></div><div class="step"><div class="step-title">5. step</div></div><div class="step"><div class="step-title">6. draft_commentary</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">7. 2-3 quotable sound bites</div></div><div class="step"><div class="step-title">8. Unique angle/insight</div></div><div class="step"><div class="step-title">9. What this means for the industry</div></div><div class="step"><div class="step-title">10. find_journalists</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">11. generate_pitch</div><div class="step-detail">generate</div></div><div class="step"><div class="step-title">12. send_pitches</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">13. alert_opportunities</div><div class="step-detail">message</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. search-news</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">2. fetch-news-context</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">3. draft-commentary</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. draft-pitches</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">5. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">industry_keywords</div><div class="kv-meta">No description yet. · required</div></div><div class="kv"><div class="kv-name">expert_bio</div><div class="kv-meta">Your expert credentials for journalist pitches · required</div></div><div class="kv"><div class="kv-name">topics_of_expertise</div><div class="kv-meta">No description yet. · required</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">industry_keywords</div><div class="kv-meta">Industry topics to monitor · default: ai design</div></div><div class="kv"><div class="kv-name">expert_bio</div><div class="kv-meta">Expert credentials for media commentary · default: Founder and product leader in AI design tools</div></div></div>
         
       </section>
       <section class="panel">
@@ -316,14 +315,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Be the expert who responds fastest.</p>
-<h3>What It Does</h3>
-<ul><li>Monitors breaking news in your industry</li><li>Drafts rapid expert commentary</li><li>Finds journalists who covered similar stories</li><li>Sends personalized pitches within hours</li></ul>
-<p>> "Journalists need expert sources. You become the expert who responds fastest."</p>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Finds the stories actually worth reacting to and drafts a fast commentary angle for outreach.</p>
 <h3>Requirements</h3>
-<ul><li>`web_search`, `web_fetch`, `email`, `messaging` capabilities</li><li>Expert bio and credentials</li></ul>
-<h3>Credit</h3>
-<p><a href="https://x.com/alex_prompter/status/2017044857764688132">@alex_prompter</a></p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr><tr><td>`email`</td><td>agentmail</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

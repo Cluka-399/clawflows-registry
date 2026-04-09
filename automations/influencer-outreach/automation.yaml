@@ -1,81 +1,57 @@
-name: Micro-Influencer Outreach Machine
-description: Find micro-influencers (1K-50K followers) in your niche, analyze their content for genuine overlap, generate hyper-personalized outreach.
-version: 1.0.0
-author: Cluka (inspired by @alex_prompter)
+name: influencer-outreach
+description: Find likely niche influencers, assess audience overlap, and draft personalized outreach without pretending to auto-DM people
+author: cluka
+version: 1.1.0
 
 requires:
-  - web_search
-  - browser
-  - email
+  - capability: web-search
+  - capability: web-fetch
+  - capability: llm
+  - capability: email
 
 trigger:
-  schedule: "0 8 * * 1"  # Weekly Monday
+  schedule: "0 8 * * 1"
 
-parameters:
-  - name: icp_definition
-    description: Your ideal customer profile
-    required: true
-  - name: niche_keywords
-    required: true
-  - name: follower_min
-    default: 1000
-  - name: follower_max
-    default: 50000
-  - name: outreach_per_week
-    default: 10
+config:
+  niche_keywords:
+    description: "Niche keywords to search"
+    default: "ai design creators"
+
+  icp_definition:
+    description: "Ideal customer profile"
+    default: "designers using AI tools"
 
 steps:
-  - name: find_influencers
-    action: search_x
-    params:
-      query: "{{niche_keywords}}"
-      filter: "followers:{{follower_min}}-{{follower_max}}"
+  - name: find-influencers
+    capability: web-search
+    method: search
+    args:
+      query: "${config.niche_keywords} creator newsletter podcast x"
+    capture: influencers
 
-  - name: analyze_content
-    action: web_fetch
-    for_each: "{{influencers}}"
-    params:
-      url: "https://x.com/{{handle}}"
-      extract: "last 20 posts"
+  - name: fetch-public-context
+    capability: web-fetch
+    method: fetch
+    args:
+      url: "${influencers.url || influencers}"
+    capture: context_pages
 
-  - name: find_overlap
-    action: analyze
-    for_each: "{{influencers}}"
-    prompt: |
-      Analyze {{handle}}'s last 20 posts.
-      Find genuine connection points with: {{icp_definition}}
-      
-      Look for:
-      - Topics they're passionate about
-      - Problems they mention
-      - Tools they use/recommend
-      - Questions they ask
-      
-      Rate overlap: HIGH/MEDIUM/LOW
+  - name: plan-outreach
+    capability: llm
+    method: summarize
+    args:
+      prompt: "Analyze these influencer candidates. Identify which ones have the strongest audience overlap with this ICP: ${config.icp_definition}. Explain the strongest personalization angle for outreach and recommend who is worth contacting first."
+      input: "${{ influencers, context_pages }}"
+    capture: plan
 
-  - name: generate_outreach
-    condition: "overlap == 'HIGH'"
-    action: generate
-    prompt: |
-      Write a DM to {{handle}} that:
-      - References their specific post about {{specific_topic}}
-      - Shows you actually read their content
-      - Finds natural connection to your product
-      - NOT "Hey [NAME], loved your post about [TOPIC]"
-      - Actually genuine
+  - name: draft-outreach
+    capability: email
+    method: draftCampaign
+    args:
+      audience: "${influencers}"
+      brief: "${plan}"
+    capture: draft
 
-  - name: send_outreach
-    action: browser
-    for_each: "{{outreach}}"
-    params:
-      platform: "{{preferred_platform}}"
-      action: send_dm
-
-  - name: track_responses
-    action: cron_add
-    params:
-      schedule: "0 9 * * *"
-      task: "check_influencer_responses"
-
-state:
-  storage: memory/influencer-outreach-state.json
+  - name: notify
+    action: notify
+    message: "📣 Influencer Outreach\n\n${plan}"

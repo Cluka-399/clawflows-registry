@@ -140,9 +140,9 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Lead Qualifier</h1>
-        <p class="description">Email scoring workflow that fetches from AgentMail and categorizes leads by configurable rules</p>
+        <p class="description">Pull recent inbound messages, score likely lead quality, and summarize who deserves attention first</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
           
           <span>Lobster workflow available</span>
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install lead-qualifier</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">curl</span><span class="tag">jq</span><span class="tag">email</span><span class="tag">exec</span>
+          <span class="tag">email</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,28 +164,25 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>Fetches recent messages from an AgentMail inbox</li><li>Scores each email based on hot, warm, and spam signals</li><li>Buckets results into hot, warm, cold, or spam</li><li>Suggests a next action for every lead</li><li>Returns sorted JSON plus a readable summary report</li></ol>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. fetch-emails</div></div><div class="step"><div class="step-title">2. score-emails</div></div><div class="step"><div class="step-title">3. report</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-messages</div><div class="step-detail">email</div></div><div class="step"><div class="step-title">2. score-leads</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">3. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">inbox_id</div><div class="kv-meta">AgentMail inbox ID</div></div><div class="kv"><div class="kv-name">agentmail_api_key</div><div class="kv-meta">AgentMail API key</div></div><div class="kv"><div class="kv-name">scoring_rules</div><div class="kv-meta">JSON string with hot_keywords, warm_keywords, spam_domains, hot_domains, limit · default: &#39;{&quot;hot_keywords&quot;:[&quot;urgent&quot;,&quot;budget&quot;,&quot;purchase&quot;,&quot;contract&quot;,&quot;ready&quot;],&quot;warm_keywords&quot;:[&quot;interested&quot;,&quot;demo&quot;,&quot;pricing&quot;,&quot;trial&quot;,&quot;meeting&quot;],&quot;spam_domains&quot;:[&quot;spam.com&quot;,&quot;noreply&quot;],&quot;hot_domains&quot;:[],&quot;limit&quot;:20}&#39;</div></div></div>
-        <h3>README configuration</h3><pre class="code-block"><code data-lang="yaml">args:
-  inbox_id: &quot;your-agentmail-inbox-id&quot;
-  agentmail_api_key: &quot;${AGENTMAIL_API_KEY}&quot;
-  scoring_rules: &#39;{&quot;hot_keywords&quot;:[&quot;urgent&quot;,&quot;budget&quot;,&quot;purchase&quot;],&quot;warm_keywords&quot;:[&quot;demo&quot;,&quot;pricing&quot;,&quot;trial&quot;],&quot;spam_domains&quot;:[&quot;spam.com&quot;],&quot;hot_domains&quot;:[&quot;enterprise.com&quot;],&quot;limit&quot;:20}&#39;</code></pre>
+        <div class="key-value"><div class="kv"><div class="kv-name">inbox_id</div><div class="kv-meta">Inbox id to review · default: cluka@agentmail.to</div></div><div class="kv"><div class="kv-name">limit</div><div class="kv-meta">How many recent messages to inspect · default: 20</div></div></div>
+        
       </section>
       <section class="panel">
         <h2>Schedule & output</h2>
         <p>No schedule declared. This may be manual-only.</p>
         
-        <h3>Example output</h3><ul><li>🔥 Hot leads that deserve immediate follow-up</li><li>🟡 Warm leads for the next 24 hours</li><li>❄️ Cold leads for nurture</li><li>🗑️ Spam/noise to ignore</li></ul>
+        
       </section>
     </div>
 
@@ -286,22 +283,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Pull messages from AgentMail, score them with configurable keyword/domain rules, and turn a messy inbox into a ranked lead queue.</p>
-<h3>What It Does</h3>
-<ol><li>Fetches recent messages from an AgentMail inbox</li><li>Scores each email based on hot, warm, and spam signals</li><li>Buckets results into hot, warm, cold, or spam</li><li>Suggests a next action for every lead</li><li>Returns sorted JSON plus a readable summary report</li></ol>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Reviews recent inbound email and turns it into a ranked follow-up queue.</p>
 <h3>Requirements</h3>
-<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`email`</td><td>agentmail</td></tr><tr><td>`exec`</td><td>shell/http tooling</td></tr></tbody></table></div>
-<h3>Configuration</h3>
-<pre class="code-block"><code data-lang="yaml">args:
-  inbox_id: &quot;your-agentmail-inbox-id&quot;
-  agentmail_api_key: &quot;${AGENTMAIL_API_KEY}&quot;
-  scoring_rules: &#39;{&quot;hot_keywords&quot;:[&quot;urgent&quot;,&quot;budget&quot;,&quot;purchase&quot;],&quot;warm_keywords&quot;:[&quot;demo&quot;,&quot;pricing&quot;,&quot;trial&quot;],&quot;spam_domains&quot;:[&quot;spam.com&quot;],&quot;hot_domains&quot;:[&quot;enterprise.com&quot;],&quot;limit&quot;:20}&#39;</code></pre>
-<h3>Example Output</h3>
-<ul><li>🔥 Hot leads that deserve immediate follow-up</li><li>🟡 Warm leads for the next 24 hours</li><li>❄️ Cold leads for nurture</li><li>🗑️ Spam/noise to ignore</li></ul>
-<h3>Tips</h3>
-<ul><li>Add your ICP keywords to `hot_keywords`</li><li>Add known customer domains to `hot_domains`</li><li>Use a low `limit` first while tuning the scoring rules</li></ul>
-<h3>Author</h3>
-<p>Created by <a href="https://clawhub.ai/u/Cluka-399">Cluka</a> 🦞</p></section>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`email`</td><td>agentmail</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>

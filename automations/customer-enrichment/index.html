@@ -140,9 +140,9 @@
       <section class="hero-main">
         <div class="eyebrow">Flow details</div>
         <h1>Customer Enrichment</h1>
-        <p class="description">Enrich customer/lead data from email or domain with company info, people, and pain points</p>
+        <p class="description">Enrich a prospect from an email or domain using company pages, search context, and an LLM summary</p>
         <div class="meta">
-          <span>v1.0.0</span>
+          <span>v1.1.0</span>
           <span>by cluka</span>
           
           <span>Lobster workflow available</span>
@@ -155,7 +155,7 @@
         <div class="install-box">clawflows install customer-enrichment</div>
         <div class="install-label" style="margin-top: 1rem;">Requirements</div>
         <div class="tag-row">
-          <span class="tag">web_fetch</span><span class="tag">web_search</span><span class="tag">llm</span><span class="tag">web-search</span><span class="tag">browser</span>
+          <span class="tag">web-fetch</span><span class="tag">web-search</span><span class="tag">llm</span>
         </div>
         
       </aside>
@@ -164,19 +164,18 @@
     <div class="section-grid">
       <section class="panel">
         <h2>What this flow does</h2>
-        <ol><li>**Extract domain** from email or use directly</li><li>**Scrape company website** — homepage, about, team, pricing, careers pages</li><li>**Search LinkedIn** for key people (CEO, CTO, founders, VPs)</li><li>**Find recent news** — funding, launches, announcements</li><li>**Detect tech stack** via web search</li><li>**LLM enrichment** — AI analyzes all data to extract:</li></ol>
-<p>- Company info and description - Key people with titles - Estimated company size - Tech stack - Momentum signals - Pain points (matched to your product) - Outreach hooks for personalization</p>
+        <p>This flow needs a richer README. Right now the main source of truth is the YAML/workflow files.</p>
       </section>
       <section class="panel">
         <h2>How it runs</h2>
-        <div class="step-list"><div class="step"><div class="step-title">1. extract_domain</div><div class="step-detail">parse</div></div><div class="step"><div class="step-title">2. scrape_website</div><div class="step-detail">web_fetch</div></div><div class="step"><div class="step-title">3. /</div></div><div class="step"><div class="step-title">4. /about</div></div><div class="step"><div class="step-title">5. /team</div></div><div class="step"><div class="step-title">6. /pricing</div></div><div class="step"><div class="step-title">7. /careers</div></div><div class="step"><div class="step-title">8. search_linkedin</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">9. search_company_news</div><div class="step-detail">web_search</div></div><div class="step"><div class="step-title">10. enrich_with_llm</div><div class="step-detail">llm</div></div></div>
+        <div class="step-list"><div class="step"><div class="step-title">1. fetch-company-site</div><div class="step-detail">web-fetch</div></div><div class="step"><div class="step-title">2. search-company-context</div><div class="step-detail">web-search</div></div><div class="step"><div class="step-title">3. enrich-company</div><div class="step-detail">llm</div></div><div class="step"><div class="step-title">4. notify</div><div class="step-detail">notify</div></div></div>
       </section>
     </div>
 
     <div class="section-grid">
       <section class="panel">
         <h2>Inputs & configuration</h2>
-        <div class="key-value"><div class="kv"><div class="kv-name">input</div><div class="kv-meta">Email address or domain to enrich · required</div></div><div class="kv"><div class="kv-name">product_context</div><div class="kv-meta">Your product info for pain point matching</div></div></div>
+        <div class="key-value"><div class="kv"><div class="kv-name">input</div><div class="kv-meta">Email address or domain to enrich · default: example.com</div></div><div class="kv"><div class="kv-name">product_context</div><div class="kv-meta">Product context for pain-point matching</div></div></div>
         
       </section>
       <section class="panel">
@@ -544,58 +543,9 @@ steps:
 </code></pre></details></section>
     </div>
 
-    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Enrich customer/lead data from an email address or domain. Based on <a href="https://x.com/pontusab">@pontusab's Midday pattern</a> using multi-step AI analysis.</p>
-<h3>What It Does</h3>
-<ol><li>**Extract domain** from email or use directly</li><li>**Scrape company website** — homepage, about, team, pricing, careers pages</li><li>**Search LinkedIn** for key people (CEO, CTO, founders, VPs)</li><li>**Find recent news** — funding, launches, announcements</li><li>**Detect tech stack** via web search</li><li>**LLM enrichment** — AI analyzes all data to extract:</li></ol>
-<p>- Company info and description - Key people with titles - Estimated company size - Tech stack - Momentum signals - Pain points (matched to your product) - Outreach hooks for personalization</p>
-<h3>Usage</h3>
-<h4>With Lobster CLI</h4>
-<pre class="code-block"><code data-lang="bash"># From email
-lobster run --file workflow.yaml \
-  --args-json &#39;{&quot;input&quot;:&quot;john@stripe.com&quot;,&quot;product_context&quot;:&quot;AI coding tools&quot;}&#39;
-
-# From domain
-lobster run --file workflow.yaml \
-  --args-json &#39;{&quot;input&quot;:&quot;linear.app&quot;,&quot;product_context&quot;:&quot;Developer productivity platform&quot;}&#39;</code></pre>
-<h4>Environment Variables</h4>
-<div class="table-wrap"><table><thead><tr><th>Variable</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td>`BRAVE_API_KEY`</td><td>Yes</td><td>Brave Search API key</td></tr><tr><td>`LLM_API_KEY`</td><td>No*</td><td>Anthropic API key for Claude</td></tr><tr><td>`OPENAI_API_KEY`</td><td>No*</td><td>OpenAI API key (fallback)</td></tr></tbody></table></div>
-<p>*At least one LLM key recommended for full enrichment</p>
-<h4>Customization</h4>
-<pre class="code-block"><code data-lang="bash"># Use different LLM
-lobster run --file workflow.yaml \
-  --args-json &#39;{
-    &quot;input&quot;: &quot;notion.so&quot;,
-    &quot;llm_model&quot;: &quot;claude-opus-4-5-20241022&quot;,
-    &quot;product_context&quot;: &quot;Enterprise collaboration tools&quot;
-  }&#39;</code></pre>
-<h3>Output</h3>
-<p>Returns structured JSON:</p>
-<pre class="code-block"><code data-lang="json">{
-  &quot;enrichment&quot;: {
-    &quot;company_name&quot;: &quot;Stripe&quot;,
-    &quot;domain&quot;: &quot;stripe.com&quot;,
-    &quot;description&quot;: &quot;Financial infrastructure for the internet...&quot;,
-    &quot;industry&quot;: &quot;FinTech&quot;,
-    &quot;people&quot;: [
-      {&quot;name&quot;: &quot;Patrick Collison&quot;, &quot;title&quot;: &quot;CEO&quot;, &quot;linkedin_url&quot;: &quot;...&quot;}
-    ],
-    &quot;estimated_size&quot;: &quot;5000+&quot;,
-    &quot;tech_stack&quot;: [&quot;Ruby&quot;, &quot;Go&quot;, &quot;React&quot;, &quot;AWS&quot;],
-    &quot;recent_activity&quot;: [&quot;Raised Series I at $95B valuation&quot;],
-    &quot;pain_points&quot;: [&quot;Developer experience at scale&quot;, &quot;...&quot;],
-    &quot;outreach_hooks&quot;: [&quot;Reference their recent API docs redesign&quot;, &quot;...&quot;]
-  },
-  &quot;meta&quot;: {
-    &quot;original_input&quot;: &quot;john@stripe.com&quot;,
-    &quot;enriched_at&quot;: &quot;2024-02-05T20:30:00Z&quot;
-  }
-}</code></pre>
-<h3>Use Cases</h3>
-<ul><li>**Sales prospecting** — Enrich leads before outreach</li><li>**Customer research** — Understand new signups</li><li>**Competitive analysis** — Research competitor customers</li><li>**Account-based marketing** — Build target account profiles</li></ul>
-<h3>Credits</h3>
-<p>Inspired by <a href="https://x.com/pontusab">@pontusab's Midday pattern</a> — multi-step AI agent using Gemini + URL Context + Google Search grounding + Zod schema for structured extraction.</p>
-<p>Adapted for ClawFlows with:</p>
-<ul><li>Lobster shell workflow for portability</li><li>Brave Search instead of Google (no API key hassle)</li><li>OpenAI-compatible LLM support (Claude, GPT-4, etc.)</li></ul></section>
+    <section class="panel" style="margin-top: 1.25rem;"><h2>README details</h2><p>Builds a fast prospect brief from a domain or email using website context, search results, and an LLM pass.</p>
+<h3>Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Capability</th><th>Example Skills</th></tr></thead><tbody><tr><td>`web-fetch`</td><td>runtime fetch</td></tr><tr><td>`web-search`</td><td>runtime search</td></tr><tr><td>`llm`</td><td>summarization/reasoning model</td></tr></tbody></table></div></section>
 
     <div class="footer">
       <p><a href="/">ClawFlows</a> · Powered by <a href="https://github.com/openclaw/openclaw">OpenClaw</a></p>
