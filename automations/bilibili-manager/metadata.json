@@ -1,0 +1,18 @@
+{
+  "name": "bilibili-manager",
+  "description": "Bilibili manager: check DMs, browse content, auto-reply, heartbeat patrol. | B站管理者：私信管理、内容浏览、自动回复、心跳巡逻。",
+  "author": "Moroiser",
+  "version": "1.2.0",
+  "requires": [
+    "browser",
+    "notification"
+  ],
+  "trigger": "manual",
+  "tags": [
+    "bilibili",
+    "dm",
+    "messaging",
+    "automation",
+    "social-media"
+  ]
+}
