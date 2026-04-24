@@ -1,6 +1,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const YAML = require('yaml');
 
 const workflows = [
   'onboarding-dropoff-explainer',
@@ -34,6 +35,7 @@ const workflows = [
 const root = process.cwd();
 const errors = [];
 const clawflowsBin = process.env.CLAWFLOWS_BIN || 'clawflows';
+const mockSkillsDir = path.join(root, '.tmp', 'mock-skills');
 
 function getCommand(bin, file) {
   const args = ['run', file, '--dry-run', '--dir', path.join(root, '.tmp', 'clawflows-smoke')];
@@ -42,6 +44,47 @@ function getCommand(bin, file) {
   }
   return { command: bin, args };
 }
+
+function ensureMockSkill(name, provides = []) {
+  const skillDir = path.join(mockSkillsDir, name);
+  fs.mkdirSync(skillDir, { recursive: true });
+
+  const frontmatter = {
+    name,
+    description: `CI stub skill for ${name}`,
+  };
+
+  if (provides.length) {
+    frontmatter.provides = provides.map(capability => ({ capability }));
+  }
+
+  const skillMd = `---\n${YAML.stringify(frontmatter).trim()}\n---\n\n# ${name}\n\nCI stub skill used only for dry-run smoke tests.\n`;
+  fs.writeFileSync(path.join(skillDir, 'SKILL.md'), skillMd);
+}
+
+function setupMockSkills() {
+  fs.rmSync(mockSkillsDir, { recursive: true, force: true });
+  fs.mkdirSync(mockSkillsDir, { recursive: true });
+
+  for (const name of workflows) {
+    const file = path.join(root, 'automations', name, 'automation.yaml');
+    if (!fs.existsSync(file)) continue;
+
+    const automation = YAML.parse(fs.readFileSync(file, 'utf8')) || {};
+    for (const req of automation.requires || []) {
+      if (typeof req === 'string') {
+        ensureMockSkill(req, [req]);
+        continue;
+      }
+
+      if (req && typeof req === 'object' && req.capability) {
+        ensureMockSkill(req.capability, [req.capability]);
+      }
+    }
+  }
+}
+
+setupMockSkills();
 
 for (const name of workflows) {
   const file = path.join(root, 'automations', name, 'automation.yaml');
@@ -55,7 +98,10 @@ for (const name of workflows) {
   const result = spawnSync(cmd.command, cmd.args, {
     cwd: root,
     encoding: 'utf8',
-    env: process.env,
+    env: {
+      ...process.env,
+      CLAWFLOWS_SKILLS: mockSkillsDir,
+    },
   });
 
   process.stdout.write(result.stdout || '');
