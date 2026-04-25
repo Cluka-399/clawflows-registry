@@ -1,7 +1,7 @@
 {
-  "generated": "2026-04-09T16:11:28.120Z",
+  "generated": "2026-04-25T10:48:57.305Z",
   "version": "1.0.0",
-  "count": 129,
+  "count": 130,
   "automations": [
     {
       "name": "100-Platform Launch Blitz",
@@ -295,6 +295,26 @@
       "updated": "2026-04-09",
       "lobster_ready": true,
       "url": "/automations/backlink-hunter/"
+    },
+    {
+      "name": "bilibili-manager",
+      "description": "Bilibili manager: check DMs, browse content, auto-reply, heartbeat patrol. | B站管理者：私信管理、内容浏览、自动回复、心跳巡逻。",
+      "author": "Moroiser",
+      "version": "1.2.0",
+      "requires": [
+        "browser",
+        "notification"
+      ],
+      "trigger": "manual",
+      "tags": [
+        "bilibili",
+        "dm",
+        "messaging",
+        "automation",
+        "social-media"
+      ],
+      "lobster_ready": false,
+      "url": "/automations/bilibili-manager/"
     },
     {
       "name": "bill-due-reminder",
